@@ -267,6 +267,69 @@ HTML_TEMPLATE = r"""
       border: 1px solid #ddd7ca;
       border-radius: 22px;
       padding: 24px;
+      transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+    }
+    .question-card.streak-5 {
+      border: 4px solid #ff9f1c;
+      box-shadow:
+        0 0 0 4px rgba(255, 214, 10, .35),
+        0 0 24px rgba(255, 159, 28, .55),
+        0 0 44px rgba(255, 77, 109, .28);
+      animation: streak5Pulse 1.15s ease-in-out infinite alternate;
+    }
+    .question-card.streak-10 {
+      border: 6px solid #ff2d55;
+      box-shadow:
+        0 0 0 5px rgba(255, 214, 10, .45),
+        0 0 0 10px rgba(0, 196, 255, .22),
+        0 0 34px rgba(255, 45, 85, .72),
+        0 0 64px rgba(124, 77, 255, .48);
+      animation: streak10Party .62s ease-in-out infinite alternate;
+    }
+    @keyframes streak5Pulse {
+      from {
+        border-color: #ff9f1c;
+        box-shadow:
+          0 0 0 4px rgba(255, 214, 10, .28),
+          0 0 20px rgba(255, 159, 28, .45),
+          0 0 36px rgba(255, 77, 109, .20);
+      }
+      to {
+        border-color: #ff4d6d;
+        box-shadow:
+          0 0 0 5px rgba(255, 214, 10, .48),
+          0 0 30px rgba(255, 77, 109, .68),
+          0 0 50px rgba(255, 159, 28, .38);
+      }
+    }
+    @keyframes streak10Party {
+      0% {
+        border-color: #ff2d55;
+        box-shadow:
+          0 0 0 5px rgba(255, 214, 10, .48),
+          0 0 0 10px rgba(0, 196, 255, .24),
+          0 0 34px rgba(255, 45, 85, .75),
+          0 0 64px rgba(124, 77, 255, .48);
+        transform: scale(1);
+      }
+      50% {
+        border-color: #00c4ff;
+        box-shadow:
+          0 0 0 6px rgba(0, 230, 118, .40),
+          0 0 0 12px rgba(255, 214, 10, .24),
+          0 0 40px rgba(0, 196, 255, .78),
+          0 0 72px rgba(255, 45, 85, .46);
+        transform: scale(1.006);
+      }
+      100% {
+        border-color: #7c4dff;
+        box-shadow:
+          0 0 0 5px rgba(255, 77, 109, .42),
+          0 0 0 10px rgba(0, 230, 118, .24),
+          0 0 38px rgba(124, 77, 255, .82),
+          0 0 70px rgba(255, 214, 10, .44);
+        transform: scale(1.01);
+      }
     }
     .qtop {
       display: flex;
@@ -627,7 +690,7 @@ HTML_TEMPLATE = r"""
         let q;
 
         if (mode === "b1") {
-          q = addSub(0, 9);
+          q = addSub(1, 9);
         } else if (mode === "b2") {
           q = addSub(10, 99);
         } else if (mode === "b3") {
@@ -690,6 +753,16 @@ HTML_TEMPLATE = r"""
     function updateBgmButton() {
       bgmBtn.textContent = bgmOn ? "♪ BGM ON" : "♪ BGM OFF";
       bgmBtn.setAttribute("aria-pressed", String(bgmOn));
+    }
+
+    function updateQuestionCardStreak(streak) {
+      questionCard.classList.remove("streak-5", "streak-10");
+
+      if (streak >= 10) {
+        questionCard.classList.add("streak-10");
+      } else if (streak >= 5) {
+        questionCard.classList.add("streak-5");
+      }
     }
 
     function playBgmForStreak(streak, force = false) {
@@ -761,6 +834,7 @@ HTML_TEMPLATE = r"""
 
       $("#statusTitle").textContent = modeInfo[mode].title;
       $("#streak").textContent = "連続正解 0";
+      updateQuestionCardStreak(0);
 
       feedback.textContent = "";
       feedback.className = "feedback";
@@ -824,6 +898,7 @@ HTML_TEMPLATE = r"""
       }
 
       $("#streak").textContent = `連続正解 ${correctStreak}`;
+      updateQuestionCardStreak(correctStreak);
       playBgmForStreak(correctStreak);
 
       answers.push({ q, user, ok });
@@ -918,6 +993,7 @@ HTML_TEMPLATE = r"""
       menuView.classList.remove("hidden");
       results.classList.remove("show");
       questionCard.classList.remove("hidden");
+      updateQuestionCardStreak(0);
 
       currentMode = null;
     }
