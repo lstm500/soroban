@@ -1,4 +1,3 @@
-# VERSION: 2026-08-25 voice-streak-v2
 import json
 
 import streamlit as st
@@ -268,55 +267,6 @@ HTML_TEMPLATE = r"""
       border: 1px solid #ddd7ca;
       border-radius: 22px;
       padding: 24px;
-      transition: border-color .35s ease, box-shadow .35s ease, background .35s ease;
-    }
-    .question-card.streak-5 {
-      border: 3px solid #e0a72e;
-      box-shadow:
-        0 0 0 3px rgba(255, 221, 104, .22),
-        0 0 20px rgba(224, 167, 46, .28);
-      background:
-        linear-gradient(#fff, #fff) padding-box,
-        linear-gradient(90deg, #e0a72e, #f1c95c, #df8d31) border-box;
-    }
-    .question-card.streak-10 {
-      border: 4px solid transparent;
-      background:
-        linear-gradient(#fff, #fff) padding-box,
-        linear-gradient(
-          90deg,
-          #ff4d6d,
-          #ff9f1c,
-          #ffe66d,
-          #43aa8b,
-          #4d96ff,
-          #9b5de5,
-          #ff4d6d
-        ) border-box;
-      background-size: 100% 100%, 240% 100%;
-      box-shadow:
-        0 0 0 4px rgba(255, 215, 80, .20),
-        0 0 28px rgba(255, 110, 80, .34),
-        0 0 48px rgba(77, 150, 255, .22);
-      animation: streakRainbow 2.8s linear infinite, streakPulse 1.25s ease-in-out infinite alternate;
-    }
-    @keyframes streakRainbow {
-      from { background-position: 0 0, 0% 50%; }
-      to   { background-position: 0 0, 240% 50%; }
-    }
-    @keyframes streakPulse {
-      from {
-        box-shadow:
-          0 0 0 4px rgba(255, 215, 80, .16),
-          0 0 20px rgba(255, 110, 80, .26),
-          0 0 34px rgba(77, 150, 255, .16);
-      }
-      to {
-        box-shadow:
-          0 0 0 5px rgba(255, 215, 80, .28),
-          0 0 34px rgba(255, 110, 80, .42),
-          0 0 58px rgba(77, 150, 255, .30);
-      }
     }
     .qtop {
       display: flex;
@@ -419,10 +369,6 @@ HTML_TEMPLATE = r"""
       margin-top: 18px;
     }
     .hidden { display: none !important; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .question-card.streak-10 { animation: none; }
-    }
 
     @media (max-width: 760px) {
       #soro-app { padding: 12px; }
@@ -555,10 +501,8 @@ HTML_TEMPLATE = r"""
           aria-label="答え"
           placeholder="答え"
         >
-        <button type="button" id="voiceBtn">🎤 音声で答える</button>
         <button type="submit" class="primary">答える</button>
       </form>
-      <div id="voiceStatus" class="result-note" style="min-height:24px;margin-top:8px;"></div>
       <div id="feedback" class="feedback"></div>
       <div class="progress"><div id="bar" class="bar"></div></div>
     </div>
@@ -642,8 +586,7 @@ HTML_TEMPLATE = r"""
 
     function addSub(min, max) {
       let a = rand(min, max);
-      const bMin = Math.max(1, min);
-      let b = rand(bMin, max);
+      let b = rand(min, max);
       const op = chance() ? "＋" : "－";
 
       if (op === "－" && b > a) {
@@ -749,16 +692,6 @@ HTML_TEMPLATE = r"""
       bgmBtn.setAttribute("aria-pressed", String(bgmOn));
     }
 
-    function updateStreakFrame(streak) {
-      questionCard.classList.remove("streak-5", "streak-10");
-
-      if (streak >= 10) {
-        questionCard.classList.add("streak-10");
-      } else if (streak >= 5) {
-        questionCard.classList.add("streak-5");
-      }
-    }
-
     function playBgmForStreak(streak, force = false) {
       const name = desiredBgmName(streak);
 
@@ -828,7 +761,6 @@ HTML_TEMPLATE = r"""
 
       $("#statusTitle").textContent = modeInfo[mode].title;
       $("#streak").textContent = "連続正解 0";
-      updateStreakFrame(0);
 
       feedback.textContent = "";
       feedback.className = "feedback";
@@ -858,7 +790,6 @@ HTML_TEMPLATE = r"""
 
       equation.textContent = `${q.a} ${q.op} ${q.b} ＝ ?`;
       answerInput.value = "";
-      voiceStatus.textContent = "";
       feedback.textContent = "";
       feedback.className = "feedback";
       locked = false;
@@ -893,7 +824,6 @@ HTML_TEMPLATE = r"""
       }
 
       $("#streak").textContent = `連続正解 ${correctStreak}`;
-      updateStreakFrame(correctStreak);
       playBgmForStreak(correctStreak);
 
       answers.push({ q, user, ok });
@@ -990,154 +920,7 @@ HTML_TEMPLATE = r"""
       questionCard.classList.remove("hidden");
 
       currentMode = null;
-      updateStreakFrame(0);
     }
-
-    const voiceBtn = $("#voiceBtn");
-    const voiceStatus = $("#voiceStatus");
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    function normalizeSpeechText(value) {
-      return String(value || "")
-        .trim()
-        .replace(/[０-９]/g, (c) =>
-          String.fromCharCode(c.charCodeAt(0) - 0xFEE0)
-        )
-        .replace(/[,\s、。．]/g, "")
-        .replace(/^(答えは|こたえは|答え|こたえ)/, "")
-        .replace(/です$/, "");
-    }
-
-    function japaneseNumberToInt(value) {
-      const normalized = normalizeSpeechText(value);
-
-      if (/^[+-]?\d+$/.test(normalized)) {
-        return Number(normalized);
-      }
-
-      const digitMap = {
-        "〇": 0, "零": 0,
-        "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
-        "六": 6, "七": 7, "八": 8, "九": 9
-      };
-
-      // 「いちにさん」のような単純な数字列
-      if (/^[〇零一二三四五六七八九]+$/.test(normalized)) {
-        const digits = [...normalized].map((c) => digitMap[c]);
-        return Number(digits.join(""));
-      }
-
-      // 十・百・千・万を含む一般的な日本語数詞
-      if (!/^[〇零一二三四五六七八九十百千万]+$/.test(normalized)) {
-        return null;
-      }
-
-      let total = 0;
-      let section = 0;
-      let number = 0;
-
-      for (const ch of normalized) {
-        if (Object.prototype.hasOwnProperty.call(digitMap, ch)) {
-          number = digitMap[ch];
-        } else if (ch === "十") {
-          section += (number || 1) * 10;
-          number = 0;
-        } else if (ch === "百") {
-          section += (number || 1) * 100;
-          number = 0;
-        } else if (ch === "千") {
-          section += (number || 1) * 1000;
-          number = 0;
-        } else if (ch === "万") {
-          total += (section + number || 1) * 10000;
-          section = 0;
-          number = 0;
-        }
-      }
-
-      return total + section + number;
-    }
-
-    function setupVoiceInput() {
-      if (!SpeechRecognition) {
-        voiceBtn.disabled = true;
-        voiceStatus.textContent =
-          "このブラウザは音声入力に対応していません。Chrome系ブラウザをお試しください。";
-        return;
-      }
-
-      let recognition = null;
-      let listening = false;
-
-      voiceBtn.addEventListener("click", () => {
-        if (locked) return;
-
-        if (listening && recognition) {
-          recognition.stop();
-          return;
-        }
-
-        recognition = new SpeechRecognition();
-        recognition.lang = "ja-JP";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 3;
-
-        recognition.onstart = () => {
-          listening = true;
-          voiceBtn.textContent = "■ 音声入力を止める";
-          voiceStatus.textContent = "答えを数字で話してください。";
-        };
-
-        recognition.onend = () => {
-          listening = false;
-          voiceBtn.textContent = "🎤 音声で答える";
-        };
-
-        recognition.onerror = (event) => {
-          voiceStatus.textContent =
-            event.error === "not-allowed"
-              ? "マイクの使用を許可してください。"
-              : "音声を認識できませんでした。もう一度お試しください。";
-        };
-
-        recognition.onresult = (event) => {
-          let parsed = null;
-          let spoken = "";
-
-          const result = event.results[0];
-          for (let i = 0; i < result.length; i += 1) {
-            const candidate = result[i].transcript;
-            const value = japaneseNumberToInt(candidate);
-            if (value !== null && Number.isFinite(value)) {
-              parsed = value;
-              spoken = candidate;
-              break;
-            }
-          }
-
-          if (parsed === null) {
-            spoken = result[0]?.transcript || "";
-            voiceStatus.textContent =
-              `「${spoken}」と聞こえました。数字として認識できなかったので、もう一度お願いします。`;
-            return;
-          }
-
-          answerInput.value = String(parsed);
-          voiceStatus.textContent = `「${spoken}」→ ${parsed}`;
-          answerInput.focus();
-        };
-
-        try {
-          recognition.start();
-        } catch (error) {
-          voiceStatus.textContent =
-            "音声入力を開始できませんでした。少し待ってからもう一度お試しください。";
-        }
-      });
-    }
-
-    setupVoiceInput();
 
     root.querySelectorAll(".start-mode").forEach((button) => {
       button.addEventListener("click", () => {
