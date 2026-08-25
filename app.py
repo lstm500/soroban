@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V28-QUIET-MIC-HIDE-QUESTION-2026-08-25
+# VERSION: CLEAN-V30-VOLUME4-SECONDS-FLASH-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V28-QUIET-MIC-HIDE-QUESTION"
+APP_VERSION = "CLEAN-V30-VOLUME4-SECONDS-FLASH"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -337,14 +337,32 @@ HTML = r"""
   }
 
   .question-card.streak10 {
-    box-shadow: none !important;
+    box-shadow: none;
   }
 
-  /* 10問連続正解以上は、新しい問題が出た瞬間だけ発光 */
+  /* 10問連続正解以上：
+     レインボー枠は常時、発光は新しい問題が出た瞬間だけ。 */
   .question-card.streak10.question-flash {
     animation:
-      rainbowBorder 2.2s linear infinite,
-      questionGlowFlash .72s ease-out;
+      rainbowBorder 2.2s linear infinite;
+  }
+
+  .question-card.streak10.question-flash::before {
+    content: "";
+    position: absolute;
+    inset: -14px;
+    border-radius: 32px;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0;
+    border: 6px solid rgba(255,255,255,.94);
+    box-shadow:
+      0 0 18px 7px rgba(255, 214, 10, .75),
+      0 0 38px 15px rgba(255, 59, 48, .58),
+      0 0 62px 22px rgba(10, 132, 255, .46),
+      inset 0 0 22px rgba(191, 90, 242, .42);
+    animation:
+      questionFlashHalo 1.15s cubic-bezier(.16,.8,.25,1);
   }
 
   @keyframes rainbowBorder {
@@ -352,23 +370,22 @@ HTML = r"""
     to   { background-position: 0 0, 300% 50%; }
   }
 
-  @keyframes questionGlowFlash {
+  @keyframes questionFlashHalo {
     0% {
-      box-shadow:
-        0 0 0 2px rgba(255,255,255,.15),
-        0 0 8px rgba(255, 214, 10, .15);
-      transform: scale(1);
+      opacity: 0;
+      transform: scale(.975);
     }
-    30% {
-      box-shadow:
-        0 0 0 7px rgba(255, 214, 10, .32),
-        0 0 34px rgba(255, 59, 48, .58),
-        0 0 58px rgba(10, 132, 255, .48);
-      transform: scale(1.006);
+    16% {
+      opacity: 1;
+      transform: scale(1.015);
+    }
+    42% {
+      opacity: .95;
+      transform: scale(1.025);
     }
     100% {
-      box-shadow: none;
-      transform: scale(1);
+      opacity: 0;
+      transform: scale(1.045);
     }
   }
 
@@ -1227,7 +1244,7 @@ HTML = r"""
 
   const BGM_VOLUME_NORMAL = 0.12;
   const BGM_VOLUME_LISTENING = 0.04;
-  const BGM_VOLUME_FEEDBACK = 0.02;
+  const BGM_VOLUME_FEEDBACK = 0.04;
 
   let bgmKeepAliveTimer = null;
 
@@ -2779,6 +2796,15 @@ HTML = r"""
       startBgmKeepAlive();
 
       updateVoiceUi(
+        "音声回答：聞き取り中"
+      );
+
+      // ① ゴワサン終了
+      // ② マイクの onstart を確認
+      // ③ ここで初めて問題を生成・表示する
+      renderQuestion(true);
+
+      updateVoiceUi(
         "音声回答：数字を話してください"
       );
     };
@@ -2957,9 +2983,9 @@ HTML = r"""
       voiceCalloutRunning = false;
       voicePauseForFeedback = false;
 
-      // ② 「ゴワサン！」を言い終えたら、ここで初めて問題を表示。
-      revealQuestionAfterVoiceCallout();
-
+      // ゴワサン終了時点では、まだ問題は作らず表示もしない。
+      // 次にマイクを開始し、recognition.onstart が発火してから
+      // 初めて問題を生成・表示する。
       refreshBgmVolume();
 
       if (
@@ -2970,10 +2996,9 @@ HTML = r"""
         return;
       }
 
-      // ③ 問題を表示して少し間を置いてからマイクを開始。
       setTimeout(() => {
         startMicrophoneRecognition();
-      }, 260);
+      }, 220);
     };
 
     if (
@@ -3066,9 +3091,6 @@ HTML = r"""
     voiceCalloutRunning = false;
     voicePauseForFeedback = false;
 
-    // 音声モードをOFFにした場合は問題を即表示へ戻す。
-    revealQuestionAfterVoiceCallout();
-
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
@@ -3077,6 +3099,10 @@ HTML = r"""
     stopBgmKeepAlive();
 
     refreshBgmVolume();
+
+    // 音声モードをOFFにした場合は、
+    // まだ作っていない現在の問題を通常モードとしてここで生成・表示。
+    renderQuestion(true);
 
     updateVoiceUi(
       "音声回答：OFF"
@@ -3266,7 +3292,7 @@ HTML = r"""
       questionCard.classList.remove(
         "question-flash"
       );
-    }, 760);
+    }, 1200);
   }
 
   function startMode(mode) {
@@ -3326,11 +3352,54 @@ HTML = r"""
     renderQuestion();
   }
 
-  function renderQuestion() {
+  function renderQuestion(voiceReady = false) {
     hideSorobanHint();
 
+    // 音声モードでは、
+    // 「ゴワサン！」→マイクonstart の前に問題を作らない。
+    if (
+      voiceAnswerEnabled &&
+      !voiceReady
+    ) {
+      hideQuestionForVoiceCallout();
+
+      // 前の問題が一瞬見えないように表示内容も消しておく。
+      equation.textContent = "";
+      answerInput.value = "";
+      feedback.textContent = "";
+      feedback.className = "feedback";
+
+      $("#qCount").textContent =
+        `${index + 1} / ${TOTAL_QUESTIONS}`;
+      $("#score").textContent =
+        `正解 ${score}`;
+
+      $("#weakBadge").classList.remove(
+        "show"
+      );
+
+      bar.style.width =
+        `${(index / TOTAL_QUESTIONS) * 100}%`;
+
+      // 前問の判定後は locked=true なので、
+      // 次のゴワサン→マイク開始へ進めるようここで解除する。
+      locked = false;
+
+      if (!voicePauseForFeedback) {
+        scheduleVoiceRestart(350);
+      }
+
+      return;
+    }
+
+    // 非音声モード、またはマイクonstart確認後だけ
+    // ここで問題を生成する。
     if (!questions[index]) {
-      questions[index] = makeQuestionForIndex(index, currentMode);
+      questions[index] =
+        makeQuestionForIndex(
+          index,
+          currentMode
+        );
     }
 
     const q = questions[index];
@@ -3341,36 +3410,37 @@ HTML = r"""
       );
     }
 
-    $("#qCount").textContent = `${index + 1} / ${TOTAL_QUESTIONS}`;
-    $("#score").textContent = `正解 ${score}`;
+    $("#qCount").textContent =
+      `${index + 1} / ${TOTAL_QUESTIONS}`;
+
+    $("#score").textContent =
+      `正解 ${score}`;
 
     $("#weakBadge").classList.toggle(
       "show",
       Boolean(q.isWeakness)
     );
-    bar.style.width = `${(index / TOTAL_QUESTIONS) * 100}%`;
 
-    equation.textContent = `${q.a} ${q.op} ${q.b} ＝ ?`;
+    bar.style.width =
+      `${(index / TOTAL_QUESTIONS) * 100}%`;
 
-    // 10問連続正解以上では、新しい問題が出た瞬間だけ枠を光らせる。
-    flashQuestionFrameIfNeeded();
+    equation.textContent =
+      `${q.a} ${q.op} ${q.b} ＝ ?`;
 
     answerInput.value = "";
     feedback.textContent = "";
     feedback.className = "feedback";
     locked = false;
 
-    if (
-      voiceAnswerEnabled &&
-      !voicePauseForFeedback
-    ) {
-      // 次の問題も、ゴワサンが終わるまで見せない。
-      hideQuestionForVoiceCallout();
-      scheduleVoiceRestart(350);
-    } else {
-      revealQuestionAfterVoiceCallout();
-    }
+    // ここへ voiceReady=true で来た時点では、
+    // マイクはすでに聞き取り状態。
+    revealQuestionAfterVoiceCallout();
+
+    // 10問連続正解以上では、
+    // 問題が実際に表示された瞬間だけ発光。
+    flashQuestionFrameIfNeeded();
   }
+
 
   function submitAnswer() {
     if (locked || index >= TOTAL_QUESTIONS) return;
@@ -3460,12 +3530,13 @@ HTML = r"""
         !entry.ok
     ).length;
 
-    // 得点計算では残り分数を整数で扱う。
-    // 例：6分48秒 → 6分。
+    // 得点計算では残り時間を秒まで反映する。
+    // 例：6分48秒 = 408秒 = 6.8分として計算。
+    const remainingSeconds =
+      Math.max(0, seconds);
+
     const remainingMinutes =
-      Math.floor(
-        Math.max(0, seconds) / 60
-      );
+      remainingSeconds / 60;
 
     const rawScore =
       score *
@@ -3476,6 +3547,7 @@ HTML = r"""
     return {
       correctCount: score,
       maxStreak: maxCorrectStreak,
+      remainingSeconds,
       remainingMinutes,
       wrongCount,
       rawScore,
@@ -3671,10 +3743,18 @@ HTML = r"""
     resultScore.classList.remove("reveal");
     resultScore.classList.add("roulette");
 
+    const remainMin =
+      Math.floor(
+        scoreInfo.remainingSeconds / 60
+      );
+
+    const remainSec =
+      scoreInfo.remainingSeconds % 60;
+
     scoreFormula.textContent =
       `${scoreInfo.correctCount}正解 × ` +
       `最高${scoreInfo.maxStreak}問連続 × ` +
-      `残り${scoreInfo.remainingMinutes}分 ÷ ` +
+      `残り${remainMin}分${remainSec}秒 ÷ ` +
       `（${scoreInfo.wrongCount}回ミス＋1）`;
 
     let tick = 0;
