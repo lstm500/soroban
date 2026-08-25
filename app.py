@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V23-BGM-EVERY-3-2026-08-25
+# VERSION: CLEAN-V24-12Q-BGM-VOICE-RAINBOW-2026-08-25
 
 import json
 
@@ -13,13 +13,14 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V23-BGM-EVERY-3"
+APP_VERSION = "CLEAN-V24-12Q-BGM-VOICE-RAINBOW"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
 BGM_FILES = [
-    "0.mp3", "1.mp3", "2.mp3", "3.mp3", "4.mp3",
-    "5.mp3", "6.mp3", "7.mp3", "8.mp3", "9.mp3",
+    "1.mp3", "2.mp3", "3.mp3",
+    "4.mp3", "5.mp3", "6.mp3",
+    "7.mp3", "8.mp3", "9.mp3",
     "10-1.mp3", "10-2.mp3", "10-3.mp3",
 ]
 
@@ -288,17 +289,9 @@ HTML = r"""
       transform .25s ease;
   }
 
-  .question-card.streak5 {
-    border: 6px solid #e7aa24 !important;
-    background: #fffaf0 !important;
-    box-shadow:
-      0 0 0 4px rgba(255, 210, 79, .24),
-      0 0 28px rgba(227, 165, 35, .52),
-      inset 0 0 26px rgba(255, 221, 103, .15) !important;
-  }
-
+  .question-card.streak6,
   .question-card.streak10 {
-    border: 8px solid transparent !important;
+    border: 7px solid transparent !important;
     background:
       linear-gradient(#fffdf9, #fffdf9) padding-box,
       linear-gradient(
@@ -313,13 +306,22 @@ HTML = r"""
         var(--rb8, #ff3b30)
       ) border-box !important;
     background-size: 100% 100%, 300% 100% !important;
-    box-shadow:
-      0 0 0 6px rgba(255, 214, 10, .28),
-      0 0 36px rgba(255, 59, 48, .52),
-      0 0 60px rgba(10, 132, 255, .42) !important;
+    animation: rainbowBorder 2.2s linear infinite;
+  }
+
+  .question-card.streak6 {
+    box-shadow: none !important;
+  }
+
+  .question-card.streak10 {
+    box-shadow: none !important;
+  }
+
+  /* 10問連続正解以上は、新しい問題が出た瞬間だけ発光 */
+  .question-card.streak10.question-flash {
     animation:
-      rainbowBorder 2s linear infinite,
-      pulseGlow 1s ease-in-out infinite alternate;
+      rainbowBorder 2.2s linear infinite,
+      questionGlowFlash .72s ease-out;
   }
 
   @keyframes rainbowBorder {
@@ -327,9 +329,24 @@ HTML = r"""
     to   { background-position: 0 0, 300% 50%; }
   }
 
-  @keyframes pulseGlow {
-    from { transform: scale(1); }
-    to   { transform: scale(1.005); }
+  @keyframes questionGlowFlash {
+    0% {
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,.15),
+        0 0 8px rgba(255, 214, 10, .15);
+      transform: scale(1);
+    }
+    30% {
+      box-shadow:
+        0 0 0 7px rgba(255, 214, 10, .32),
+        0 0 34px rgba(255, 59, 48, .58),
+        0 0 58px rgba(10, 132, 255, .48);
+      transform: scale(1.006);
+    }
+    100% {
+      box-shadow: none;
+      transform: scale(1);
+    }
   }
 
   .qtop {
@@ -723,8 +740,38 @@ HTML = r"""
     color: #685f55;
   }
 
+  .score-stage.score-rainbow {
+    border: 7px solid transparent;
+    background:
+      radial-gradient(circle at 50% 20%, #fff8d4 0, #fff 56%) padding-box,
+      linear-gradient(
+        90deg,
+        #ff3b30,
+        #ff9500,
+        #ffd60a,
+        #34c759,
+        #0a84ff,
+        #5e5ce6,
+        #bf5af2,
+        #ff3b30
+      ) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: scoreRainbow 2s linear infinite;
+  }
+
   .score-stage.babaan {
     animation: scoreStageBang .72s ease-out;
+  }
+
+  .score-stage.score-rainbow.babaan {
+    animation:
+      scoreStageBang .72s ease-out,
+      scoreRainbow 2s linear infinite;
+  }
+
+  @keyframes scoreRainbow {
+    from { background-position: 0 0, 0% 50%; }
+    to   { background-position: 0 0, 300% 50%; }
   }
 
   @keyframes scoreStageBang {
@@ -820,11 +867,11 @@ HTML = r"""
 <div id="menuView">
   <div class="intro">
     <div class="lead">
-      各モード20問・制限時間10分です。
+      各モード12問・制限時間10分です。
       割り算以外は、計算式を確定する直前に左右の数へ必ず+1します。
       そのため表示される数に0は出ません。
     </div>
-    <div class="badge">20問 / 10分</div>
+    <div class="badge">12問 / 10分</div>
   </div>
 
   <div class="level-title">初級モード｜足し算のみ</div>
@@ -832,24 +879,24 @@ HTML = r"""
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 1</div>
       <div class="mode-name">1桁の足し算</div>
-      <div class="mode-desc">最終表示は1〜9の数だけ。足し算のみ20問です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="mode-desc">最終表示は1〜9の数だけ。足し算のみ12問です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba1">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 2</div>
       <div class="mode-name">2桁の足し算</div>
-      <div class="mode-desc">最終表示は10〜99。足し算のみ20問です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="mode-desc">最終表示は10〜99。足し算のみ12問です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba2">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 3</div>
       <div class="mode-name">3桁の足し算</div>
-      <div class="mode-desc">最終表示は100〜999。足し算のみ20問です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="mode-desc">最終表示は100〜999。足し算のみ12問です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba3">はじめる</button>
     </article>
   </div>
@@ -859,24 +906,24 @@ HTML = r"""
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 1</div>
       <div class="mode-name">1桁の引き算</div>
-      <div class="mode-desc">最終表示は1〜9。引き算のみ20問。答えは必ず0以上です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="mode-desc">最終表示は1〜9。引き算のみ12問。答えは必ず0以上です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs1">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 2</div>
       <div class="mode-name">2桁の引き算</div>
-      <div class="mode-desc">最終表示は10〜99。引き算のみ20問。答えは必ず0以上です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="mode-desc">最終表示は10〜99。引き算のみ12問。答えは必ず0以上です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs2">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 3</div>
       <div class="mode-name">3桁の引き算</div>
-      <div class="mode-desc">最終表示は100〜999。引き算のみ20問。答えは必ず0以上です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="mode-desc">最終表示は100〜999。引き算のみ12問。答えは必ず0以上です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs3">はじめる</button>
     </article>
   </div>
@@ -887,7 +934,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE 1</div>
       <div class="mode-name">1桁の掛け算・割り算</div>
       <div class="mode-desc">1〜9同士の掛け算と、整数になる割り算です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="m1">はじめる</button>
     </article>
 
@@ -895,7 +942,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE 2</div>
       <div class="mode-name">2桁×1桁 / 3桁÷1桁</div>
       <div class="mode-desc">2桁×1桁の掛け算と、3桁÷1桁の整数解です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="m2">はじめる</button>
     </article>
 
@@ -903,7 +950,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE 3</div>
       <div class="mode-name">2桁×2桁 / 3桁÷2桁</div>
       <div class="mode-desc">2桁同士の掛け算と、3桁÷2桁の整数解です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="m3">はじめる</button>
     </article>
   </div>
@@ -914,7 +961,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 1</div>
       <div class="mode-name">4桁の足し算・引き算</div>
       <div class="mode-desc">最終表示は1000〜9999。引き算の答えは0以上です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="a1">はじめる</button>
     </article>
 
@@ -922,7 +969,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 2</div>
       <div class="mode-name">3桁×2桁 / 4桁÷2桁</div>
       <div class="mode-desc">3桁×2桁の掛け算と、4桁÷2桁の整数解です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="a2">はじめる</button>
     </article>
 
@@ -930,7 +977,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 3</div>
       <div class="mode-name">3桁×3桁 / 5桁÷3桁</div>
       <div class="mode-desc">3桁同士の掛け算と、5桁÷3桁の整数解です。</div>
-      <div class="chips"><span class="chip">20問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
       <button type="button" class="primary start-mode" data-mode="a3">はじめる</button>
     </article>
   </div>
@@ -940,7 +987,7 @@ HTML = r"""
   <div class="statusbar">
     <div>
       <div id="statusTitle" class="status-title"></div>
-      <div class="status-sub">20問・制限時間10分</div>
+      <div class="status-sub">12問・制限時間10分</div>
     </div>
     <div id="timer" class="timer">10:00</div>
     <div id="streak" class="streak">連続正解 0</div>
@@ -948,13 +995,13 @@ HTML = r"""
     <button type="button" id="bgmBtn">♪ BGM ON</button>
     <button type="button" id="quitBtn">モード選択へ</button>
     <div id="voiceStatus" class="voice-status">音声回答：OFF</div>
-    <div id="bgmName" class="bgm-name">BGM：0.mp3</div>
+    <div id="bgmName" class="bgm-name">BGM：準備中</div>
   </div>
 
   <div id="questionCard" class="question-card">
     <div class="qtop">
       <div>
-        <span id="qCount" class="qcount">1 / 20</span>
+        <span id="qCount" class="qcount">1 / 12</span>
         <span id="weakBadge" class="weak-badge">にがて克服</span>
       </div>
       <div id="score" class="score">正解 0</div>
@@ -1098,14 +1145,16 @@ HTML = r"""
     divisionMustBeInteger: true
   });
 
+  const TOTAL_QUESTIONS = 12;
+
   // =====================================================
   // 自動レベルアップ・苦手克服
   // =====================================================
   const LEARNING_STORAGE_KEY = "soroban_learning_stats_v1";
 
   // 最初の5問（1〜5問目）には苦手克服問題を入れない。
-  // その後の15問の中へ、最大5問を分散して入れる。
-  const WEAKNESS_SLOTS = new Set([5, 8, 11, 14, 17]);
+  // その後の7問の中へ、最大5問を分散して入れる。
+  const WEAKNESS_SLOTS = new Set([5, 6, 8, 9, 11]);
 
   // 苦手克服問題として1回正解した時点で克服扱い。
   // 一度克服した問題は、それ以降の苦手克服枠には出さない。
@@ -1134,9 +1183,8 @@ HTML = r"""
   let maxCorrectStreak = 0;
   let scoreAnimationToken = 0;
   let bgmOn = true;
-  let currentBgm = "0.mp3";
-  let lastTenBgm = null;
-  let desiredTenTrackGroup = -1;
+  let currentBgm = null;
+  let currentBgmGroupKey = null;
 
   let learningStats = loadLearningStats();
   let sessionWeakAsked = 0;
@@ -1782,19 +1830,18 @@ HTML = r"""
     const activeWeakLeft = getWeakCandidates(mode).length;
 
     // 苦手克服問題が出た場合：
-    // 3問以上出題され、すべて正解し、未克服の苦手が残っていないこと。
+    // 出た苦手問題をすべてクリアし、未克服が残っておらず、
+    // 全体でも10/12以上なら次のレベルへ。
     if (sessionWeakAsked > 0) {
       return (
-        sessionWeakAsked >= 3 &&
         sessionWeakCorrect === sessionWeakAsked &&
         activeWeakLeft === 0 &&
-        finalScore >= 16
+        finalScore >= 10
       );
     }
 
-    // 苦手がまだ一つも記録されていない場合は、
-    // 18/20以上なら「苦手なし」とみなし次レベルへ。
-    return activeWeakLeft === 0 && finalScore >= 18;
+    // 苦手が記録されていない場合は11/12以上でレベルアップ。
+    return activeWeakLeft === 0 && finalScore >= 11;
   }
 
   function makeOneQuestion(mode) {
@@ -2082,7 +2129,7 @@ HTML = r"""
   }
 
   function runSorobanHint() {
-    if (index >= 20 || !questions[index]) {
+    if (index >= TOTAL_QUESTIONS || !questions[index]) {
       return;
     }
 
@@ -2219,82 +2266,61 @@ HTML = r"""
     bgmKeepAliveTimer = null;
   }
 
-  function desiredBgmName(streak) {
-    // 3問連続正解するごとに次のBGMへ進む。
-    // 0〜2問   : 0.mp3
-    // 3〜5問   : 1.mp3
-    // 6〜8問   : 2.mp3
-    // 9〜11問  : 3.mp3
-    // 12〜14問 : 4.mp3
-    //
-    // 15問連続正解以降は、BGMが切り替わるタイミングで
-    // 10-1 / 10-2 / 10-3 のいずれかを使用する。
-    if (streak < 3) {
-      lastTenBgm = null;
-      desiredTenTrackGroup = -1;
-      return "0.mp3";
-    }
-
-    if (streak < 6) {
-      lastTenBgm = null;
-      desiredTenTrackGroup = -1;
-      return "1.mp3";
-    }
-
-    if (streak < 9) {
-      lastTenBgm = null;
-      desiredTenTrackGroup = -1;
-      return "2.mp3";
-    }
-
-    if (streak < 12) {
-      lastTenBgm = null;
-      desiredTenTrackGroup = -1;
-      return "3.mp3";
-    }
-
-    if (streak < 15) {
-      lastTenBgm = null;
-      desiredTenTrackGroup = -1;
-      return "4.mp3";
-    }
-
-    const tenTracks = [
-      "10-1.mp3",
-      "10-2.mp3",
-      "10-3.mp3"
+  function chooseRandomTrack(tracks) {
+    return tracks[
+      Math.floor(
+        Math.random() * tracks.length
+      )
     ];
+  }
 
-    // 15〜17問をグループ0、18〜20問をグループ1とする。
-    const groupIndex =
-      Math.floor((streak - 15) / 3);
+  function desiredBgmName(streak) {
+    let groupKey;
+    let tracks;
 
-    // 同じ3問グループ内では曲を変えない。
+    if (streak <= 2) {
+      groupKey = "1-3";
+      tracks = [
+        "1.mp3",
+        "2.mp3",
+        "3.mp3"
+      ];
+    } else if (streak <= 5) {
+      groupKey = "4-6";
+      tracks = [
+        "4.mp3",
+        "5.mp3",
+        "6.mp3"
+      ];
+    } else if (streak <= 9) {
+      groupKey = "7-9";
+      tracks = [
+        "7.mp3",
+        "8.mp3",
+        "9.mp3"
+      ];
+    } else {
+      groupKey = "10";
+      tracks = [
+        "10-1.mp3",
+        "10-2.mp3",
+        "10-3.mp3"
+      ];
+    }
+
+    // 同じ連続正解帯の中では、選んだ曲をそのまま流す。
     if (
+      currentBgmGroupKey === groupKey &&
       currentBgm &&
-      currentBgm.startsWith("10-") &&
-      desiredTenTrackGroup === groupIndex
+      tracks.includes(currentBgm)
     ) {
       return currentBgm;
     }
 
-    const choices = lastTenBgm
-      ? tenTracks.filter(
-          (name) => name !== lastTenBgm
-        )
-      : tenTracks;
+    // 次の帯に入った時だけ、その帯からランダム選択。
+    currentBgmGroupKey = groupKey;
 
-    const selected =
-      choices[
-        Math.floor(
-          Math.random() * choices.length
-        )
-      ];
-
-    lastTenBgm = selected;
-    desiredTenTrackGroup = groupIndex;
-
-    return selected;
+    return chooseRandomTrack(tracks);
   }
 
   function updateBgmButton() {
@@ -2873,6 +2899,65 @@ HTML = r"""
     }
   }
 
+  function speakVoiceModeOnCallout() {
+    voicePauseForFeedback = true;
+    stopVoiceRecognition();
+    refreshBgmVolume();
+    bgmEngine.ensureRunning();
+
+    const beginListening = () => {
+      voicePauseForFeedback = false;
+      refreshBgmVolume();
+
+      if (voiceAnswerEnabled) {
+        startVoiceRecognition();
+      }
+    };
+
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance === "undefined"
+    ) {
+      beginListening();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        "ゴワサン！"
+      );
+
+    utterance.lang = "ja-JP";
+    utterance.rate = 1.18;
+    utterance.pitch = 1.35;
+    utterance.volume = 0.95;
+
+    const voice = getJapaneseVoice();
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    let completed = false;
+
+    const done = () => {
+      if (completed) {
+        return;
+      }
+
+      completed = true;
+      beginListening();
+    };
+
+    utterance.onend = done;
+    utterance.onerror = done;
+
+    window.speechSynthesis.speak(
+      utterance
+    );
+  }
+
   function setVoiceAnswerEnabled(
     enabled
   ) {
@@ -2880,8 +2965,7 @@ HTML = r"""
       Boolean(enabled);
 
     if (voiceAnswerEnabled) {
-      // 音声回答ONボタンのユーザー操作中に
-      // WebAudioを明示的に起動しておく。
+      // 音声回答ONのユーザー操作中にWebAudioを起動。
       bgmEngine.ensureContext();
       bgmEngine.ensureRunning();
 
@@ -2899,10 +2983,11 @@ HTML = r"""
       startBgmKeepAlive();
 
       updateVoiceUi(
-        "音声回答：マイクを開始します…"
+        "音声回答：ゴワサン！"
       );
 
-      startVoiceRecognition();
+      // 「ゴワサン！」を言い終わってからマイクを開始する。
+      speakVoiceModeOnCallout();
       return;
     }
 
@@ -2964,9 +3049,11 @@ HTML = r"""
     window.speechSynthesis.cancel();
 
     const message =
-      ok
-        ? `正解！${streak}問連続正解中！`
-        : "残念！";
+      !ok
+        ? "残念！"
+        : streak >= 2
+          ? `お見事！${streak}問連続正解！`
+          : "お見事！";
 
     const utterance =
       new SpeechSynthesisUtterance(
@@ -3022,26 +3109,42 @@ HTML = r"""
       "--rb5", "--rb6", "--rb7", "--rb8"
     ];
 
-    if (streak < 10) {
-      vars.forEach((name) => questionCard.style.removeProperty(name));
+    if (streak < 6) {
+      vars.forEach((name) =>
+        questionCard.style.removeProperty(name)
+      );
       return;
     }
 
-    // 10問以降は正解するたび47度ずつ色相をずらす。
-    const baseHue = ((streak - 10) * 47) % 360;
-    const offsets = [0, 46, 92, 138, 184, 230, 276, 322];
+    // 6問連続正解以降は、正解するたび少しずつ配色を変える。
+    const baseHue =
+      ((streak - 6) * 47) % 360;
 
-    offsets.forEach((offset, index) => {
-      const hue = (baseHue + offset) % 360;
-      questionCard.style.setProperty(
-        `--rb${index + 1}`,
-        `hsl(${hue} 92% 58%)`
-      );
-    });
+    const offsets = [
+      0, 46, 92, 138,
+      184, 230, 276, 322
+    ];
+
+    offsets.forEach(
+      (offset, index) => {
+        const hue =
+          (baseHue + offset) % 360;
+
+        questionCard.style.setProperty(
+          `--rb${index + 1}`,
+          `hsl(${hue} 92% 58%)`
+        );
+      }
+    );
   }
 
   function updateStreakFrame(streak) {
-    questionCard.classList.remove("streak5", "streak10");
+    questionCard.classList.remove(
+      "streak5",
+      "streak6",
+      "streak10",
+      "question-flash"
+    );
 
     questionCard.style.borderColor = "";
     questionCard.style.borderWidth = "";
@@ -3050,18 +3153,40 @@ HTML = r"""
     setRainbowForStreak(streak);
 
     if (streak >= 10) {
-      questionCard.classList.add("streak10");
-      questionCard.style.borderWidth = "8px";
+      questionCard.classList.add(
+        "streak10"
+      );
       return;
     }
 
-    if (streak >= 5) {
-      questionCard.classList.add("streak5");
-      questionCard.style.borderColor = "#e7aa24";
-      questionCard.style.borderWidth = "6px";
-      questionCard.style.boxShadow =
-        "0 0 28px rgba(227,165,35,.52)";
+    if (streak >= 6) {
+      questionCard.classList.add(
+        "streak6"
+      );
     }
+  }
+
+  function flashQuestionFrameIfNeeded() {
+    questionCard.classList.remove(
+      "question-flash"
+    );
+
+    if (correctStreak < 10) {
+      return;
+    }
+
+    // reflowして、毎問きちんと発光アニメーションを再生。
+    void questionCard.offsetWidth;
+
+    questionCard.classList.add(
+      "question-flash"
+    );
+
+    setTimeout(() => {
+      questionCard.classList.remove(
+        "question-flash"
+      );
+    }, 760);
   }
 
   function startMode(mode) {
@@ -3082,9 +3207,8 @@ HTML = r"""
     locked = false;
     correctStreak = 0;
     maxCorrectStreak = 0;
-    currentBgm = "0.mp3";
-    lastTenBgm = null;
-    desiredTenTrackGroup = -1;
+    currentBgm = null;
+    currentBgmGroupKey = null;
 
     sessionWeakAsked = 0;
     sessionWeakCorrect = 0;
@@ -3134,16 +3258,20 @@ HTML = r"""
       );
     }
 
-    $("#qCount").textContent = `${index + 1} / 20`;
+    $("#qCount").textContent = `${index + 1} / ${TOTAL_QUESTIONS}`;
     $("#score").textContent = `正解 ${score}`;
 
     $("#weakBadge").classList.toggle(
       "show",
       Boolean(q.isWeakness)
     );
-    bar.style.width = `${(index / 20) * 100}%`;
+    bar.style.width = `${(index / TOTAL_QUESTIONS) * 100}%`;
 
     equation.textContent = `${q.a} ${q.op} ${q.b} ＝ ?`;
+
+    // 10問連続正解以上では、新しい問題が出た瞬間だけ枠を光らせる。
+    flashQuestionFrameIfNeeded();
+
     answerInput.value = "";
     feedback.textContent = "";
     feedback.className = "feedback";
@@ -3158,7 +3286,7 @@ HTML = r"""
   }
 
   function submitAnswer() {
-    if (locked || index >= 20) return;
+    if (locked || index >= TOTAL_QUESTIONS) return;
 
     const raw = String(answerInput.value || "").trim();
 
@@ -3205,13 +3333,13 @@ HTML = r"""
 
     answers.push({ q, user, ok });
 
-    feedback.textContent = ok ? "せいかい！" : `答えは ${q.answer}`;
+    feedback.textContent = ok ? "お見事！" : `残念！ 答えは ${q.answer}`;
     feedback.className = `feedback ${ok ? "good" : "bad"}`;
 
     setTimeout(() => {
       index += 1;
 
-      if (index >= 20) {
+      if (index >= TOTAL_QUESTIONS) {
         finish(false);
       } else {
         renderQuestion();
@@ -3443,7 +3571,16 @@ HTML = r"""
 
     const finalPoints = scoreInfo.finalScore;
 
-    scoreStage.classList.remove("babaan");
+    scoreStage.classList.remove(
+      "babaan",
+      "score-rainbow"
+    );
+
+    if (finalPoints > 1000) {
+      scoreStage.classList.add(
+        "score-rainbow"
+      );
+    }
     resultScore.classList.remove("reveal");
     resultScore.classList.add("roulette");
 
@@ -3505,7 +3642,7 @@ HTML = r"""
       }, 380);
 
       setTimeout(() => {
-        scoreStage.classList.remove("babaan");
+        scoreStage.classList.remove("babaan", "score-rainbow");
       }, 900);
     }, 2700);
   }
@@ -3523,7 +3660,7 @@ HTML = r"""
     locked = true;
 
     if (timeup) {
-      for (let i = index; i < 20; i += 1) {
+      for (let i = index; i < TOTAL_QUESTIONS; i += 1) {
         if (!questions[i]) {
           questions[i] = makeQuestionForIndex(i, currentMode);
         }
@@ -3565,7 +3702,7 @@ HTML = r"""
 
     let resultMessage = timeup
       ? `10分になりました。正解は${score}問です。${weakSummary}`
-      : `20問終了。残り時間は${timerEl.textContent}、正解は${score}問です。${weakSummary}`;
+      : `12問終了。残り時間は${timerEl.textContent}、正解は${score}問です。${weakSummary}`;
 
     if (promotedMode) {
       resultMessage +=
