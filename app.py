@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V16-SOROBAN-HINT-2026-08-25
+# VERSION: CLEAN-V17-VOICE-INPUT-HINT-LOOP-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V16-SOROBAN-HINT"
+APP_VERSION = "CLEAN-V17-VOICE-INPUT-HINT-LOOP"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -213,7 +213,7 @@ HTML = r"""
 
   .statusbar {
     display: grid;
-    grid-template-columns: minmax(200px, 1fr) auto auto auto auto;
+    grid-template-columns: minmax(200px, 1fr) auto auto auto auto auto;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
@@ -246,6 +246,23 @@ HTML = r"""
   .streak {
     white-space: nowrap;
     font-size: 14px;
+    font-weight: 900;
+  }
+
+  .voice-btn.on {
+    background: #dff1e3;
+    color: #285a36;
+    border: 1px solid #a9cfb3;
+  }
+
+  .voice-status {
+    grid-column: 1 / -1;
+    font-size: 12px;
+    color: #706c64;
+  }
+
+  .voice-status.listening {
+    color: #2f6a43;
     font-weight: 900;
   }
 
@@ -836,8 +853,10 @@ HTML = r"""
     </div>
     <div id="timer" class="timer">10:00</div>
     <div id="streak" class="streak">連続正解 0</div>
+    <button type="button" id="voiceBtn" class="voice-btn">🎤 音声回答 OFF</button>
     <button type="button" id="bgmBtn">♪ BGM ON</button>
     <button type="button" id="quitBtn">モード選択へ</button>
+    <div id="voiceStatus" class="voice-status">音声回答：OFF</div>
     <div id="bgmName" class="bgm-name">BGM：0.mp3</div>
   </div>
 
@@ -948,6 +967,8 @@ HTML = r"""
   const feedback = $("#feedback");
   const timerEl = $("#timer");
   const bar = $("#bar");
+  const voiceBtn = $("#voiceBtn");
+  const voiceStatus = $("#voiceStatus");
   const bgmBtn = $("#bgmBtn");
   const bgmName = $("#bgmName");
   const hintBtn = $("#hintBtn");
@@ -1021,6 +1042,12 @@ HTML = r"""
   let hintRunToken = 0;
   let hintDigitCount = 1;
   let hintRods = [];
+
+  let voiceAnswerEnabled = false;
+  let voiceRecognition = null;
+  let voiceRecognitionRunning = false;
+  let voicePauseForFeedback = false;
+  let voiceRestartTimer = null;
 
   const audio = new Audio();
   audio.loop = true;
@@ -1674,16 +1701,28 @@ HTML = r"""
     buildSorobanBoard(digitCount);
     abacusHint.classList.add("show");
 
+    // 1周を約5秒にする。
+    // ステップ数に応じて自動的に間隔を調整する。
+    const cycleMs = 5000;
+    const stepDelay = Math.max(
+      550,
+      Math.floor(cycleMs / Math.max(1, steps.length))
+    );
+
     let stepIndex = 0;
 
     const showStep = () => {
-      if (token !== hintRunToken) {
+      if (
+        token !== hintRunToken ||
+        !abacusHint.classList.contains("show")
+      ) {
         return;
       }
 
       const step = steps[stepIndex];
 
       hintStep.textContent = step.text;
+
       showSorobanNumber(
         step.value,
         step.activePlace
@@ -1691,9 +1730,12 @@ HTML = r"""
 
       stepIndex += 1;
 
-      if (stepIndex < steps.length) {
-        setTimeout(showStep, 1250);
+      if (stepIndex >= steps.length) {
+        stepIndex = 0;
       }
+
+      // ヒントを閉じる／次の問題へ進むまで自動ループ。
+      setTimeout(showStep, stepDelay);
     };
 
     showStep();
@@ -1772,6 +1814,329 @@ HTML = r"""
     }
   }
 
+  function getSpeechRecognitionClass() {
+    return (
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition ||
+      null
+    );
+  }
+
+  function japaneseDigitValue(char) {
+    const map = {
+      "〇": 0, "零": 0,
+      "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
+      "六": 6, "七": 7, "八": 8, "九": 9
+    };
+
+    return Object.prototype.hasOwnProperty.call(map, char)
+      ? map[char]
+      : null;
+  }
+
+  function japaneseIntegerToNumber(input) {
+    const s = String(input || "")
+      .replace(/[,\s、。,.]/g, "")
+      .replace(/マイナス|minus/gi, "-");
+
+    if (!s) return null;
+
+    const direct = s.match(/-?\d+/);
+    if (direct) {
+      const n = Number(direct[0]);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    const normalized = s
+      .replace(/いち/g, "一")
+      .replace(/に/g, "二")
+      .replace(/さん/g, "三")
+      .replace(/よん|し/g, "四")
+      .replace(/ご/g, "五")
+      .replace(/ろく/g, "六")
+      .replace(/なな|しち/g, "七")
+      .replace(/はち/g, "八")
+      .replace(/きゅう|く/g, "九")
+      .replace(/れい|ぜろ/g, "零")
+      .replace(/じゅう/g, "十")
+      .replace(/ひゃく/g, "百")
+      .replace(/せん/g, "千")
+      .replace(/まん/g, "万");
+
+    if (!/[一二三四五六七八九〇零十百千万]/.test(normalized)) {
+      return null;
+    }
+
+    let total = 0;
+    let section = 0;
+    let number = 0;
+    let negative = false;
+
+    if (normalized.startsWith("-")) {
+      negative = true;
+    }
+
+    for (const char of normalized.replace("-", "")) {
+      const digit = japaneseDigitValue(char);
+
+      if (digit !== null) {
+        number = digit;
+        continue;
+      }
+
+      if (char === "十" || char === "百" || char === "千") {
+        const unit =
+          char === "十" ? 10 :
+          char === "百" ? 100 :
+          1000;
+
+        section += (number || 1) * unit;
+        number = 0;
+        continue;
+      }
+
+      if (char === "万") {
+        section += number;
+        total += (section || 1) * 10000;
+        section = 0;
+        number = 0;
+      }
+    }
+
+    const result = total + section + number;
+    return negative ? -result : result;
+  }
+
+  function updateVoiceUi(message = null) {
+    const supported = Boolean(getSpeechRecognitionClass());
+
+    if (!supported) {
+      voiceBtn.disabled = true;
+      voiceBtn.textContent = "🎤 音声回答 非対応";
+      voiceStatus.textContent =
+        "このブラウザでは音声回答を利用できません。";
+      voiceStatus.classList.remove("listening");
+      return;
+    }
+
+    voiceBtn.disabled = false;
+    voiceBtn.classList.toggle("on", voiceAnswerEnabled);
+    voiceBtn.textContent =
+      voiceAnswerEnabled
+        ? "🎤 音声回答 ON"
+        : "🎤 音声回答 OFF";
+
+    if (message) {
+      voiceStatus.textContent = message;
+    } else {
+      voiceStatus.textContent =
+        voiceAnswerEnabled
+          ? "音声回答：数字を話してください"
+          : "音声回答：OFF";
+    }
+
+    voiceStatus.classList.toggle(
+      "listening",
+      voiceAnswerEnabled &&
+      voiceRecognitionRunning &&
+      !voicePauseForFeedback
+    );
+  }
+
+  function stopVoiceRecognition() {
+    if (voiceRestartTimer) {
+      clearTimeout(voiceRestartTimer);
+      voiceRestartTimer = null;
+    }
+
+    if (voiceRecognition && voiceRecognitionRunning) {
+      try {
+        voiceRecognition.stop();
+      } catch (error) {
+        // すでに停止中でも問題なし。
+      }
+    }
+  }
+
+  function scheduleVoiceRestart(delay = 250) {
+    if (
+      !voiceAnswerEnabled ||
+      voicePauseForFeedback ||
+      locked ||
+      !workspace.classList.contains("show") ||
+      results.classList.contains("show")
+    ) {
+      return;
+    }
+
+    if (voiceRestartTimer) {
+      clearTimeout(voiceRestartTimer);
+    }
+
+    voiceRestartTimer = setTimeout(() => {
+      startVoiceRecognition();
+    }, delay);
+  }
+
+  function createVoiceRecognition() {
+    const Recognition = getSpeechRecognitionClass();
+
+    if (!Recognition) {
+      updateVoiceUi();
+      return null;
+    }
+
+    const recognition = new Recognition();
+
+    recognition.lang = "ja-JP";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 3;
+
+    recognition.onstart = () => {
+      voiceRecognitionRunning = true;
+      updateVoiceUi("音声回答：聞いています…");
+    };
+
+    recognition.onend = () => {
+      voiceRecognitionRunning = false;
+      updateVoiceUi();
+
+      if (
+        voiceAnswerEnabled &&
+        !voicePauseForFeedback &&
+        !locked
+      ) {
+        scheduleVoiceRestart(300);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      voiceRecognitionRunning = false;
+
+      if (event.error === "not-allowed") {
+        voiceAnswerEnabled = false;
+        updateVoiceUi(
+          "マイクの使用が許可されていません。ブラウザでマイクを許可してください。"
+        );
+        return;
+      }
+
+      if (
+        event.error === "no-speech" ||
+        event.error === "aborted"
+      ) {
+        updateVoiceUi();
+        return;
+      }
+
+      updateVoiceUi(`音声回答：${event.error}`);
+    };
+
+    recognition.onresult = (event) => {
+      if (
+        locked ||
+        !voiceAnswerEnabled ||
+        voicePauseForFeedback
+      ) {
+        return;
+      }
+
+      const alternatives = [];
+
+      for (
+        let i = 0;
+        i < event.results[0].length;
+        i += 1
+      ) {
+        alternatives.push(
+          event.results[0][i].transcript
+        );
+      }
+
+      let parsed = null;
+      let usedTranscript = "";
+
+      for (const transcript of alternatives) {
+        const value = japaneseIntegerToNumber(transcript);
+
+        if (
+          value !== null &&
+          Number.isInteger(value) &&
+          value >= 0
+        ) {
+          parsed = value;
+          usedTranscript = transcript;
+          break;
+        }
+      }
+
+      if (parsed === null) {
+        updateVoiceUi(
+          `音声回答：「${alternatives[0] || ""}」を数字として認識できませんでした`
+        );
+        scheduleVoiceRestart(500);
+        return;
+      }
+
+      answerInput.value = String(parsed);
+      updateVoiceUi(
+        `音声回答：「${usedTranscript}」→ ${parsed}`
+      );
+
+      // 誤って次の音声を拾わないよう、認識を止めてから自動回答。
+      stopVoiceRecognition();
+
+      setTimeout(() => {
+        if (!locked) {
+          submitAnswer();
+        }
+      }, 180);
+    };
+
+    return recognition;
+  }
+
+  function startVoiceRecognition() {
+    if (
+      !voiceAnswerEnabled ||
+      voicePauseForFeedback ||
+      locked ||
+      voiceRecognitionRunning ||
+      results.classList.contains("show") ||
+      !workspace.classList.contains("show")
+    ) {
+      return;
+    }
+
+    if (!voiceRecognition) {
+      voiceRecognition = createVoiceRecognition();
+    }
+
+    if (!voiceRecognition) {
+      return;
+    }
+
+    try {
+      voiceRecognition.start();
+    } catch (error) {
+      scheduleVoiceRestart(500);
+    }
+  }
+
+  function setVoiceAnswerEnabled(enabled) {
+    voiceAnswerEnabled = Boolean(enabled);
+
+    if (voiceAnswerEnabled) {
+      updateVoiceUi("音声回答：マイクを開始します…");
+      startVoiceRecognition();
+    } else {
+      voicePauseForFeedback = false;
+      stopVoiceRecognition();
+      updateVoiceUi("音声回答：OFF");
+    }
+  }
+
   function getJapaneseVoice() {
     if (!("speechSynthesis" in window)) return null;
 
@@ -1791,8 +2156,14 @@ HTML = r"""
       !("speechSynthesis" in window) ||
       typeof SpeechSynthesisUtterance === "undefined"
     ) {
+      if (voiceAnswerEnabled) {
+        scheduleVoiceRestart(300);
+      }
       return;
     }
+
+    voicePauseForFeedback = true;
+    stopVoiceRecognition();
 
     window.speechSynthesis.cancel();
 
@@ -1811,6 +2182,17 @@ HTML = r"""
     if (voice) {
       utterance.voice = voice;
     }
+
+    const resumeVoice = () => {
+      voicePauseForFeedback = false;
+
+      if (voiceAnswerEnabled) {
+        scheduleVoiceRestart(300);
+      }
+    };
+
+    utterance.onend = resumeVoice;
+    utterance.onerror = resumeVoice;
 
     window.speechSynthesis.speak(utterance);
   }
@@ -1941,6 +2323,13 @@ HTML = r"""
     feedback.textContent = "";
     feedback.className = "feedback";
     locked = false;
+
+    if (
+      voiceAnswerEnabled &&
+      !voicePauseForFeedback
+    ) {
+      scheduleVoiceRestart(350);
+    }
   }
 
   function submitAnswer() {
@@ -2024,6 +2413,7 @@ HTML = r"""
     stopTimer();
     stopBgm();
     hideSorobanHint();
+    stopVoiceRecognition();
 
     if (timeup && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -2103,6 +2493,7 @@ HTML = r"""
     stopTimer();
     stopBgm();
     hideSorobanHint();
+    setVoiceAnswerEnabled(false);
 
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -2117,6 +2508,10 @@ HTML = r"""
     correctStreak = 0;
     updateStreakFrame(0);
   }
+
+  voiceBtn.addEventListener("click", () => {
+    setVoiceAnswerEnabled(!voiceAnswerEnabled);
+  });
 
   hintBtn.addEventListener("click", () => {
     runSorobanHint();
@@ -2185,6 +2580,7 @@ HTML = r"""
   });
 
   updateBgmButton();
+  updateVoiceUi();
 })();
 </script>
 </div>
