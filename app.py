@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V32-PERFECT-SCORE-VOICE-2026-08-25
+# VERSION: CLEAN-V33-MODE-RANKINGS-2026-08-26
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V32-PERFECT-SCORE-VOICE"
+APP_VERSION = "CLEAN-V33-MODE-RANKINGS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -849,6 +849,150 @@ HTML = r"""
     line-height: 1.7;
   }
 
+  .ranking-panel {
+    margin: 18px auto;
+    padding: 14px;
+    border: 1px solid #ddd7ca;
+    border-radius: 16px;
+    background: #fbfaf7;
+  }
+
+  .ranking-panel-title {
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 950;
+    color: #554d43;
+  }
+
+  .ranking-note {
+    margin-bottom: 8px;
+    font-size: 10px;
+    line-height: 1.5;
+    color: #857d73;
+  }
+
+  .ranking-list {
+    display: grid;
+    gap: 5px;
+    max-height: 330px;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .ranking-empty {
+    padding: 12px 6px;
+    text-align: center;
+    font-size: 11px;
+    color: #928b82;
+  }
+
+  .ranking-row {
+    display: grid;
+    grid-template-columns: 25px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 8px;
+    border: 1px solid #e7e1d7;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .ranking-place {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 900;
+    color: #8b8174;
+  }
+
+  .ranking-main {
+    min-width: 0;
+  }
+
+  /* ランキング内の点数は意図的に小さく表示 */
+  .ranking-score {
+    font-size: 17px;
+    line-height: 1.15;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+    color: #463f37;
+  }
+
+  .ranking-detail {
+    margin-top: 2px;
+    font-size: 9px;
+    line-height: 1.45;
+    color: #91887d;
+  }
+
+  .ranking-delete {
+    min-height: 28px !important;
+    padding: 4px 7px !important;
+    font-size: 9px !important;
+    color: #765d59;
+    background: #fff;
+    border: 1px solid #d9c9c6;
+  }
+
+  .ranking-open-btn {
+    width: 100%;
+    margin-top: 7px;
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: #62594f;
+    background: #f7f4ee;
+    border: 1px solid #ddd5c8;
+  }
+
+  .ranking-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    padding: 24px;
+    background: rgba(38, 34, 30, .38);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ranking-modal.show {
+    display: flex;
+  }
+
+  .ranking-dialog {
+    width: min(560px, 96vw);
+    max-height: 82vh;
+    overflow: hidden;
+    padding: 18px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+
+  .ranking-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .ranking-dialog-title {
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 950;
+  }
+
+  .ranking-dialog-close {
+    min-height: 30px !important;
+    padding: 5px 9px !important;
+    font-size: 10px !important;
+  }
+
+  .ranking-dialog .ranking-list {
+    max-height: 60vh;
+  }
+
   .review {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1021,6 +1165,23 @@ HTML = r"""
       <button type="button" class="primary start-mode" data-mode="a3">はじめる</button>
     </article>
   </div>
+
+  <div id="rankingModal" class="ranking-modal" aria-hidden="true">
+    <div class="ranking-dialog">
+      <div class="ranking-dialog-head">
+        <div id="rankingModalTitle" class="ranking-dialog-title">
+          過去の得点ランキング
+        </div>
+        <button type="button" id="rankingModalClose" class="ranking-dialog-close">
+          閉じる
+        </button>
+      </div>
+      <div class="ranking-note">
+        このブラウザに保存された記録です。親御さんの記録などは「削除」で1件ずつ消せます。
+      </div>
+      <div id="rankingModalList" class="ranking-list"></div>
+    </div>
+  </div>
 </div>
 
 <section id="workspace" class="workspace">
@@ -1124,6 +1285,15 @@ HTML = r"""
     </div>
 
     <div id="resultNote" class="result-note"></div>
+
+    <div id="resultRankingPanel" class="ranking-panel">
+      <div class="ranking-panel-title">このモードの過去の得点ランキング</div>
+      <div class="ranking-note">
+        点数は小さめに表示しています。不要な記録は1件ずつ削除できます。
+      </div>
+      <div id="resultRankingList" class="ranking-list"></div>
+    </div>
+
     <div id="review" class="review"></div>
     <div class="actions">
       <button type="button" id="retryBtn" class="primary">同じモードをもう一度</button>
@@ -1154,6 +1324,10 @@ HTML = r"""
   const scoreStage = $("#scoreStage");
   const resultScore = $("#resultScore");
   const scoreFormula = $("#scoreFormula");
+  const resultRankingList = $("#resultRankingList");
+  const rankingModal = $("#rankingModal");
+  const rankingModalTitle = $("#rankingModalTitle");
+  const rankingModalList = $("#rankingModalList");
 
   const voiceBtn = $("#voiceBtn");
   const voiceStatus = $("#voiceStatus");
@@ -1191,6 +1365,8 @@ HTML = r"""
   // 自動レベルアップ・苦手克服
   // =====================================================
   const LEARNING_STORAGE_KEY = "soroban_learning_stats_v1";
+  const RANKING_STORAGE_KEY = "soroban_score_rankings_v1";
+  const MAX_RANKING_ENTRIES_PER_MODE = 100;
 
   // 最初の5問（1〜5問目）には苦手克服問題を入れない。
   // その後の7問の中へ、最大5問を分散して入れる。
@@ -1227,9 +1403,12 @@ HTML = r"""
   let currentBgmGroupKey = null;
 
   let learningStats = loadLearningStats();
+  let scoreRankings = loadScoreRankings();
   let sessionWeakAsked = 0;
   let sessionWeakCorrect = 0;
   let promotedMode = null;
+  let sessionRankingSaved = false;
+  let rankingModalMode = null;
 
   let hintRunToken = 0;
   let hintDigitCount = 1;
@@ -1683,6 +1862,412 @@ HTML = r"""
     }
 
     throw new Error("整数になる割り算を生成できませんでした。");
+  }
+
+  function loadScoreRankings() {
+    try {
+      const raw =
+        localStorage.getItem(
+          RANKING_STORAGE_KEY
+        );
+
+      if (!raw) {
+        return { modes: {} };
+      }
+
+      const parsed =
+        JSON.parse(raw);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object"
+      ) {
+        return { modes: {} };
+      }
+
+      if (
+        !parsed.modes ||
+        typeof parsed.modes !== "object"
+      ) {
+        parsed.modes = {};
+      }
+
+      return parsed;
+    } catch (error) {
+      return { modes: {} };
+    }
+  }
+
+  function saveScoreRankings() {
+    try {
+      localStorage.setItem(
+        RANKING_STORAGE_KEY,
+        JSON.stringify(
+          scoreRankings
+        )
+      );
+    } catch (error) {
+      // 保存できなくてもゲーム自体は継続する。
+    }
+  }
+
+  function rankingEntriesForMode(mode) {
+    const entries =
+      scoreRankings.modes[mode];
+
+    if (!Array.isArray(entries)) {
+      return [];
+    }
+
+    return [...entries].sort(
+      (a, b) =>
+        (b.score - a.score) ||
+        (b.correctCount - a.correctCount) ||
+        (b.maxStreak - a.maxStreak) ||
+        (b.remainingSeconds - a.remainingSeconds) ||
+        (a.playedAt - b.playedAt)
+    );
+  }
+
+  function addScoreRanking(
+    mode,
+    scoreInfo,
+    timeup
+  ) {
+    if (!mode || !scoreInfo) {
+      return;
+    }
+
+    if (
+      !scoreRankings.modes[mode] ||
+      !Array.isArray(
+        scoreRankings.modes[mode]
+      )
+    ) {
+      scoreRankings.modes[mode] = [];
+    }
+
+    const entry = {
+      id:
+        `${Date.now()}-` +
+        Math.random()
+          .toString(36)
+          .slice(2, 9),
+      score:
+        Number(scoreInfo.finalScore) || 0,
+      correctCount:
+        Number(scoreInfo.correctCount) || 0,
+      maxStreak:
+        Number(scoreInfo.maxStreak) || 0,
+      remainingSeconds:
+        Number(scoreInfo.remainingSeconds) || 0,
+      wrongCount:
+        Number(scoreInfo.wrongCount) || 0,
+      timeup:
+        Boolean(timeup),
+      playedAt:
+        Date.now()
+    };
+
+    scoreRankings.modes[mode].push(
+      entry
+    );
+
+    scoreRankings.modes[mode] =
+      rankingEntriesForMode(mode)
+        .slice(
+          0,
+          MAX_RANKING_ENTRIES_PER_MODE
+        );
+
+    saveScoreRankings();
+  }
+
+  function deleteRankingEntry(
+    mode,
+    entryId
+  ) {
+    const entries =
+      scoreRankings.modes[mode];
+
+    if (!Array.isArray(entries)) {
+      return;
+    }
+
+    scoreRankings.modes[mode] =
+      entries.filter(
+        (entry) =>
+          entry.id !== entryId
+      );
+
+    saveScoreRankings();
+
+    if (currentMode === mode) {
+      renderResultRanking(mode);
+    }
+
+    if (rankingModalMode === mode) {
+      renderRankingList(
+        rankingModalList,
+        mode
+      );
+    }
+  }
+
+  function formatRankingTime(
+    secondsValue
+  ) {
+    const safe =
+      Math.max(
+        0,
+        Math.floor(
+          Number(secondsValue) || 0
+        )
+      );
+
+    const minutes =
+      Math.floor(safe / 60);
+
+    const secondsPart =
+      safe % 60;
+
+    return (
+      `${minutes}:` +
+      String(secondsPart)
+        .padStart(2, "0")
+    );
+  }
+
+  function formatRankingDate(
+    timestamp
+  ) {
+    try {
+      return new Date(timestamp)
+        .toLocaleString(
+          "ja-JP",
+          {
+            month: "numeric",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          }
+        );
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function renderRankingList(
+    container,
+    mode
+  ) {
+    if (!container) {
+      return;
+    }
+
+    container.innerHTML = "";
+
+    const entries =
+      rankingEntriesForMode(mode);
+
+    if (entries.length === 0) {
+      const empty =
+        document.createElement(
+          "div"
+        );
+
+      empty.className =
+        "ranking-empty";
+
+      empty.textContent =
+        "まだ得点記録がありません。";
+
+      container.appendChild(empty);
+      return;
+    }
+
+    entries.forEach(
+      (entry, index) => {
+        const row =
+          document.createElement(
+            "div"
+          );
+
+        row.className =
+          "ranking-row";
+
+        const place =
+          document.createElement(
+            "div"
+          );
+
+        place.className =
+          "ranking-place";
+
+        place.textContent =
+          `${index + 1}`;
+
+        const main =
+          document.createElement(
+            "div"
+          );
+
+        main.className =
+          "ranking-main";
+
+        const scoreEl =
+          document.createElement(
+            "div"
+          );
+
+        scoreEl.className =
+          "ranking-score";
+
+        scoreEl.textContent =
+          `${entry.score.toLocaleString()}点`;
+
+        const detail =
+          document.createElement(
+            "div"
+          );
+
+        detail.className =
+          "ranking-detail";
+
+        detail.textContent =
+          `${entry.correctCount}/${TOTAL_QUESTIONS}正解` +
+          ` ・ 最高${entry.maxStreak}連続` +
+          ` ・ 残り${formatRankingTime(entry.remainingSeconds)}` +
+          ` ・ ${formatRankingDate(entry.playedAt)}`;
+
+        const deleteBtn =
+          document.createElement(
+            "button"
+          );
+
+        deleteBtn.type =
+          "button";
+
+        deleteBtn.className =
+          "ranking-delete";
+
+        deleteBtn.textContent =
+          "削除";
+
+        deleteBtn.addEventListener(
+          "click",
+          () => {
+            const ok =
+              window.confirm(
+                "この得点記録を削除しますか？"
+              );
+
+            if (!ok) {
+              return;
+            }
+
+            deleteRankingEntry(
+              mode,
+              entry.id
+            );
+          }
+        );
+
+        main.appendChild(scoreEl);
+        main.appendChild(detail);
+
+        row.appendChild(place);
+        row.appendChild(main);
+        row.appendChild(deleteBtn);
+
+        container.appendChild(row);
+      }
+    );
+  }
+
+  function renderResultRanking(mode) {
+    renderRankingList(
+      resultRankingList,
+      mode
+    );
+  }
+
+  function openRankingModal(mode) {
+    rankingModalMode = mode;
+
+    rankingModalTitle.textContent =
+      `${modeInfo[mode].title}｜得点ランキング`;
+
+    renderRankingList(
+      rankingModalList,
+      mode
+    );
+
+    rankingModal.classList.add(
+      "show"
+    );
+
+    rankingModal.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+  }
+
+  function closeRankingModal() {
+    rankingModalMode = null;
+
+    rankingModal.classList.remove(
+      "show"
+    );
+
+    rankingModal.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+  }
+
+  function setupModeRankingButtons() {
+    root
+      .querySelectorAll(
+        ".start-mode"
+      )
+      .forEach((startButton) => {
+        const mode =
+          startButton.dataset.mode;
+
+        if (!mode) {
+          return;
+        }
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+
+        button.className =
+          "ranking-open-btn";
+
+        button.dataset.mode =
+          mode;
+
+        button.textContent =
+          "過去の得点ランキング";
+
+        button.addEventListener(
+          "click",
+          () => {
+            openRankingModal(mode);
+          }
+        );
+
+        startButton.insertAdjacentElement(
+          "afterend",
+          button
+        );
+      });
   }
 
   function loadLearningStats() {
@@ -3303,6 +3888,8 @@ HTML = r"""
     sessionWeakAsked = 0;
     sessionWeakCorrect = 0;
     promotedMode = null;
+    sessionRankingSaved = false;
+    closeRankingModal();
 
     $("#retryBtn").textContent = "同じモードをもう一度";
 
@@ -3907,6 +4494,20 @@ HTML = r"""
     const challengeScore =
       calculateChallengeScore();
 
+    if (!sessionRankingSaved) {
+      addScoreRanking(
+        currentMode,
+        challengeScore,
+        timeup
+      );
+
+      sessionRankingSaved = true;
+    }
+
+    renderResultRanking(
+      currentMode
+    );
+
     const weakSummary =
       sessionWeakAsked > 0
         ? `苦手克服 ${sessionWeakCorrect}/${sessionWeakAsked}問。`
@@ -3964,6 +4565,7 @@ HTML = r"""
 
   function goMenu() {
     scoreAnimationToken += 1;
+    closeRankingModal();
     stopTimer();
     stopBgm();
     hideSorobanHint();
@@ -4027,11 +4629,27 @@ HTML = r"""
     }
   });
 
+  setupModeRankingButtons();
+
   root.querySelectorAll(".start-mode").forEach((button) => {
     button.addEventListener("click", () => {
       startMode(button.dataset.mode);
     });
   });
+
+  $("#rankingModalClose").addEventListener(
+    "click",
+    closeRankingModal
+  );
+
+  rankingModal.addEventListener(
+    "click",
+    (event) => {
+      if (event.target === rankingModal) {
+        closeRankingModal();
+      }
+    }
+  );
 
   $("#answerForm").addEventListener("submit", (event) => {
     event.preventDefault();
