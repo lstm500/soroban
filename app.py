@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V33-MODE-RANKINGS-2026-08-26
+# VERSION: CLEAN-V34-5MIN-CHALLENGE-COUNT-2026-08-26
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V33-MODE-RANKINGS"
+APP_VERSION = "CLEAN-V34-5MIN-CHALLENGE-COUNT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -933,6 +933,14 @@ HTML = r"""
     border: 1px solid #d9c9c6;
   }
 
+  .mode-challenge-count {
+    margin: 8px 0 5px;
+    text-align: right;
+    font-size: 10px;
+    font-weight: 800;
+    color: #8b8378;
+  }
+
   .ranking-open-btn {
     width: 100%;
     margin-top: 7px;
@@ -1051,11 +1059,11 @@ HTML = r"""
 <div id="menuView">
   <div class="intro">
     <div class="lead">
-      各モード12問・制限時間10分です。
+      各モード12問・制限時間5分です。
       割り算以外は、計算式を確定する直前に左右の数へ必ず+1します。
       そのため表示される数に0は出ません。
     </div>
-    <div class="badge">12問 / 10分</div>
+    <div class="badge">12問 / 5分</div>
   </div>
 
   <div class="level-title">初級モード｜足し算のみ</div>
@@ -1064,7 +1072,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 1</div>
       <div class="mode-name">1桁の足し算</div>
       <div class="mode-desc">最終表示は1〜9の数だけ。足し算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba1">はじめる</button>
     </article>
 
@@ -1072,7 +1080,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 2</div>
       <div class="mode-name">2桁の足し算</div>
       <div class="mode-desc">最終表示は10〜99。足し算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba2">はじめる</button>
     </article>
 
@@ -1080,7 +1088,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 3</div>
       <div class="mode-name">3桁の足し算</div>
       <div class="mode-desc">最終表示は100〜999。足し算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba3">はじめる</button>
     </article>
   </div>
@@ -1091,7 +1099,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 1</div>
       <div class="mode-name">1桁の引き算</div>
       <div class="mode-desc">最終表示は1〜9。引き算のみ12問。答えは必ず0以上です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs1">はじめる</button>
     </article>
 
@@ -1099,7 +1107,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 2</div>
       <div class="mode-name">2桁の引き算</div>
       <div class="mode-desc">最終表示は10〜99。引き算のみ12問。答えは必ず0以上です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs2">はじめる</button>
     </article>
 
@@ -1107,7 +1115,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 3</div>
       <div class="mode-name">3桁の引き算</div>
       <div class="mode-desc">最終表示は100〜999。引き算のみ12問。答えは必ず0以上です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs3">はじめる</button>
     </article>
   </div>
@@ -1118,7 +1126,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE 1</div>
       <div class="mode-name">1桁の掛け算・割り算</div>
       <div class="mode-desc">1〜9同士の掛け算と、整数になる割り算です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="m1">はじめる</button>
     </article>
 
@@ -1126,7 +1134,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE 2</div>
       <div class="mode-name">2桁×1桁 / 3桁÷1桁</div>
       <div class="mode-desc">2桁×1桁の掛け算と、3桁÷1桁の整数解です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="m2">はじめる</button>
     </article>
 
@@ -1134,7 +1142,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE 3</div>
       <div class="mode-name">2桁×2桁 / 3桁÷2桁</div>
       <div class="mode-desc">2桁同士の掛け算と、3桁÷2桁の整数解です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="m3">はじめる</button>
     </article>
   </div>
@@ -1145,7 +1153,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 1</div>
       <div class="mode-name">4桁の足し算・引き算</div>
       <div class="mode-desc">最終表示は1000〜9999。引き算の答えは0以上です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="a1">はじめる</button>
     </article>
 
@@ -1153,7 +1161,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 2</div>
       <div class="mode-name">3桁×2桁 / 4桁÷2桁</div>
       <div class="mode-desc">3桁×2桁の掛け算と、4桁÷2桁の整数解です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="a2">はじめる</button>
     </article>
 
@@ -1161,7 +1169,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 3</div>
       <div class="mode-name">3桁×3桁 / 5桁÷3桁</div>
       <div class="mode-desc">3桁同士の掛け算と、5桁÷3桁の整数解です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip">10分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="a3">はじめる</button>
     </article>
   </div>
@@ -1188,9 +1196,9 @@ HTML = r"""
   <div class="statusbar">
     <div>
       <div id="statusTitle" class="status-title"></div>
-      <div class="status-sub">12問・制限時間10分</div>
+      <div class="status-sub">12問・制限時間5分</div>
     </div>
-    <div id="timer" class="timer">10:00</div>
+    <div id="timer" class="timer">5:00</div>
     <div id="streak" class="streak">連続正解 0</div>
     <button type="button" id="voiceBtn" class="voice-btn">🎤 音声回答 OFF</button>
     <button type="button" id="bgmBtn">♪ BGM ON</button>
@@ -1366,6 +1374,7 @@ HTML = r"""
   // =====================================================
   const LEARNING_STORAGE_KEY = "soroban_learning_stats_v1";
   const RANKING_STORAGE_KEY = "soroban_score_rankings_v1";
+  const CHALLENGE_COUNT_STORAGE_KEY = "soroban_challenge_counts_v1";
   const MAX_RANKING_ENTRIES_PER_MODE = 100;
 
   // 最初の5問（1〜5問目）には苦手克服問題を入れない。
@@ -1392,7 +1401,7 @@ HTML = r"""
   let index = 0;
   let score = 0;
   let answers = [];
-  let seconds = 600;
+  let seconds = 300;
   let timerHandle = null;
   let locked = false;
   let correctStreak = 0;
@@ -1404,10 +1413,12 @@ HTML = r"""
 
   let learningStats = loadLearningStats();
   let scoreRankings = loadScoreRankings();
+  let challengeCounts = loadChallengeCounts();
   let sessionWeakAsked = 0;
   let sessionWeakCorrect = 0;
   let promotedMode = null;
   let sessionRankingSaved = false;
+  let sessionChallengeRecorded = false;
   let rankingModalMode = null;
 
   let hintRunToken = 0;
@@ -1862,6 +1873,147 @@ HTML = r"""
     }
 
     throw new Error("整数になる割り算を生成できませんでした。");
+  }
+
+  function loadChallengeCounts() {
+    try {
+      const raw =
+        localStorage.getItem(
+          CHALLENGE_COUNT_STORAGE_KEY
+        );
+
+      if (!raw) {
+        return {};
+      }
+
+      const parsed =
+        JSON.parse(raw);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+      ) {
+        return {};
+      }
+
+      return parsed;
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveChallengeCounts() {
+    try {
+      localStorage.setItem(
+        CHALLENGE_COUNT_STORAGE_KEY,
+        JSON.stringify(
+          challengeCounts
+        )
+      );
+    } catch (error) {
+      // 保存できなくてもゲーム自体は継続する。
+    }
+  }
+
+  function getChallengeCount(mode) {
+    return Math.max(
+      0,
+      Math.floor(
+        Number(
+          challengeCounts[mode]
+        ) || 0
+      )
+    );
+  }
+
+  function incrementChallengeCount(mode) {
+    const next =
+      getChallengeCount(mode) + 1;
+
+    challengeCounts[mode] = next;
+    saveChallengeCounts();
+
+    updateModeChallengeCountLabels();
+
+    return next;
+  }
+
+  function modeVoiceName(mode) {
+    const title =
+      modeInfo[mode]?.title ||
+      mode;
+
+    return String(title)
+      .split("｜")[0];
+  }
+
+  function updateModeChallengeCountLabels() {
+    root
+      .querySelectorAll(
+        ".mode-challenge-count"
+      )
+      .forEach((node) => {
+        const mode =
+          node.dataset.mode;
+
+        if (!mode) {
+          return;
+        }
+
+        node.textContent =
+          `総チャレンジ ${getChallengeCount(mode)}回`;
+      });
+  }
+
+  function setupModeChallengeCountLabels() {
+    root
+      .querySelectorAll(
+        ".start-mode"
+      )
+      .forEach((startButton) => {
+        const mode =
+          startButton.dataset.mode;
+
+        if (!mode) {
+          return;
+        }
+
+        const card =
+          startButton.closest(
+            ".mode-card"
+          );
+
+        if (!card) {
+          return;
+        }
+
+        if (
+          card.querySelector(
+            `.mode-challenge-count[data-mode="${mode}"]`
+          )
+        ) {
+          return;
+        }
+
+        const label =
+          document.createElement(
+            "div"
+          );
+
+        label.className =
+          "mode-challenge-count";
+
+        label.dataset.mode =
+          mode;
+
+        startButton.insertAdjacentElement(
+          "beforebegin",
+          label
+        );
+      });
+
+    updateModeChallengeCountLabels();
   }
 
   function loadScoreRankings() {
@@ -3878,7 +4030,7 @@ HTML = r"""
     index = 0;
     score = 0;
     answers = [];
-    seconds = 600;
+    seconds = 300;
     locked = false;
     correctStreak = 0;
     maxCorrectStreak = 0;
@@ -3889,6 +4041,7 @@ HTML = r"""
     sessionWeakCorrect = 0;
     promotedMode = null;
     sessionRankingSaved = false;
+    sessionChallengeRecorded = false;
     closeRankingModal();
 
     $("#retryBtn").textContent = "同じモードをもう一度";
@@ -4277,7 +4430,24 @@ HTML = r"""
 
     window.speechSynthesis.cancel();
 
-    const points = scoreInfo.finalScore;
+    const points =
+      scoreInfo.finalScore;
+
+    const challengeCount =
+      Math.max(
+        0,
+        Number(
+          scoreInfo.challengeCount
+        ) || 0
+      );
+
+    const challengeMessage =
+      (
+        challengeCount > 0 &&
+        challengeCount % 5 === 0
+      )
+        ? `今回で${modeVoiceName(scoreInfo.mode)}モードは${challengeCount}回目のチャレンジでした。がんばってますね。`
+        : null;
 
     let openingMessage = null;
 
@@ -4295,20 +4465,76 @@ HTML = r"""
         "惜しい！もう少しでパーフェクト！";
     }
 
-    const speakPoints = () => {
-      const scoreUtterance =
+    const makeUtterance = (
+      message,
+      rate = 1.18,
+      pitch = 1.52
+    ) => {
+      const utterance =
         new SpeechSynthesisUtterance(
-          `得点は、${points}点！`
+          message
         );
 
-      scoreUtterance.lang = "ja-JP";
-      scoreUtterance.rate = 1.22;
-      scoreUtterance.pitch = 1.62;
-      scoreUtterance.volume = 1.0;
+      utterance.lang = "ja-JP";
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      utterance.volume = 1.0;
 
-      const voice = getJapaneseVoice();
+      const voice =
+        getJapaneseVoice();
+
       if (voice) {
-        scoreUtterance.voice = voice;
+        utterance.voice = voice;
+      }
+
+      return utterance;
+    };
+
+    const speakChallengeMessage = () => {
+      if (!challengeMessage) {
+        return;
+      }
+
+      const challengeUtterance =
+        makeUtterance(
+          challengeMessage,
+          1.08,
+          1.42
+        );
+
+      window.speechSynthesis.speak(
+        challengeUtterance
+      );
+    };
+
+    const speakPoints = () => {
+      const scoreUtterance =
+        makeUtterance(
+          `得点は、${points}点！`,
+          1.22,
+          1.62
+        );
+
+      if (challengeMessage) {
+        let continued = false;
+
+        const continueToChallenge = () => {
+          if (continued) {
+            return;
+          }
+
+          continued = true;
+
+          setTimeout(() => {
+            speakChallengeMessage();
+          }, 260);
+        };
+
+        scoreUtterance.onend =
+          continueToChallenge;
+
+        scoreUtterance.onerror =
+          continueToChallenge;
       }
 
       window.speechSynthesis.speak(
@@ -4316,23 +4542,13 @@ HTML = r"""
       );
     };
 
-    // パーフェクト／1問ミスのときは、
-    // 先に専用メッセージを読み上げてから得点を読む。
     if (openingMessage) {
       const openingUtterance =
-        new SpeechSynthesisUtterance(
-          openingMessage
+        makeUtterance(
+          openingMessage,
+          1.18,
+          1.55
         );
-
-      openingUtterance.lang = "ja-JP";
-      openingUtterance.rate = 1.18;
-      openingUtterance.pitch = 1.55;
-      openingUtterance.volume = 1.0;
-
-      const voice = getJapaneseVoice();
-      if (voice) {
-        openingUtterance.voice = voice;
-      }
 
       let continued = false;
 
@@ -4494,6 +4710,26 @@ HTML = r"""
     const challengeScore =
       calculateChallengeScore();
 
+    if (!sessionChallengeRecorded) {
+      challengeScore.challengeCount =
+        incrementChallengeCount(
+          currentMode
+        );
+
+      challengeScore.mode =
+        currentMode;
+
+      sessionChallengeRecorded = true;
+    } else {
+      challengeScore.challengeCount =
+        getChallengeCount(
+          currentMode
+        );
+
+      challengeScore.mode =
+        currentMode;
+    }
+
     if (!sessionRankingSaved) {
       addScoreRanking(
         currentMode,
@@ -4523,8 +4759,11 @@ HTML = r"""
       : null;
 
     let resultMessage = timeup
-      ? `10分になりました。正解は${score}問です。${weakSummary}`
+      ? `5分になりました。正解は${score}問です。${weakSummary}`
       : `12問終了。残り時間は${timerEl.textContent}、正解は${score}問です。${weakSummary}`;
+
+    resultMessage +=
+      ` 総チャレンジ回数は${challengeScore.challengeCount}回です。`;
 
     if (promotedMode) {
       resultMessage +=
@@ -4629,6 +4868,7 @@ HTML = r"""
     }
   });
 
+  setupModeChallengeCountLabels();
   setupModeRankingButtons();
 
   root.querySelectorAll(".start-mode").forEach((button) => {
