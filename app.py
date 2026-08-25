@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V13-BEGINNER-SPLIT-2026-08-25
+# VERSION: CLEAN-V14-VOICE-FEEDBACK-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V13-BEGINNER-SPLIT"
+APP_VERSION = "CLEAN-V14-VOICE-FEEDBACK"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1018,9 +1018,8 @@ HTML = r"""
     );
   }
 
-  function speakCorrectStreak(streak) {
+  function speakAnswerFeedback(ok, streak) {
     if (
-      streak <= 0 ||
       !("speechSynthesis" in window) ||
       typeof SpeechSynthesisUtterance === "undefined"
     ) {
@@ -1029,17 +1028,21 @@ HTML = r"""
 
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(
-      `${streak}問連続正解中！`
-    );
+    const message = ok
+      ? `正解！${streak}問連続正解中！`
+      : "残念！";
+
+    const utterance = new SpeechSynthesisUtterance(message);
 
     utterance.lang = "ja-JP";
-    utterance.rate = 1.28;
+    utterance.rate = 1.30;
     utterance.pitch = 1.48;
     utterance.volume = 0.95;
 
     const voice = getJapaneseVoice();
-    if (voice) utterance.voice = voice;
+    if (voice) {
+      utterance.voice = voice;
+    }
 
     window.speechSynthesis.speak(utterance);
   }
@@ -1174,16 +1177,13 @@ HTML = r"""
     if (ok) {
       score += 1;
       correctStreak += 1;
-
-      // 正解するたびに現在の連続正解数を高め・速めの声で読み上げる。
-      speakCorrectStreak(correctStreak);
     } else {
       correctStreak = 0;
-
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
     }
+
+    // 正解時：「正解！○問連続正解中！」
+    // 不正解時：「残念！」
+    speakAnswerFeedback(ok, correctStreak);
 
     $("#score").textContent = `正解 ${score}`;
     $("#streak").textContent = `連続正解 ${correctStreak}`;
@@ -1204,7 +1204,7 @@ HTML = r"""
       } else {
         renderQuestion();
       }
-    }, 650);
+    }, 850);
   }
 
   function updateTimer() {
@@ -1230,7 +1230,7 @@ HTML = r"""
     stopTimer();
     stopBgm();
 
-    if ("speechSynthesis" in window) {
+    if (timeup && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
 
