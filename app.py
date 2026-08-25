@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V19-BGM-DUCKING-2026-08-25
+# VERSION: CLEAN-V20-BGM-LISTEN-8-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V19-BGM-DUCKING"
+APP_VERSION = "CLEAN-V20-BGM-LISTEN-8"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1153,7 +1153,8 @@ HTML = r"""
   let voiceRestartTimer = null;
 
   const BGM_VOLUME_NORMAL = 0.12;
-  const BGM_VOLUME_DUCKED = 0.04;
+  const BGM_VOLUME_LISTENING = 0.08;
+  const BGM_VOLUME_FEEDBACK = 0.04;
 
   const audio = new Audio();
   audio.loop = true;
@@ -1847,28 +1848,24 @@ HTML = r"""
     showStep();
   }
 
-  function setBgmDucked(ducked) {
+  function getTargetBgmVolume() {
+    if (voiceAnswerEnabled && voicePauseForFeedback) {
+      return BGM_VOLUME_FEEDBACK;
+    }
+
+    if (voiceAnswerEnabled && voiceRecognitionRunning) {
+      return BGM_VOLUME_LISTENING;
+    }
+
+    return BGM_VOLUME_NORMAL;
+  }
+
+  function refreshBgmVolume() {
     if (!bgmOn) {
       return;
     }
 
-    audio.volume = ducked
-      ? BGM_VOLUME_DUCKED
-      : BGM_VOLUME_NORMAL;
-  }
-
-  function shouldDuckBgm() {
-    return (
-      voiceAnswerEnabled &&
-      (
-        voiceRecognitionRunning ||
-        voicePauseForFeedback
-      )
-    );
-  }
-
-  function refreshBgmVolume() {
-    setBgmDucked(shouldDuckBgm());
+    audio.volume = getTargetBgmVolume();
   }
 
   function desiredBgmName(streak) {
@@ -1913,7 +1910,7 @@ HTML = r"""
     audio.src = url;
     audio.currentTime = 0;
     audio.loop = true;
-    audio.volume = shouldDuckBgm() ? BGM_VOLUME_DUCKED : BGM_VOLUME_NORMAL;
+    audio.volume = getTargetBgmVolume();
 
     if (bgmOn) {
       const p = audio.play();
