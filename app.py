@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V17-VOICE-INPUT-HINT-LOOP-2026-08-25
+# VERSION: CLEAN-V18-SCORE-ROULETTE-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V17-VOICE-INPUT-HINT-LOOP"
+APP_VERSION = "CLEAN-V18-SCORE-ROULETTE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -658,11 +658,102 @@ HTML = r"""
 
   .results.show { display: block; }
 
-  .result-score {
-    margin: 8px 0;
+  .score-stage {
+    position: relative;
+    overflow: hidden;
+    margin: 10px auto 14px;
+    padding: 22px 12px 18px;
+    border: 2px solid #e1d6bf;
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at 50% 20%, #fff8d4 0, #fff 56%);
     text-align: center;
-    font-size: 46px;
-    font-weight: 950;
+  }
+
+  .score-caption {
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 900;
+    color: #74654e;
+  }
+
+  .result-score {
+    min-height: 74px;
+    margin: 6px 0;
+    text-align: center;
+    font-size: clamp(54px, 10vw, 88px);
+    line-height: 1;
+    font-weight: 1000;
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums;
+    transform-origin: center;
+  }
+
+  .result-score.roulette {
+    animation: scoreRoulette .16s linear infinite;
+    filter: blur(.35px);
+  }
+
+  .result-score.reveal {
+    animation: scoreReveal .85s cubic-bezier(.18,.9,.2,1.25);
+    text-shadow:
+      0 3px 0 rgba(255,255,255,.9),
+      0 0 18px rgba(255, 189, 35, .55),
+      0 0 34px rgba(255, 96, 52, .34);
+  }
+
+  @keyframes scoreRoulette {
+    0%   { transform: perspective(500px) rotateX(0deg) scale(1); }
+    50%  { transform: perspective(500px) rotateX(90deg) scale(1.04); }
+    100% { transform: perspective(500px) rotateX(180deg) scale(1); }
+  }
+
+  @keyframes scoreReveal {
+    0%   { transform: scale(.35) rotate(-7deg); opacity: .2; }
+    55%  { transform: scale(1.32) rotate(3deg); opacity: 1; }
+    75%  { transform: scale(.94) rotate(-1deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  .score-formula {
+    min-height: 44px;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: #685f55;
+  }
+
+  .score-stage.babaan {
+    animation: scoreStageBang .72s ease-out;
+  }
+
+  @keyframes scoreStageBang {
+    0%   { transform: scale(1); }
+    24%  { transform: scale(1.035); }
+    45%  { transform: scale(.985); }
+    100% { transform: scale(1); }
+  }
+
+  .confetti-piece {
+    position: absolute;
+    top: -16px;
+    width: 9px;
+    height: 16px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 8;
+    animation: confettiFall 1.8s ease-in forwards;
+  }
+
+  @keyframes confettiFall {
+    0% {
+      transform: translate3d(0, -10px, 0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(var(--drift), 240px, 0) rotate(var(--spin));
+      opacity: 0;
+    }
   }
 
   .result-note {
@@ -938,7 +1029,13 @@ HTML = r"""
 
   <div id="results" class="results">
     <div class="result-note">結果</div>
-    <div id="resultScore" class="result-score"></div>
+
+    <div id="scoreStage" class="score-stage">
+      <div class="score-caption">チャレンジスコア</div>
+      <div id="resultScore" class="result-score">---</div>
+      <div id="scoreFormula" class="score-formula"></div>
+    </div>
+
     <div id="resultNote" class="result-note"></div>
     <div id="review" class="review"></div>
     <div class="actions">
@@ -967,6 +1064,10 @@ HTML = r"""
   const feedback = $("#feedback");
   const timerEl = $("#timer");
   const bar = $("#bar");
+  const scoreStage = $("#scoreStage");
+  const resultScore = $("#resultScore");
+  const scoreFormula = $("#scoreFormula");
+
   const voiceBtn = $("#voiceBtn");
   const voiceStatus = $("#voiceStatus");
   const bgmBtn = $("#bgmBtn");
@@ -1029,6 +1130,8 @@ HTML = r"""
   let timerHandle = null;
   let locked = false;
   let correctStreak = 0;
+  let maxCorrectStreak = 0;
+  let scoreAnimationToken = 0;
   let bgmOn = true;
   let currentBgm = "0.mp3";
   let lastTenBgm = null;
@@ -2246,6 +2349,7 @@ HTML = r"""
   }
 
   function startMode(mode) {
+    scoreAnimationToken += 1;
     currentMode = mode;
     questions = [];
 
@@ -2255,6 +2359,7 @@ HTML = r"""
     seconds = 600;
     locked = false;
     correctStreak = 0;
+    maxCorrectStreak = 0;
     currentBgm = "0.mp3";
     lastTenBgm = null;
 
@@ -2360,6 +2465,10 @@ HTML = r"""
     if (ok) {
       score += 1;
       correctStreak += 1;
+      maxCorrectStreak = Math.max(
+        maxCorrectStreak,
+        correctStreak
+      );
     } else {
       correctStreak = 0;
     }
@@ -2409,6 +2518,274 @@ HTML = r"""
     }
   }
 
+  function calculateChallengeScore() {
+    const wrongCount = answers.filter(
+      (entry) =>
+        entry.user !== null &&
+        !entry.ok
+    ).length;
+
+    const remainingMinutes =
+      Math.max(0, seconds) / 60;
+
+    const rawScore =
+      score *
+      maxCorrectStreak *
+      remainingMinutes /
+      (wrongCount + 1);
+
+    return {
+      correctCount: score,
+      maxStreak: maxCorrectStreak,
+      remainingMinutes,
+      wrongCount,
+      rawScore,
+      finalScore: Math.max(
+        0,
+        Math.round(rawScore)
+      )
+    };
+  }
+
+  function playBabaanSound() {
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      if (!AudioContextClass) {
+        return;
+      }
+
+      const ctx = new AudioContextClass();
+      const now = ctx.currentTime;
+
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(
+        0.72,
+        now + 0.025
+      );
+      master.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + 1.05
+      );
+      master.connect(ctx.destination);
+
+      const notes = [
+        { freq: 196.00, start: 0.00, dur: .78 },
+        { freq: 261.63, start: 0.07, dur: .82 },
+        { freq: 329.63, start: 0.14, dur: .90 },
+        { freq: 523.25, start: 0.25, dur: .74 }
+      ];
+
+      notes.forEach((note, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type =
+          index === notes.length - 1
+            ? "triangle"
+            : "sawtooth";
+
+        osc.frequency.setValueAtTime(
+          note.freq,
+          now + note.start
+        );
+
+        gain.gain.setValueAtTime(
+          0.0001,
+          now + note.start
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          index === notes.length - 1 ? .28 : .16,
+          now + note.start + .025
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          now + note.start + note.dur
+        );
+
+        osc.connect(gain);
+        gain.connect(master);
+
+        osc.start(now + note.start);
+        osc.stop(now + note.start + note.dur + .04);
+      });
+
+      const drum = ctx.createOscillator();
+      const drumGain = ctx.createGain();
+
+      drum.type = "sine";
+      drum.frequency.setValueAtTime(120, now);
+      drum.frequency.exponentialRampToValueAtTime(
+        46,
+        now + .42
+      );
+
+      drumGain.gain.setValueAtTime(.36, now);
+      drumGain.gain.exponentialRampToValueAtTime(
+        .0001,
+        now + .48
+      );
+
+      drum.connect(drumGain);
+      drumGain.connect(master);
+
+      drum.start(now);
+      drum.stop(now + .5);
+
+      setTimeout(() => {
+        ctx.close().catch(() => {});
+      }, 1400);
+    } catch (error) {
+      // 効果音に失敗しても得点表示は続行する。
+    }
+  }
+
+  function launchConfetti() {
+    scoreStage
+      .querySelectorAll(".confetti-piece")
+      .forEach((node) => node.remove());
+
+    const hues = [
+      8, 32, 52, 105, 175, 210, 260, 315
+    ];
+
+    for (let i = 0; i < 42; i += 1) {
+      const piece = document.createElement("span");
+      piece.className = "confetti-piece";
+
+      piece.style.left =
+        `${Math.random() * 100}%`;
+
+      piece.style.background =
+        `hsl(${hues[i % hues.length]} 90% 58%)`;
+
+      piece.style.setProperty(
+        "--drift",
+        `${-90 + Math.random() * 180}px`
+      );
+
+      piece.style.setProperty(
+        "--spin",
+        `${360 + Math.floor(Math.random() * 720)}deg`
+      );
+
+      piece.style.animationDelay =
+        `${Math.random() * .16}s`;
+
+      scoreStage.appendChild(piece);
+    }
+
+    setTimeout(() => {
+      scoreStage
+        .querySelectorAll(".confetti-piece")
+        .forEach((node) => node.remove());
+    }, 2200);
+  }
+
+  function speakFinalScore(points) {
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance === "undefined"
+    ) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        `得点は、${points}点！`
+      );
+
+    utterance.lang = "ja-JP";
+    utterance.rate = 1.22;
+    utterance.pitch = 1.62;
+    utterance.volume = 1.0;
+
+    const voice = getJapaneseVoice();
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function runScoreRoulette(scoreInfo) {
+    scoreAnimationToken += 1;
+    const token = scoreAnimationToken;
+
+    const finalPoints = scoreInfo.finalScore;
+
+    scoreStage.classList.remove("babaan");
+    resultScore.classList.remove("reveal");
+    resultScore.classList.add("roulette");
+
+    scoreFormula.textContent =
+      `${scoreInfo.correctCount}正解 × ` +
+      `最高${scoreInfo.maxStreak}問連続 × ` +
+      `残り${scoreInfo.remainingMinutes.toFixed(2)}分 ÷ ` +
+      `（${scoreInfo.wrongCount}回ミス＋1）`;
+
+    let tick = 0;
+
+    const rouletteTimer = setInterval(() => {
+      if (token !== scoreAnimationToken) {
+        clearInterval(rouletteTimer);
+        return;
+      }
+
+      const spread = Math.max(
+        finalPoints * 1.9,
+        180
+      );
+
+      const randomValue = Math.max(
+        0,
+        Math.floor(Math.random() * spread)
+      );
+
+      resultScore.textContent =
+        `${randomValue.toLocaleString()} 点`;
+
+      tick += 1;
+    }, 72);
+
+    setTimeout(() => {
+      if (token !== scoreAnimationToken) {
+        clearInterval(rouletteTimer);
+        return;
+      }
+
+      clearInterval(rouletteTimer);
+
+      resultScore.classList.remove("roulette");
+      resultScore.textContent =
+        `${finalPoints.toLocaleString()} 点`;
+
+      // 再アニメーションのためreflow
+      void resultScore.offsetWidth;
+
+      resultScore.classList.add("reveal");
+      scoreStage.classList.add("babaan");
+
+      playBabaanSound();
+      launchConfetti();
+
+      setTimeout(() => {
+        if (token === scoreAnimationToken) {
+          speakFinalScore(finalPoints);
+        }
+      }, 380);
+
+      setTimeout(() => {
+        scoreStage.classList.remove("babaan");
+      }, 900);
+    }, 2700);
+  }
+
   function finish(timeup) {
     stopTimer();
     stopBgm();
@@ -2438,7 +2815,15 @@ HTML = r"""
     questionCard.classList.add("hidden");
     results.classList.add("show");
 
-    $("#resultScore").textContent = `${score} / 20`;
+    resultScore.textContent = "---";
+    resultScore.classList.remove(
+      "roulette",
+      "reveal"
+    );
+    scoreStage.classList.remove("babaan");
+
+    const challengeScore =
+      calculateChallengeScore();
 
     const weakSummary =
       sessionWeakAsked > 0
@@ -2487,9 +2872,16 @@ HTML = r"""
         (entry.user === null ? "未回答" : `回答 ${entry.user}`);
       review.appendChild(div);
     });
+
+    // 最後の正誤読み上げと少し重ならないよう、
+    // 結果画面表示後に得点ルーレットを開始する。
+    setTimeout(() => {
+      runScoreRoulette(challengeScore);
+    }, 450);
   }
 
   function goMenu() {
+    scoreAnimationToken += 1;
     stopTimer();
     stopBgm();
     hideSorobanHint();
