@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V22-WEAK-ONCE-INTEGER-MINUTES-2026-08-25
+# VERSION: CLEAN-V23-BGM-EVERY-3-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V22-WEAK-ONCE-INTEGER-MINUTES"
+APP_VERSION = "CLEAN-V23-BGM-EVERY-3"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1136,6 +1136,7 @@ HTML = r"""
   let bgmOn = true;
   let currentBgm = "0.mp3";
   let lastTenBgm = null;
+  let desiredTenTrackGroup = -1;
 
   let learningStats = loadLearningStats();
   let sessionWeakAsked = 0;
@@ -2219,38 +2220,81 @@ HTML = r"""
   }
 
   function desiredBgmName(streak) {
-    if (streak <= 0) {
+    // 3問連続正解するごとに次のBGMへ進む。
+    // 0〜2問   : 0.mp3
+    // 3〜5問   : 1.mp3
+    // 6〜8問   : 2.mp3
+    // 9〜11問  : 3.mp3
+    // 12〜14問 : 4.mp3
+    //
+    // 15問連続正解以降は、BGMが切り替わるタイミングで
+    // 10-1 / 10-2 / 10-3 のいずれかを使用する。
+    if (streak < 3) {
       lastTenBgm = null;
+      desiredTenTrackGroup = -1;
       return "0.mp3";
     }
 
-    if (streak <= 9) {
+    if (streak < 6) {
       lastTenBgm = null;
-      return `${streak}.mp3`;
+      desiredTenTrackGroup = -1;
+      return "1.mp3";
     }
 
-    const pool = [
+    if (streak < 9) {
+      lastTenBgm = null;
+      desiredTenTrackGroup = -1;
+      return "2.mp3";
+    }
+
+    if (streak < 12) {
+      lastTenBgm = null;
+      desiredTenTrackGroup = -1;
+      return "3.mp3";
+    }
+
+    if (streak < 15) {
+      lastTenBgm = null;
+      desiredTenTrackGroup = -1;
+      return "4.mp3";
+    }
+
+    const tenTracks = [
       "10-1.mp3",
       "10-2.mp3",
       "10-3.mp3"
     ];
 
-    const choices = lastTenBgm
-      ? pool.filter(
-          (name) =>
-            name !== lastTenBgm
-        )
-      : pool;
+    // 15〜17問をグループ0、18〜20問をグループ1とする。
+    const groupIndex =
+      Math.floor((streak - 15) / 3);
 
-    lastTenBgm =
+    // 同じ3問グループ内では曲を変えない。
+    if (
+      currentBgm &&
+      currentBgm.startsWith("10-") &&
+      desiredTenTrackGroup === groupIndex
+    ) {
+      return currentBgm;
+    }
+
+    const choices = lastTenBgm
+      ? tenTracks.filter(
+          (name) => name !== lastTenBgm
+        )
+      : tenTracks;
+
+    const selected =
       choices[
         Math.floor(
-          Math.random() *
-          choices.length
+          Math.random() * choices.length
         )
       ];
 
-    return lastTenBgm;
+    lastTenBgm = selected;
+    desiredTenTrackGroup = groupIndex;
+
+    return selected;
   }
 
   function updateBgmButton() {
@@ -3040,6 +3084,7 @@ HTML = r"""
     maxCorrectStreak = 0;
     currentBgm = "0.mp3";
     lastTenBgm = null;
+    desiredTenTrackGroup = -1;
 
     sessionWeakAsked = 0;
     sessionWeakCorrect = 0;
