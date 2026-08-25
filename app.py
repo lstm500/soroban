@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V20-BGM-LISTEN-8-2026-08-25
+# VERSION: CLEAN-V21-WEBAUDIO-MIC-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V20-BGM-LISTEN-8"
+APP_VERSION = "CLEAN-V21-WEBAUDIO-MIC"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1156,10 +1156,321 @@ HTML = r"""
   const BGM_VOLUME_LISTENING = 0.08;
   const BGM_VOLUME_FEEDBACK = 0.04;
 
-  const audio = new Audio();
-  audio.loop = true;
-  audio.volume = BGM_VOLUME_NORMAL;
-  audio.preload = "auto";
+  let bgmKeepAliveTimer = null;
+
+  class BgmEngine {
+    constructor(urls) {
+      this.urls = urls;
+      this.ctx = null;
+      this.masterGain = null;
+      this.buffers = new Map();
+
+      this.currentName = null;
+      this.currentSource = null;
+      this.currentSourceGain = null;
+
+      this.playGeneration = 0;
+      this.targetVolume = BGM_VOLUME_NORMAL;
+    }
+
+    ensureContext() {
+      const AudioContextClass =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      if (!AudioContextClass) {
+        return false;
+      }
+
+      if (!this.ctx) {
+        this.ctx = new AudioContextClass({
+          latencyHint: "interactive"
+        });
+
+        this.masterGain =
+          this.ctx.createGain();
+
+        this.masterGain.gain.value =
+          this.targetVolume;
+
+        this.masterGain.connect(
+          this.ctx.destination
+        );
+      }
+
+      // resume() は非同期だが、ここでは呼び出し自体を
+      // ユーザー操作と同じイベント内で開始する。
+      if (this.ctx.state !== "running") {
+        this.ctx.resume().catch(() => {});
+      }
+
+      return true;
+    }
+
+    async ensureRunning() {
+      if (!this.ensureContext()) {
+        return false;
+      }
+
+      if (this.ctx.state !== "running") {
+        try {
+          await this.ctx.resume();
+        } catch (error) {
+          return false;
+        }
+      }
+
+      return this.ctx.state === "running";
+    }
+
+    setVolume(value, rampSeconds = 0.12) {
+      this.targetVolume = value;
+
+      if (
+        !this.ctx ||
+        !this.masterGain
+      ) {
+        return;
+      }
+
+      const now = this.ctx.currentTime;
+      const gain = this.masterGain.gain;
+
+      gain.cancelScheduledValues(now);
+      gain.setValueAtTime(
+        Math.max(0.0001, gain.value),
+        now
+      );
+      gain.linearRampToValueAtTime(
+        value,
+        now + rampSeconds
+      );
+    }
+
+    async loadBuffer(name) {
+      if (this.buffers.has(name)) {
+        return this.buffers.get(name);
+      }
+
+      const url = this.urls[name];
+
+      if (!url) {
+        throw new Error(
+          `BGM URLがありません: ${name}`
+        );
+      }
+
+      const ready =
+        await this.ensureRunning();
+
+      if (!ready) {
+        throw new Error(
+          "Web Audioを開始できません。"
+        );
+      }
+
+      const response = await fetch(
+        url,
+        {
+          method: "GET",
+          cache: "force-cache",
+          mode: "cors"
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `BGM取得失敗: ${response.status}`
+        );
+      }
+
+      const arrayBuffer =
+        await response.arrayBuffer();
+
+      const decoded =
+        await this.ctx.decodeAudioData(
+          arrayBuffer.slice(0)
+        );
+
+      this.buffers.set(name, decoded);
+      return decoded;
+    }
+
+    async play(name, force = false) {
+      if (!name) {
+        return false;
+      }
+
+      this.ensureContext();
+
+      if (
+        !force &&
+        this.currentName === name &&
+        this.currentSource
+      ) {
+        await this.ensureRunning();
+        return true;
+      }
+
+      const generation =
+        ++this.playGeneration;
+
+      let buffer;
+
+      try {
+        buffer =
+          await this.loadBuffer(name);
+      } catch (error) {
+        console.error(
+          "BGM load error",
+          error
+        );
+        return false;
+      }
+
+      if (
+        generation !==
+        this.playGeneration
+      ) {
+        return false;
+      }
+
+      const ready =
+        await this.ensureRunning();
+
+      if (!ready) {
+        return false;
+      }
+
+      const newSource =
+        this.ctx.createBufferSource();
+
+      const newSourceGain =
+        this.ctx.createGain();
+
+      newSource.buffer = buffer;
+      newSource.loop = true;
+
+      newSourceGain.gain.value = 0.0001;
+
+      newSource.connect(newSourceGain);
+      newSourceGain.connect(
+        this.masterGain
+      );
+
+      const oldSource =
+        this.currentSource;
+
+      const oldSourceGain =
+        this.currentSourceGain;
+
+      const now = this.ctx.currentTime;
+
+      newSource.start(0);
+
+      newSourceGain.gain.setValueAtTime(
+        0.0001,
+        now
+      );
+
+      newSourceGain.gain.linearRampToValueAtTime(
+        1.0,
+        now + 0.18
+      );
+
+      this.currentName = name;
+      this.currentSource = newSource;
+      this.currentSourceGain =
+        newSourceGain;
+
+      if (
+        oldSource &&
+        oldSourceGain
+      ) {
+        try {
+          oldSourceGain.gain
+            .cancelScheduledValues(now);
+
+          oldSourceGain.gain
+            .setValueAtTime(
+              Math.max(
+                0.0001,
+                oldSourceGain.gain.value
+              ),
+              now
+            );
+
+          oldSourceGain.gain
+            .linearRampToValueAtTime(
+              0.0001,
+              now + 0.18
+            );
+
+          setTimeout(() => {
+            try {
+              oldSource.stop();
+            } catch (error) {}
+            try {
+              oldSource.disconnect();
+            } catch (error) {}
+            try {
+              oldSourceGain.disconnect();
+            } catch (error) {}
+          }, 230);
+        } catch (error) {}
+      }
+
+      return true;
+    }
+
+    async keepAlive() {
+      const ready =
+        await this.ensureRunning();
+
+      if (!ready) {
+        return false;
+      }
+
+      // マイク開始時にブラウザがAudioContextを
+      // 一時停止しても、ここでは同じ再生ノードを維持する。
+      // BGMのpause/startは行わない。
+      return true;
+    }
+
+    stop() {
+      ++this.playGeneration;
+
+      if (this.currentSource) {
+        try {
+          this.currentSource.stop();
+        } catch (error) {}
+
+        try {
+          this.currentSource.disconnect();
+        } catch (error) {}
+      }
+
+      if (this.currentSourceGain) {
+        try {
+          this.currentSourceGain.disconnect();
+        } catch (error) {}
+      }
+
+      this.currentSource = null;
+      this.currentSourceGain = null;
+      this.currentName = null;
+    }
+
+    hasActiveSource() {
+      return Boolean(
+        this.currentSource &&
+        this.currentName
+      );
+    }
+  }
+
+  const bgmEngine =
+    new BgmEngine(BGM_URLS);
 
   const randInt = (min, max) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
@@ -1849,11 +2160,19 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    if (voiceAnswerEnabled && voicePauseForFeedback) {
+    // 判定音声中は最も小さくする。
+    if (
+      voiceAnswerEnabled &&
+      voicePauseForFeedback
+    ) {
       return BGM_VOLUME_FEEDBACK;
     }
 
-    if (voiceAnswerEnabled && voiceRecognitionRunning) {
+    // マイクが実際に聞いている最中は8%。
+    if (
+      voiceAnswerEnabled &&
+      voiceRecognitionRunning
+    ) {
       return BGM_VOLUME_LISTENING;
     }
 
@@ -1861,11 +2180,55 @@ HTML = r"""
   }
 
   function refreshBgmVolume() {
-    if (!bgmOn) {
+    bgmEngine.setVolume(
+      getTargetBgmVolume()
+    );
+  }
+
+  function startBgmKeepAlive() {
+    if (bgmKeepAliveTimer) {
       return;
     }
 
-    audio.volume = getTargetBgmVolume();
+    bgmKeepAliveTimer =
+      setInterval(() => {
+        if (
+          !bgmOn ||
+          !voiceAnswerEnabled ||
+          !workspace.classList.contains("show") ||
+          results.classList.contains("show")
+        ) {
+          return;
+        }
+
+        // 音声認識中にブラウザがAudioContextを
+        // suspendしていないか定期的に確認する。
+        bgmEngine.keepAlive();
+
+        if (
+          currentBgm &&
+          !bgmEngine.hasActiveSource()
+        ) {
+          bgmEngine.play(
+            currentBgm,
+            true
+          );
+        }
+
+        refreshBgmVolume();
+      }, 400);
+  }
+
+  function stopBgmKeepAlive() {
+    if (!bgmKeepAliveTimer) {
+      return;
+    }
+
+    clearInterval(
+      bgmKeepAliveTimer
+    );
+
+    bgmKeepAliveTimer = null;
   }
 
   function desiredBgmName(streak) {
@@ -1879,51 +2242,80 @@ HTML = r"""
       return `${streak}.mp3`;
     }
 
-    const pool = ["10-1.mp3", "10-2.mp3", "10-3.mp3"];
+    const pool = [
+      "10-1.mp3",
+      "10-2.mp3",
+      "10-3.mp3"
+    ];
+
     const choices = lastTenBgm
-      ? pool.filter((name) => name !== lastTenBgm)
+      ? pool.filter(
+          (name) =>
+            name !== lastTenBgm
+        )
       : pool;
 
-    lastTenBgm = choices[Math.floor(Math.random() * choices.length)];
+    lastTenBgm =
+      choices[
+        Math.floor(
+          Math.random() *
+          choices.length
+        )
+      ];
+
     return lastTenBgm;
   }
 
   function updateBgmButton() {
-    bgmBtn.textContent = bgmOn ? "♪ BGM ON" : "♪ BGM OFF";
+    bgmBtn.textContent =
+      bgmOn
+        ? "♪ BGM ON"
+        : "♪ BGM OFF";
   }
 
-  function playBgmForStreak(streak, force = false) {
-    const name = desiredBgmName(streak);
-
-    if (!force && name === currentBgm && !audio.paused) return;
+  function playBgmForStreak(
+    streak,
+    force = false
+  ) {
+    const name =
+      desiredBgmName(streak);
 
     currentBgm = name;
-    bgmName.textContent = `BGM：${name}`;
 
-    const url = BGM_URLS[name];
-    if (!url) {
-      bgmName.textContent = `BGM：${name}（URL取得失敗）`;
+    bgmName.textContent =
+      `BGM：${name}`;
+
+    if (!bgmOn) {
       return;
     }
 
-    audio.pause();
-    audio.src = url;
-    audio.currentTime = 0;
-    audio.loop = true;
-    audio.volume = getTargetBgmVolume();
+    // ここではマイク状態にかかわらず
+    // BGM再生ノードを継続する。
+    bgmEngine.setVolume(
+      getTargetBgmVolume(),
+      0.08
+    );
 
-    if (bgmOn) {
-      const p = audio.play();
-      if (p && typeof p.catch === "function") {
-        p.catch(() => {
-          bgmName.textContent = `BGM：${name}（再生待機）`;
-        });
-      }
-    }
+    bgmEngine
+      .play(name, force)
+      .then((ok) => {
+        if (!ok) {
+          bgmName.textContent =
+            `BGM：${name}（再生できません）`;
+          return;
+        }
+
+        refreshBgmVolume();
+      })
+      .catch(() => {
+        bgmName.textContent =
+          `BGM：${name}（再生できません）`;
+      });
   }
 
   function stopBgm() {
-    audio.pause();
+    stopBgmKeepAlive();
+    bgmEngine.stop();
   }
 
   function toggleBgm() {
@@ -1935,12 +2327,23 @@ HTML = r"""
       workspace.classList.contains("show") &&
       !results.classList.contains("show")
     ) {
-      playBgmForStreak(correctStreak, true);
-      refreshBgmVolume();
+      // BGMボタンはユーザー操作なので、
+      // このイベント内でAudioContextを起動する。
+      bgmEngine.ensureContext();
+
+      playBgmForStreak(
+        correctStreak,
+        true
+      );
+
+      if (voiceAnswerEnabled) {
+        startBgmKeepAlive();
+      }
     } else {
       stopBgm();
     }
   }
+
 
   function getSpeechRecognitionClass() {
     return (
@@ -1951,117 +2354,190 @@ HTML = r"""
   }
 
   function japaneseDigitValue(char) {
-    const map = {
-      "〇": 0, "零": 0,
-      "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
-      "六": 6, "七": 7, "八": 8, "九": 9
+    const values = {
+      "〇": 0,
+      "零": 0,
+      "一": 1,
+      "二": 2,
+      "三": 3,
+      "四": 4,
+      "五": 5,
+      "六": 6,
+      "七": 7,
+      "八": 8,
+      "九": 9
     };
 
-    return Object.prototype.hasOwnProperty.call(map, char)
-      ? map[char]
-      : null;
+    if (
+      Object.prototype.hasOwnProperty
+        .call(values, char)
+    ) {
+      return values[char];
+    }
+
+    return null;
   }
 
   function japaneseIntegerToNumber(input) {
-    const s = String(input || "")
-      .replace(/[,\s、。,.]/g, "")
-      .replace(/マイナス|minus/gi, "-");
+    const original =
+      String(input || "");
 
-    if (!s) return null;
+    const compact =
+      original
+        .replace(
+          /[,\s、。,.]/g,
+          ""
+        )
+        .replace(
+          /マイナス|minus/gi,
+          "-"
+        );
 
-    const direct = s.match(/-?\d+/);
-    if (direct) {
-      const n = Number(direct[0]);
-      return Number.isFinite(n) ? n : null;
+    if (!compact) {
+      return null;
     }
 
-    const normalized = s
-      .replace(/いち/g, "一")
-      .replace(/に/g, "二")
-      .replace(/さん/g, "三")
-      .replace(/よん|し/g, "四")
-      .replace(/ご/g, "五")
-      .replace(/ろく/g, "六")
-      .replace(/なな|しち/g, "七")
-      .replace(/はち/g, "八")
-      .replace(/きゅう|く/g, "九")
-      .replace(/れい|ぜろ/g, "零")
-      .replace(/じゅう/g, "十")
-      .replace(/ひゃく/g, "百")
-      .replace(/せん/g, "千")
-      .replace(/まん/g, "万");
+    // 「15」のように数字で認識された場合。
+    const direct =
+      compact.match(/-?\d+/);
 
-    if (!/[一二三四五六七八九〇零十百千万]/.test(normalized)) {
+    if (direct) {
+      const value =
+        Number(direct[0]);
+
+      return Number.isFinite(value)
+        ? value
+        : null;
+    }
+
+    // ひらがな認識も漢数字へ寄せる。
+    const normalized =
+      compact
+        .replace(/いち/g, "一")
+        .replace(/に/g, "二")
+        .replace(/さん/g, "三")
+        .replace(/よん|し/g, "四")
+        .replace(/ご/g, "五")
+        .replace(/ろく/g, "六")
+        .replace(/なな|しち/g, "七")
+        .replace(/はち/g, "八")
+        .replace(/きゅう|く/g, "九")
+        .replace(/れい|ぜろ/g, "零")
+        .replace(/じゅう/g, "十")
+        .replace(/ひゃく/g, "百")
+        .replace(/せん/g, "千")
+        .replace(/まん/g, "万");
+
+    if (
+      !/[一二三四五六七八九〇零十百千万]/
+        .test(normalized)
+    ) {
       return null;
     }
 
     let total = 0;
     let section = 0;
     let number = 0;
-    let negative = false;
 
-    if (normalized.startsWith("-")) {
-      negative = true;
-    }
+    const negative =
+      normalized.startsWith("-");
 
-    for (const char of normalized.replace("-", "")) {
-      const digit = japaneseDigitValue(char);
+    const chars =
+      normalized
+        .replace("-", "");
+
+    for (const char of chars) {
+      const digit =
+        japaneseDigitValue(char);
 
       if (digit !== null) {
         number = digit;
         continue;
       }
 
-      if (char === "十" || char === "百" || char === "千") {
+      if (
+        char === "十" ||
+        char === "百" ||
+        char === "千"
+      ) {
         const unit =
-          char === "十" ? 10 :
-          char === "百" ? 100 :
-          1000;
+          char === "十"
+            ? 10
+            : char === "百"
+              ? 100
+              : 1000;
 
-        section += (number || 1) * unit;
+        section +=
+          (number || 1) * unit;
+
         number = 0;
         continue;
       }
 
       if (char === "万") {
         section += number;
-        total += (section || 1) * 10000;
+
+        total +=
+          (section || 1) *
+          10000;
+
         section = 0;
         number = 0;
       }
     }
 
-    const result = total + section + number;
-    return negative ? -result : result;
+    const value =
+      total +
+      section +
+      number;
+
+    return negative
+      ? -value
+      : value;
   }
 
-  function updateVoiceUi(message = null) {
-    const supported = Boolean(getSpeechRecognitionClass());
+  function updateVoiceUi(
+    message = null
+  ) {
+    const supported =
+      Boolean(
+        getSpeechRecognitionClass()
+      );
 
     if (!supported) {
       voiceBtn.disabled = true;
-      voiceBtn.textContent = "🎤 音声回答 非対応";
+      voiceBtn.textContent =
+        "🎤 音声回答 非対応";
+
       voiceStatus.textContent =
         "このブラウザでは音声回答を利用できません。";
-      voiceStatus.classList.remove("listening");
+
+      voiceStatus.classList.remove(
+        "listening"
+      );
+
       return;
     }
 
     voiceBtn.disabled = false;
-    voiceBtn.classList.toggle("on", voiceAnswerEnabled);
+
+    voiceBtn.classList.toggle(
+      "on",
+      voiceAnswerEnabled
+    );
+
     voiceBtn.textContent =
       voiceAnswerEnabled
         ? "🎤 音声回答 ON"
         : "🎤 音声回答 OFF";
 
-    if (message) {
-      voiceStatus.textContent = message;
-    } else {
-      voiceStatus.textContent =
+    voiceStatus.textContent =
+      message ||
+      (
         voiceAnswerEnabled
           ? "音声回答：数字を話してください"
-          : "音声回答：OFF";
-    }
+          : "音声回答：OFF"
+      );
 
     voiceStatus.classList.toggle(
       "listening",
@@ -2071,22 +2547,37 @@ HTML = r"""
     );
   }
 
-  function stopVoiceRecognition() {
-    if (voiceRestartTimer) {
-      clearTimeout(voiceRestartTimer);
-      voiceRestartTimer = null;
+  function clearVoiceRestartTimer() {
+    if (!voiceRestartTimer) {
+      return;
     }
 
-    if (voiceRecognition && voiceRecognitionRunning) {
+    clearTimeout(
+      voiceRestartTimer
+    );
+
+    voiceRestartTimer = null;
+  }
+
+  function stopVoiceRecognition() {
+    clearVoiceRestartTimer();
+
+    if (!voiceRecognition) {
+      voiceRecognitionRunning = false;
+      refreshBgmVolume();
+      return;
+    }
+
+    if (voiceRecognitionRunning) {
       try {
         voiceRecognition.stop();
-      } catch (error) {
-        // すでに停止中でも問題なし。
-      }
+      } catch (error) {}
     }
   }
 
-  function scheduleVoiceRestart(delay = 250) {
+  function scheduleVoiceRestart(
+    delay = 280
+  ) {
     if (
       !voiceAnswerEnabled ||
       voicePauseForFeedback ||
@@ -2097,39 +2588,143 @@ HTML = r"""
       return;
     }
 
-    if (voiceRestartTimer) {
-      clearTimeout(voiceRestartTimer);
+    clearVoiceRestartTimer();
+
+    voiceRestartTimer =
+      setTimeout(() => {
+        startVoiceRecognition();
+      }, delay);
+  }
+
+  function handleRecognizedSpeech(
+    event
+  ) {
+    if (
+      locked ||
+      !voiceAnswerEnabled ||
+      voicePauseForFeedback
+    ) {
+      return;
     }
 
-    voiceRestartTimer = setTimeout(() => {
-      startVoiceRecognition();
-    }, delay);
+    const result =
+      event.results?.[0];
+
+    if (!result) {
+      scheduleVoiceRestart(350);
+      return;
+    }
+
+    const alternatives = [];
+
+    for (
+      let i = 0;
+      i < result.length;
+      i += 1
+    ) {
+      alternatives.push(
+        result[i].transcript
+      );
+    }
+
+    let parsed = null;
+    let recognizedText = "";
+
+    for (
+      const transcript
+      of alternatives
+    ) {
+      const value =
+        japaneseIntegerToNumber(
+          transcript
+        );
+
+      if (
+        value !== null &&
+        Number.isInteger(value) &&
+        value >= 0
+      ) {
+        parsed = value;
+        recognizedText =
+          transcript;
+        break;
+      }
+    }
+
+    if (parsed === null) {
+      updateVoiceUi(
+        `音声回答：「${alternatives[0] || ""}」を数字として認識できませんでした`
+      );
+
+      scheduleVoiceRestart(450);
+      return;
+    }
+
+    answerInput.value =
+      String(parsed);
+
+    updateVoiceUi(
+      `音声回答：「${recognizedText}」→ ${parsed}`
+    );
+
+    // 回答が確定した時だけ認識を止める。
+    // BGMは止めず、WebAudioの再生ノードを維持する。
+    stopVoiceRecognition();
+
+    setTimeout(() => {
+      if (!locked) {
+        submitAnswer();
+      }
+    }, 160);
   }
 
   function createVoiceRecognition() {
-    const Recognition = getSpeechRecognitionClass();
+    const Recognition =
+      getSpeechRecognitionClass();
 
     if (!Recognition) {
-      updateVoiceUi();
       return null;
     }
 
-    const recognition = new Recognition();
+    const recognition =
+      new Recognition();
 
     recognition.lang = "ja-JP";
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
+    recognition.maxAlternatives = 5;
 
     recognition.onstart = () => {
       voiceRecognitionRunning = true;
+
+      // マイク開始中もBGMノードを停止しない。
+      // 8%へGainだけを滑らかに変更する。
       refreshBgmVolume();
-      updateVoiceUi("音声回答：聞いています…");
+
+      // Android/ChromeなどがAudioContextを
+      // suspendした場合に即座にresumeを試みる。
+      bgmEngine.ensureRunning();
+
+      startBgmKeepAlive();
+
+      updateVoiceUi(
+        "音声回答：聞いています…（BGM 8%）"
+      );
     };
+
+    recognition.onresult =
+      handleRecognizedSpeech;
 
     recognition.onend = () => {
       voiceRecognitionRunning = false;
+
+      // 再生ノードはそのまま。
+      // Gainだけ通常状態へ戻す。
       refreshBgmVolume();
+
+      // AudioContextが止められていた場合だけ復帰。
+      bgmEngine.ensureRunning();
+
       updateVoiceUi();
 
       if (
@@ -2137,92 +2732,64 @@ HTML = r"""
         !voicePauseForFeedback &&
         !locked
       ) {
-        scheduleVoiceRestart(300);
+        scheduleVoiceRestart(280);
       }
     };
 
-    recognition.onerror = (event) => {
+    recognition.onerror = (
+      event
+    ) => {
       voiceRecognitionRunning = false;
-      refreshBgmVolume();
 
-      if (event.error === "not-allowed") {
+      refreshBgmVolume();
+      bgmEngine.ensureRunning();
+
+      if (
+        event.error ===
+        "not-allowed"
+      ) {
         voiceAnswerEnabled = false;
+        stopBgmKeepAlive();
+
         updateVoiceUi(
-          "マイクの使用が許可されていません。ブラウザでマイクを許可してください。"
+          "マイクが許可されていません。ブラウザでマイクを許可してください。"
         );
+
         return;
       }
 
       if (
-        event.error === "no-speech" ||
-        event.error === "aborted"
+        event.error ===
+          "no-speech" ||
+        event.error ===
+          "aborted"
       ) {
         updateVoiceUi();
-        return;
-      }
-
-      updateVoiceUi(`音声回答：${event.error}`);
-    };
-
-    recognition.onresult = (event) => {
-      if (
-        locked ||
-        !voiceAnswerEnabled ||
-        voicePauseForFeedback
-      ) {
-        return;
-      }
-
-      const alternatives = [];
-
-      for (
-        let i = 0;
-        i < event.results[0].length;
-        i += 1
-      ) {
-        alternatives.push(
-          event.results[0][i].transcript
-        );
-      }
-
-      let parsed = null;
-      let usedTranscript = "";
-
-      for (const transcript of alternatives) {
-        const value = japaneseIntegerToNumber(transcript);
 
         if (
-          value !== null &&
-          Number.isInteger(value) &&
-          value >= 0
+          voiceAnswerEnabled &&
+          !voicePauseForFeedback &&
+          !locked
         ) {
-          parsed = value;
-          usedTranscript = transcript;
-          break;
+          scheduleVoiceRestart(
+            320
+          );
         }
-      }
 
-      if (parsed === null) {
-        updateVoiceUi(
-          `音声回答：「${alternatives[0] || ""}」を数字として認識できませんでした`
-        );
-        scheduleVoiceRestart(500);
         return;
       }
 
-      answerInput.value = String(parsed);
       updateVoiceUi(
-        `音声回答：「${usedTranscript}」→ ${parsed}`
+        `音声回答：${event.error}`
       );
 
-      // 誤って次の音声を拾わないよう、認識を止めてから自動回答。
-      stopVoiceRecognition();
-
-      setTimeout(() => {
-        if (!locked) {
-          submitAnswer();
-        }
-      }, 180);
+      if (
+        voiceAnswerEnabled &&
+        !voicePauseForFeedback &&
+        !locked
+      ) {
+        scheduleVoiceRestart(500);
+      }
     };
 
     return recognition;
@@ -2241,33 +2808,85 @@ HTML = r"""
     }
 
     if (!voiceRecognition) {
-      voiceRecognition = createVoiceRecognition();
+      voiceRecognition =
+        createVoiceRecognition();
     }
 
     if (!voiceRecognition) {
+      updateVoiceUi();
       return;
     }
+
+    // AudioContextのresumeを音声認識より先に開始する。
+    // BGM自体をpause/stopする処理は一切行わない。
+    bgmEngine.ensureContext();
+    bgmEngine.ensureRunning();
+
+    if (
+      bgmOn &&
+      currentBgm &&
+      !bgmEngine.hasActiveSource()
+    ) {
+      bgmEngine.play(
+        currentBgm,
+        true
+      );
+    }
+
+    refreshBgmVolume();
 
     try {
       voiceRecognition.start();
     } catch (error) {
-      scheduleVoiceRestart(500);
+      scheduleVoiceRestart(450);
     }
   }
 
-  function setVoiceAnswerEnabled(enabled) {
-    voiceAnswerEnabled = Boolean(enabled);
+  function setVoiceAnswerEnabled(
+    enabled
+  ) {
+    voiceAnswerEnabled =
+      Boolean(enabled);
 
     if (voiceAnswerEnabled) {
-      updateVoiceUi("音声回答：マイクを開始します…");
+      // 音声回答ONボタンのユーザー操作中に
+      // WebAudioを明示的に起動しておく。
+      bgmEngine.ensureContext();
+      bgmEngine.ensureRunning();
+
+      if (
+        bgmOn &&
+        currentBgm &&
+        !bgmEngine.hasActiveSource()
+      ) {
+        bgmEngine.play(
+          currentBgm,
+          true
+        );
+      }
+
+      startBgmKeepAlive();
+
+      updateVoiceUi(
+        "音声回答：マイクを開始します…"
+      );
+
       startVoiceRecognition();
-    } else {
-      voicePauseForFeedback = false;
-      stopVoiceRecognition();
-      refreshBgmVolume();
-      updateVoiceUi("音声回答：OFF");
+      return;
     }
+
+    voicePauseForFeedback = false;
+
+    stopVoiceRecognition();
+    stopBgmKeepAlive();
+
+    refreshBgmVolume();
+
+    updateVoiceUi(
+      "音声回答：OFF"
+    );
   }
+
 
   function getJapaneseVoice() {
     if (!("speechSynthesis" in window)) return null;
@@ -2283,52 +2902,87 @@ HTML = r"""
     );
   }
 
-  function speakAnswerFeedback(ok, streak) {
-    if (
-      !("speechSynthesis" in window) ||
-      typeof SpeechSynthesisUtterance === "undefined"
-    ) {
-      if (voiceAnswerEnabled) {
-        scheduleVoiceRestart(300);
-      }
-      return;
-    }
-
+  function speakAnswerFeedback(
+    ok,
+    streak
+  ) {
+    // 判定音声中はマイクだけ一時停止。
+    // BGM再生ノードは止めず、4%へGainを下げる。
     voicePauseForFeedback = true;
+
     stopVoiceRecognition();
     refreshBgmVolume();
 
+    bgmEngine.ensureRunning();
+
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance ===
+        "undefined"
+    ) {
+      voicePauseForFeedback = false;
+      refreshBgmVolume();
+
+      if (voiceAnswerEnabled) {
+        scheduleVoiceRestart(280);
+      }
+
+      return;
+    }
+
     window.speechSynthesis.cancel();
 
-    const message = ok
-      ? `正解！${streak}問連続正解中！`
-      : "残念！";
+    const message =
+      ok
+        ? `正解！${streak}問連続正解中！`
+        : "残念！";
 
-    const utterance = new SpeechSynthesisUtterance(message);
+    const utterance =
+      new SpeechSynthesisUtterance(
+        message
+      );
 
     utterance.lang = "ja-JP";
     utterance.rate = 1.30;
     utterance.pitch = 1.48;
     utterance.volume = 0.95;
 
-    const voice = getJapaneseVoice();
+    const voice =
+      getJapaneseVoice();
+
     if (voice) {
       utterance.voice = voice;
     }
 
-    const resumeVoice = () => {
+    let resumed = false;
+
+    const resumeAfterFeedback = () => {
+      if (resumed) {
+        return;
+      }
+
+      resumed = true;
       voicePauseForFeedback = false;
+
+      // BGMはここでも再スタートしない。
+      // 同じWebAudioノードのGainだけ戻す。
       refreshBgmVolume();
+      bgmEngine.ensureRunning();
 
       if (voiceAnswerEnabled) {
-        scheduleVoiceRestart(300);
+        scheduleVoiceRestart(280);
       }
     };
 
-    utterance.onend = resumeVoice;
-    utterance.onerror = resumeVoice;
+    utterance.onend =
+      resumeAfterFeedback;
 
-    window.speechSynthesis.speak(utterance);
+    utterance.onerror =
+      resumeAfterFeedback;
+
+    window.speechSynthesis.speak(
+      utterance
+    );
   }
 
   function setRainbowForStreak(streak) {
@@ -2381,6 +3035,12 @@ HTML = r"""
 
   function startMode(mode) {
     scoreAnimationToken += 1;
+
+    // 「はじめる」のクリック中にWebAudioを先に起動。
+    // 以後、マイク開始時も同じBGMノードを使い続ける。
+    bgmEngine.ensureContext();
+    bgmEngine.ensureRunning();
+
     currentMode = mode;
     questions = [];
 
