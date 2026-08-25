@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V27-GOWASAN-THEN-MIC-2026-08-25
+# VERSION: CLEAN-V28-QUIET-MIC-HIDE-QUESTION-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V27-GOWASAN-THEN-MIC"
+APP_VERSION = "CLEAN-V28-QUIET-MIC-HIDE-QUESTION"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -271,6 +271,29 @@ HTML = r"""
     grid-column: 1 / -1;
     font-size: 12px;
     color: #706c64;
+  }
+
+  .question-card.voice-waiting .qtop,
+  .question-card.voice-waiting .equation,
+  .question-card.voice-waiting .hint-launch,
+  .question-card.voice-waiting .abacus-hint,
+  .question-card.voice-waiting .answer-form,
+  .question-card.voice-waiting .keypad,
+  .question-card.voice-waiting .feedback {
+    visibility: hidden !important;
+  }
+
+  .question-card.voice-waiting::after {
+    content: "ゴワサン！";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: clamp(34px, 7vw, 64px);
+    font-weight: 1000;
+    letter-spacing: .08em;
+    color: #5c5144;
+    pointer-events: none;
   }
 
   .question-card {
@@ -1203,8 +1226,8 @@ HTML = r"""
   let voiceRestartTimer = null;
 
   const BGM_VOLUME_NORMAL = 0.12;
-  const BGM_VOLUME_LISTENING = 0.08;
-  const BGM_VOLUME_FEEDBACK = 0.04;
+  const BGM_VOLUME_LISTENING = 0.04;
+  const BGM_VOLUME_FEEDBACK = 0.02;
 
   let bgmKeepAliveTimer = null;
 
@@ -2887,6 +2910,21 @@ HTML = r"""
     }
   }
 
+  function hideQuestionForVoiceCallout() {
+    questionCard.classList.add(
+      "voice-waiting"
+    );
+  }
+
+  function revealQuestionAfterVoiceCallout() {
+    questionCard.classList.remove(
+      "voice-waiting"
+    );
+
+    // 表示された瞬間にレイアウトを確定。
+    void questionCard.offsetWidth;
+  }
+
   function speakGowasanThenListen() {
     if (
       !voiceAnswerEnabled ||
@@ -2902,6 +2940,9 @@ HTML = r"""
 
     voiceCalloutRunning = true;
 
+    // 音声回答ON中は「ゴワサン！」が終わるまで問題を隠す。
+    hideQuestionForVoiceCallout();
+
     // ① まず「ゴワサン！」を読み上げる。
     // この間、音声認識はまだ開始しない。
     updateVoiceUi(
@@ -2916,6 +2957,9 @@ HTML = r"""
       voiceCalloutRunning = false;
       voicePauseForFeedback = false;
 
+      // ② 「ゴワサン！」を言い終えたら、ここで初めて問題を表示。
+      revealQuestionAfterVoiceCallout();
+
       refreshBgmVolume();
 
       if (
@@ -2926,10 +2970,10 @@ HTML = r"""
         return;
       }
 
-      // ② 掛け声が完全に終了した後でマイクを開始。
+      // ③ 問題を表示して少し間を置いてからマイクを開始。
       setTimeout(() => {
         startMicrophoneRecognition();
-      }, 220);
+      }, 260);
     };
 
     if (
@@ -3012,12 +3056,18 @@ HTML = r"""
         "音声回答：開始します…"
       );
 
+      // ボタンをONにした直後から問題を隠す。
+      hideQuestionForVoiceCallout();
+
       startVoiceRecognition();
       return;
     }
 
     voiceCalloutRunning = false;
     voicePauseForFeedback = false;
+
+    // 音声モードをOFFにした場合は問題を即表示へ戻す。
+    revealQuestionAfterVoiceCallout();
 
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -3248,7 +3298,10 @@ HTML = r"""
 
     menuView.classList.add("hidden");
     workspace.classList.add("show");
-    questionCard.classList.remove("hidden");
+    questionCard.classList.remove(
+      "hidden",
+      "voice-waiting"
+    );
     results.classList.remove("show");
 
     $("#statusTitle").textContent = modeInfo[mode].title;
@@ -3311,7 +3364,11 @@ HTML = r"""
       voiceAnswerEnabled &&
       !voicePauseForFeedback
     ) {
+      // 次の問題も、ゴワサンが終わるまで見せない。
+      hideQuestionForVoiceCallout();
       scheduleVoiceRestart(350);
+    } else {
+      revealQuestionAfterVoiceCallout();
     }
   }
 
@@ -3703,6 +3760,7 @@ HTML = r"""
       }
     }
 
+    questionCard.classList.remove("voice-waiting");
     questionCard.classList.add("hidden");
     results.classList.add("show");
 
