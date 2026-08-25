@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V21-WEBAUDIO-MIC-2026-08-25
+# VERSION: CLEAN-V22-WEAK-ONCE-INTEGER-MINUTES-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V21-WEBAUDIO-MIC"
+APP_VERSION = "CLEAN-V22-WEAK-ONCE-INTEGER-MINUTES"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1107,8 +1107,9 @@ HTML = r"""
   // その後の15問の中へ、最大5問を分散して入れる。
   const WEAKNESS_SLOTS = new Set([5, 8, 11, 14, 17]);
 
-  // 同じ苦手問題を「苦手克服問題」で2回正解すると克服扱い。
-  const RECOVERY_STREAK_TO_MASTER = 2;
+  // 苦手克服問題として1回正解した時点で克服扱い。
+  // 一度克服した問題は、それ以降の苦手克服枠には出さない。
+  const RECOVERY_STREAK_TO_MASTER = 1;
 
   // 同じ種類の学習内でのみ自動レベルアップする。
   const NEXT_MODE = Object.freeze({
@@ -1139,7 +1140,6 @@ HTML = r"""
   let learningStats = loadLearningStats();
   let sessionWeakAsked = 0;
   let sessionWeakCorrect = 0;
-  let sessionWeakSeeds = [];
   let promotedMode = null;
 
   let hintRunToken = 0;
@@ -1742,27 +1742,14 @@ HTML = r"""
   function getWeaknessQuestion(mode) {
     const active = getWeakCandidates(mode);
 
-    let source = null;
-
-    if (active.length > 0) {
-      source = active[0];
-    } else if (sessionWeakSeeds.length > 0) {
-      // すでに克服扱いになった場合でも、
-      // このセッションでは5問程度の克服練習を完了できるよう再利用する。
-      source = sessionWeakSeeds[
-        sessionWeakAsked % sessionWeakSeeds.length
-      ];
-    }
-
-    if (!source) {
+    // 未克服の苦手だけを出題する。
+    // 苦手克服問題として1回正解して mastered=true になった問題は
+    // getWeakCandidates() の対象外になるため、二度と苦手枠には出ない。
+    if (active.length === 0) {
       return null;
     }
 
-    if (
-      !sessionWeakSeeds.some((stat) => stat.key === source.key)
-    ) {
-      sessionWeakSeeds.push({ ...source });
-    }
+    const source = active[0];
 
     return statToWeakQuestion(source);
   }
@@ -3056,9 +3043,6 @@ HTML = r"""
 
     sessionWeakAsked = 0;
     sessionWeakCorrect = 0;
-    sessionWeakSeeds = getWeakCandidates(mode)
-      .slice(0, 5)
-      .map((stat) => ({ ...stat }));
     promotedMode = null;
 
     $("#retryBtn").textContent = "同じモードをもう一度";
@@ -3216,8 +3200,12 @@ HTML = r"""
         !entry.ok
     ).length;
 
+    // 得点計算では残り分数を整数で扱う。
+    // 例：6分48秒 → 6分。
     const remainingMinutes =
-      Math.max(0, seconds) / 60;
+      Math.floor(
+        Math.max(0, seconds) / 60
+      );
 
     const rawScore =
       score *
@@ -3417,7 +3405,7 @@ HTML = r"""
     scoreFormula.textContent =
       `${scoreInfo.correctCount}正解 × ` +
       `最高${scoreInfo.maxStreak}問連続 × ` +
-      `残り${scoreInfo.remainingMinutes.toFixed(2)}分 ÷ ` +
+      `残り${scoreInfo.remainingMinutes}分 ÷ ` +
       `（${scoreInfo.wrongCount}回ミス＋1）`;
 
     let tick = 0;
