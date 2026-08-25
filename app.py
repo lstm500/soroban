@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V30-VOLUME4-SECONDS-FLASH-2026-08-25
+# VERSION: CLEAN-V31-BGM-FIXED-4-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V30-VOLUME4-SECONDS-FLASH"
+APP_VERSION = "CLEAN-V31-BGM-FIXED-4"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1242,9 +1242,7 @@ HTML = r"""
   let voiceCalloutRunning = false;
   let voiceRestartTimer = null;
 
-  const BGM_VOLUME_NORMAL = 0.12;
-  const BGM_VOLUME_LISTENING = 0.04;
-  const BGM_VOLUME_FEEDBACK = 0.04;
+  const BGM_VOLUME_FIXED = 0.04;
 
   let bgmKeepAliveTimer = null;
 
@@ -1260,7 +1258,7 @@ HTML = r"""
       this.currentSourceGain = null;
 
       this.playGeneration = 0;
-      this.targetVolume = BGM_VOLUME_NORMAL;
+      this.targetVolume = BGM_VOLUME_FIXED;
     }
 
     ensureContext() {
@@ -2236,23 +2234,9 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // 判定音声中は最も小さくする。
-    if (
-      voiceAnswerEnabled &&
-      voicePauseForFeedback
-    ) {
-      return BGM_VOLUME_FEEDBACK;
-    }
-
-    // マイクが実際に聞いている最中は8%。
-    if (
-      voiceAnswerEnabled &&
-      voiceRecognitionRunning
-    ) {
-      return BGM_VOLUME_LISTENING;
-    }
-
-    return BGM_VOLUME_NORMAL;
+    // BGMは常に4%固定。
+    // 音声モード、ゴワサン、音声認識、判定読み上げ中でも変えない。
+    return BGM_VOLUME_FIXED;
   }
 
   function refreshBgmVolume() {
