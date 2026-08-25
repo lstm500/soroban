@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V18-SCORE-ROULETTE-2026-08-25
+# VERSION: CLEAN-V19-BGM-DUCKING-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V18-SCORE-ROULETTE"
+APP_VERSION = "CLEAN-V19-BGM-DUCKING"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1152,9 +1152,12 @@ HTML = r"""
   let voicePauseForFeedback = false;
   let voiceRestartTimer = null;
 
+  const BGM_VOLUME_NORMAL = 0.12;
+  const BGM_VOLUME_DUCKED = 0.04;
+
   const audio = new Audio();
   audio.loop = true;
-  audio.volume = 0.12;
+  audio.volume = BGM_VOLUME_NORMAL;
   audio.preload = "auto";
 
   const randInt = (min, max) =>
@@ -1844,6 +1847,30 @@ HTML = r"""
     showStep();
   }
 
+  function setBgmDucked(ducked) {
+    if (!bgmOn) {
+      return;
+    }
+
+    audio.volume = ducked
+      ? BGM_VOLUME_DUCKED
+      : BGM_VOLUME_NORMAL;
+  }
+
+  function shouldDuckBgm() {
+    return (
+      voiceAnswerEnabled &&
+      (
+        voiceRecognitionRunning ||
+        voicePauseForFeedback
+      )
+    );
+  }
+
+  function refreshBgmVolume() {
+    setBgmDucked(shouldDuckBgm());
+  }
+
   function desiredBgmName(streak) {
     if (streak <= 0) {
       lastTenBgm = null;
@@ -1886,7 +1913,7 @@ HTML = r"""
     audio.src = url;
     audio.currentTime = 0;
     audio.loop = true;
-    audio.volume = 0.12;
+    audio.volume = shouldDuckBgm() ? BGM_VOLUME_DUCKED : BGM_VOLUME_NORMAL;
 
     if (bgmOn) {
       const p = audio.play();
@@ -1912,6 +1939,7 @@ HTML = r"""
       !results.classList.contains("show")
     ) {
       playBgmForStreak(correctStreak, true);
+      refreshBgmVolume();
     } else {
       stopBgm();
     }
@@ -2098,11 +2126,13 @@ HTML = r"""
 
     recognition.onstart = () => {
       voiceRecognitionRunning = true;
+      refreshBgmVolume();
       updateVoiceUi("音声回答：聞いています…");
     };
 
     recognition.onend = () => {
       voiceRecognitionRunning = false;
+      refreshBgmVolume();
       updateVoiceUi();
 
       if (
@@ -2116,6 +2146,7 @@ HTML = r"""
 
     recognition.onerror = (event) => {
       voiceRecognitionRunning = false;
+      refreshBgmVolume();
 
       if (event.error === "not-allowed") {
         voiceAnswerEnabled = false;
@@ -2236,6 +2267,7 @@ HTML = r"""
     } else {
       voicePauseForFeedback = false;
       stopVoiceRecognition();
+      refreshBgmVolume();
       updateVoiceUi("音声回答：OFF");
     }
   }
@@ -2267,6 +2299,7 @@ HTML = r"""
 
     voicePauseForFeedback = true;
     stopVoiceRecognition();
+    refreshBgmVolume();
 
     window.speechSynthesis.cancel();
 
@@ -2288,6 +2321,7 @@ HTML = r"""
 
     const resumeVoice = () => {
       voicePauseForFeedback = false;
+      refreshBgmVolume();
 
       if (voiceAnswerEnabled) {
         scheduleVoiceRestart(300);
