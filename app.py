@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V24-12Q-BGM-VOICE-RAINBOW-2026-08-25
+# VERSION: CLEAN-V25-GOWASAN-EVERY-LISTEN-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V24-12Q-BGM-VOICE-RAINBOW"
+APP_VERSION = "CLEAN-V25-GOWASAN-EVERY-LISTEN"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1199,6 +1199,7 @@ HTML = r"""
   let voiceRecognition = null;
   let voiceRecognitionRunning = false;
   let voicePauseForFeedback = false;
+  let voiceCalloutRunning = false;
   let voiceRestartTimer = null;
 
   const BGM_VOLUME_NORMAL = 0.12;
@@ -2852,7 +2853,7 @@ HTML = r"""
     return recognition;
   }
 
-  function startVoiceRecognition() {
+  function startRecognitionAfterCallout() {
     if (
       !voiceAnswerEnabled ||
       voicePauseForFeedback ||
@@ -2874,8 +2875,7 @@ HTML = r"""
       return;
     }
 
-    // AudioContextのresumeを音声認識より先に開始する。
-    // BGM自体をpause/stopする処理は一切行わない。
+    // BGMは止めず、WebAudioを維持したままマイク開始。
     bgmEngine.ensureContext();
     bgmEngine.ensureRunning();
 
@@ -2899,18 +2899,57 @@ HTML = r"""
     }
   }
 
+  function startVoiceRecognition() {
+    if (
+      !voiceAnswerEnabled ||
+      voicePauseForFeedback ||
+      voiceCalloutRunning ||
+      locked ||
+      voiceRecognitionRunning ||
+      results.classList.contains("show") ||
+      !workspace.classList.contains("show")
+    ) {
+      return;
+    }
+
+    // 音声認識状態へ入るたびに、必ず先に「ゴワサン！」。
+    // 読み上げが終わってからマイクを開始するため、
+    // 自分の「ゴワサン」を回答として拾わない。
+    speakVoiceModeOnCallout();
+  }
+
   function speakVoiceModeOnCallout() {
+    if (
+      !voiceAnswerEnabled ||
+      voicePauseForFeedback ||
+      voiceCalloutRunning ||
+      locked ||
+      results.classList.contains("show") ||
+      !workspace.classList.contains("show")
+    ) {
+      return;
+    }
+
+    voiceCalloutRunning = true;
+
+    // 「ゴワサン！」中はマイクを止め、
+    // BGMは4%で流し続ける。
     voicePauseForFeedback = true;
     stopVoiceRecognition();
     refreshBgmVolume();
     bgmEngine.ensureRunning();
 
+    updateVoiceUi(
+      "音声回答：ゴワサン！"
+    );
+
     const beginListening = () => {
+      voiceCalloutRunning = false;
       voicePauseForFeedback = false;
       refreshBgmVolume();
 
       if (voiceAnswerEnabled) {
-        startVoiceRecognition();
+        startRecognitionAfterCallout();
       }
     };
 
@@ -2958,6 +2997,7 @@ HTML = r"""
     );
   }
 
+
   function setVoiceAnswerEnabled(
     enabled
   ) {
@@ -2965,7 +3005,6 @@ HTML = r"""
       Boolean(enabled);
 
     if (voiceAnswerEnabled) {
-      // 音声回答ONのユーザー操作中にWebAudioを起動。
       bgmEngine.ensureContext();
       bgmEngine.ensureRunning();
 
@@ -2983,15 +3022,21 @@ HTML = r"""
       startBgmKeepAlive();
 
       updateVoiceUi(
-        "音声回答：ゴワサン！"
+        "音声回答：開始します…"
       );
 
-      // 「ゴワサン！」を言い終わってからマイクを開始する。
-      speakVoiceModeOnCallout();
+      // ON直後も通常の認識開始フローへ。
+      // startVoiceRecognition() 内で毎回「ゴワサン！」を再生する。
+      startVoiceRecognition();
       return;
     }
 
+    voiceCalloutRunning = false;
     voicePauseForFeedback = false;
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
 
     stopVoiceRecognition();
     stopBgmKeepAlive();
