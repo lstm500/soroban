@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V26-MIC-FIRST-GOWASAN-2026-08-25
+# VERSION: CLEAN-V27-GOWASAN-THEN-MIC-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V26-MIC-FIRST-GOWASAN"
+APP_VERSION = "CLEAN-V27-GOWASAN-THEN-MIC"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1200,8 +1200,6 @@ HTML = r"""
   let voiceRecognitionRunning = false;
   let voicePauseForFeedback = false;
   let voiceCalloutRunning = false;
-  let voiceIgnoreResults = false;
-  let voicePendingCallout = false;
   let voiceRestartTimer = null;
 
   const BGM_VOLUME_NORMAL = 0.12;
@@ -2659,19 +2657,11 @@ HTML = r"""
   function handleRecognizedSpeech(
     event
   ) {
-    // 「ゴワサン！」の掛け声中に拾った音声は完全に無視する。
-    // マイク自体はすでにONのまま。
-    if (
-      voiceIgnoreResults ||
-      voiceCalloutRunning
-    ) {
-      return;
-    }
-
     if (
       locked ||
       !voiceAnswerEnabled ||
-      voicePauseForFeedback
+      voicePauseForFeedback ||
+      voiceCalloutRunning
     ) {
       return;
     }
@@ -2680,7 +2670,6 @@ HTML = r"""
       event.results?.[0];
 
     if (!result) {
-      scheduleVoiceRestart(350);
       return;
     }
 
@@ -2724,8 +2713,6 @@ HTML = r"""
       updateVoiceUi(
         `音声回答：「${alternatives[0] || ""}」を数字として認識できませんでした`
       );
-
-      scheduleVoiceRestart(450);
       return;
     }
 
@@ -2736,8 +2723,6 @@ HTML = r"""
       `音声回答：「${recognizedText}」→ ${parsed}`
     );
 
-    // 人間の回答を受け取った時だけ認識を止める。
-    // BGMは止めない。
     stopVoiceRecognition();
 
     setTimeout(() => {
@@ -2746,7 +2731,6 @@ HTML = r"""
       }
     }, 160);
   }
-
 
   function createVoiceRecognition() {
     const Recognition =
@@ -2767,24 +2751,13 @@ HTML = r"""
     recognition.onstart = () => {
       voiceRecognitionRunning = true;
 
-      // ① まず音声認識モードに入る。
       refreshBgmVolume();
       bgmEngine.ensureRunning();
       startBgmKeepAlive();
 
       updateVoiceUi(
-        "音声回答：聞き取り開始"
+        "音声回答：数字を話してください"
       );
-
-      // ② マイクが実際にONになった後で「ゴワサン！」。
-      // この間もマイクは停止しない。
-      if (voicePendingCallout) {
-        voicePendingCallout = false;
-
-        setTimeout(() => {
-          speakVoiceModeOnCallout();
-        }, 80);
-      }
     };
 
     recognition.onresult =
@@ -2796,26 +2769,19 @@ HTML = r"""
       refreshBgmVolume();
       bgmEngine.ensureRunning();
 
-      // 掛け声の最中にブラウザ側が認識を終了してしまった場合は、
-      // 掛け声終了後に再度マイクを開始する。
-      if (
-        voiceCalloutRunning ||
-        voiceIgnoreResults
-      ) {
-        updateVoiceUi(
-          "音声回答：ゴワサン！"
-        );
-        return;
-      }
-
-      updateVoiceUi();
-
       if (
         voiceAnswerEnabled &&
         !voicePauseForFeedback &&
-        !locked
+        !voiceCalloutRunning &&
+        !locked &&
+        workspace.classList.contains("show") &&
+        !results.classList.contains("show")
       ) {
-        scheduleVoiceRestart(280);
+        // 無音や認識失敗で終了した場合も、
+        // 次回は必ず「ゴワサン！」から再開する。
+        scheduleVoiceRestart(350);
+      } else {
+        updateVoiceUi();
       }
     };
 
@@ -2832,46 +2798,29 @@ HTML = r"""
         "not-allowed"
       ) {
         voiceAnswerEnabled = false;
-        voicePendingCallout = false;
         voiceCalloutRunning = false;
-        voiceIgnoreResults = false;
-
         stopBgmKeepAlive();
 
         updateVoiceUi(
           "マイクが許可されていません。ブラウザでマイクを許可してください。"
         );
-
         return;
       }
 
       if (
-        event.error ===
-          "no-speech" ||
-        event.error ===
-          "aborted"
+        event.error === "no-speech" ||
+        event.error === "aborted"
       ) {
-        // ゴワサン中ならここでは再起動しない。
-        // 掛け声終了後に必要なら再起動する。
-        if (
-          voiceCalloutRunning ||
-          voiceIgnoreResults
-        ) {
-          return;
-        }
-
-        updateVoiceUi();
-
         if (
           voiceAnswerEnabled &&
           !voicePauseForFeedback &&
+          !voiceCalloutRunning &&
           !locked
         ) {
           scheduleVoiceRestart(
-            320
+            380
           );
         }
-
         return;
       }
 
@@ -2882,8 +2831,8 @@ HTML = r"""
       if (
         voiceAnswerEnabled &&
         !voicePauseForFeedback &&
-        !locked &&
-        !voiceCalloutRunning
+        !voiceCalloutRunning &&
+        !locked
       ) {
         scheduleVoiceRestart(500);
       }
@@ -2892,8 +2841,7 @@ HTML = r"""
     return recognition;
   }
 
-
-  function startVoiceRecognition() {
+  function startMicrophoneRecognition() {
     if (
       !voiceAnswerEnabled ||
       voicePauseForFeedback ||
@@ -2930,90 +2878,66 @@ HTML = r"""
       );
     }
 
-    // 今回の認識開始では、マイクON後にゴワサンを言う。
-    voicePendingCallout = true;
-    voiceIgnoreResults = true;
-
     refreshBgmVolume();
 
     try {
-      // ① 先に音声認識モードへ入る。
       voiceRecognition.start();
     } catch (error) {
-      voicePendingCallout = false;
-      voiceIgnoreResults = false;
-      scheduleVoiceRestart(450);
+      scheduleVoiceRestart(500);
     }
   }
 
-  function speakVoiceModeOnCallout() {
+  function speakGowasanThenListen() {
     if (
       !voiceAnswerEnabled ||
       voicePauseForFeedback ||
       voiceCalloutRunning ||
       locked ||
+      voiceRecognitionRunning ||
       results.classList.contains("show") ||
       !workspace.classList.contains("show")
     ) {
-      voiceIgnoreResults = false;
       return;
     }
 
     voiceCalloutRunning = true;
 
-    // ② 「ゴワサン！」。
-    // マイクはONのまま、認識結果だけ無視する。
-    voiceIgnoreResults = true;
-
+    // ① まず「ゴワサン！」を読み上げる。
+    // この間、音声認識はまだ開始しない。
     updateVoiceUi(
       "音声回答：ゴワサン！"
     );
-
-    // 掛け声中はBGMを4%へ。
-    const priorPauseState =
-      voicePauseForFeedback;
 
     voicePauseForFeedback = true;
     refreshBgmVolume();
     bgmEngine.ensureRunning();
 
-    const finishCallout = () => {
+    const beginListening = () => {
       voiceCalloutRunning = false;
-      voicePauseForFeedback =
-        priorPauseState;
+      voicePauseForFeedback = false;
 
-      // 少しだけ余韻を置いてから人間の音声を受け付ける。
+      refreshBgmVolume();
+
+      if (
+        !voiceAnswerEnabled ||
+        locked ||
+        results.classList.contains("show")
+      ) {
+        return;
+      }
+
+      // ② 掛け声が完全に終了した後でマイクを開始。
       setTimeout(() => {
-        voiceIgnoreResults = false;
-        refreshBgmVolume();
-
-        if (
-          !voiceAnswerEnabled ||
-          locked
-        ) {
-          return;
-        }
-
-        // ブラウザが掛け声中に認識を維持できた場合：
-        // そのまま③人間の回答を待つ。
-        if (voiceRecognitionRunning) {
-          updateVoiceUi(
-            "音声回答：数字を話してください"
-          );
-          return;
-        }
-
-        // 掛け声によって認識が終了したブラウザだけ、
-        // ゴワサンを再度言わずにマイクだけ再開する。
-        startRecognitionWithoutCallout();
-      }, 180);
+        startMicrophoneRecognition();
+      }, 220);
     };
 
     if (
       !("speechSynthesis" in window) ||
-      typeof SpeechSynthesisUtterance === "undefined"
+      typeof SpeechSynthesisUtterance ===
+        "undefined"
     ) {
-      finishCallout();
+      beginListening();
       return;
     }
 
@@ -3036,15 +2960,15 @@ HTML = r"""
       utterance.voice = voice;
     }
 
-    let completed = false;
+    let finished = false;
 
     const done = () => {
-      if (completed) {
+      if (finished) {
         return;
       }
 
-      completed = true;
-      finishCallout();
+      finished = true;
+      beginListening();
     };
 
     utterance.onend = done;
@@ -3055,43 +2979,11 @@ HTML = r"""
     );
   }
 
-  function startRecognitionWithoutCallout() {
-    if (
-      !voiceAnswerEnabled ||
-      voicePauseForFeedback ||
-      locked ||
-      voiceRecognitionRunning ||
-      results.classList.contains("show") ||
-      !workspace.classList.contains("show")
-    ) {
-      return;
-    }
-
-    if (!voiceRecognition) {
-      voiceRecognition =
-        createVoiceRecognition();
-    }
-
-    if (!voiceRecognition) {
-      return;
-    }
-
-    voicePendingCallout = false;
-    voiceIgnoreResults = false;
-
-    bgmEngine.ensureContext();
-    bgmEngine.ensureRunning();
-    refreshBgmVolume();
-
-    try {
-      voiceRecognition.start();
-    } catch (error) {
-      setTimeout(() => {
-        startRecognitionWithoutCallout();
-      }, 450);
-    }
+  function startVoiceRecognition() {
+    // 音声入力を開始するたびに必ず
+    // 「ゴワサン！」→マイク開始の順序にする。
+    speakGowasanThenListen();
   }
-
 
   function setVoiceAnswerEnabled(
     enabled
@@ -3120,15 +3012,11 @@ HTML = r"""
         "音声回答：開始します…"
       );
 
-      // ON直後も通常の認識開始フローへ。
-      // startVoiceRecognition() 内で毎回「ゴワサン！」を再生する。
       startVoiceRecognition();
       return;
     }
 
-    voicePendingCallout = false;
     voiceCalloutRunning = false;
-    voiceIgnoreResults = false;
     voicePauseForFeedback = false;
 
     if ("speechSynthesis" in window) {
