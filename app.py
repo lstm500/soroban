@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V14-VOICE-FEEDBACK-2026-08-25
+# VERSION: CLEAN-V16-SOROBAN-HINT-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V14-VOICE-FEEDBACK"
+APP_VERSION = "CLEAN-V16-SOROBAN-HINT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -329,12 +329,219 @@ HTML = r"""
 
   .qcount { color: #706c64; }
 
+  .weak-badge {
+    display: none;
+    margin-left: 8px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #fff1c9;
+    color: #805b00;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .weak-badge.show {
+    display: inline-block;
+  }
+
   .equation {
     margin: 38px 0 22px;
     text-align: center;
     font-size: clamp(42px, 7vw, 68px);
     font-weight: 950;
     letter-spacing: .03em;
+  }
+
+  .hint-launch {
+    display: flex;
+    justify-content: center;
+    margin: -4px 0 14px;
+  }
+
+  .hint-btn {
+    background: #e8f0e2;
+    color: #345233;
+    border: 1px solid #c9d8c0;
+  }
+
+  .abacus-hint {
+    display: none;
+    width: min(760px, 100%);
+    margin: 0 auto 18px;
+    padding: 14px;
+    border: 2px solid #d7c69e;
+    border-radius: 18px;
+    background: #fffaf0;
+  }
+
+  .abacus-hint.show {
+    display: block;
+    animation: hintOpen .22s ease-out;
+  }
+
+  @keyframes hintOpen {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .hint-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .hint-title {
+    font-size: 15px;
+    font-weight: 950;
+  }
+
+  .hint-step {
+    min-height: 42px;
+    margin: 8px 0 10px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.55;
+    color: #4c473e;
+  }
+
+  .hint-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .hint-actions button {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .soroban-scroll {
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+  }
+
+  .soroban-board {
+    --rod-width: 64px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 5px;
+    min-width: max-content;
+    padding: 12px 14px 8px;
+    border: 5px solid #73543a;
+    border-radius: 14px;
+    background: #e8c895;
+    box-shadow:
+      inset 0 0 0 2px rgba(255,255,255,.35),
+      0 6px 15px rgba(72, 54, 37, .12);
+  }
+
+  .soroban-board::before {
+    content: "";
+    position: absolute;
+    left: 7px;
+    right: 7px;
+    top: 78px;
+    height: 8px;
+    border-radius: 5px;
+    background: #66452f;
+    z-index: 3;
+  }
+
+  .soroban-rod {
+    position: relative;
+    width: var(--rod-width);
+    height: 202px;
+    border-radius: 12px;
+    transition:
+      background .25s ease,
+      box-shadow .25s ease;
+  }
+
+  .soroban-rod.active {
+    background: rgba(255, 238, 155, .58);
+    box-shadow:
+      inset 0 0 0 2px rgba(236, 175, 37, .78),
+      0 0 16px rgba(236, 175, 37, .38);
+  }
+
+  .rod-line {
+    position: absolute;
+    left: 50%;
+    top: 5px;
+    bottom: 30px;
+    width: 3px;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: #6b4b33;
+    z-index: 1;
+  }
+
+  .soroban-bead {
+    position: absolute;
+    left: 50%;
+    width: 48px;
+    height: 16px;
+    transform: translateX(-50%);
+    border: 2px solid #8d4929;
+    border-radius: 50% 50% 44% 44%;
+    background:
+      linear-gradient(
+        180deg,
+        #ef9b5c 0%,
+        #c86735 54%,
+        #a84d27 100%
+      );
+    box-shadow:
+      inset 0 2px 2px rgba(255,255,255,.38),
+      0 2px 3px rgba(77,40,21,.24);
+    z-index: 4;
+    transition:
+      top .58s cubic-bezier(.22,.8,.24,1),
+      filter .22s ease,
+      transform .22s ease;
+  }
+
+  .soroban-rod.active .soroban-bead {
+    filter: saturate(1.14) brightness(1.04);
+  }
+
+  .upper-bead {
+    top: 13px;
+  }
+
+  .lower-bead {
+    top: 112px;
+  }
+
+  .rod-place {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 5px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 950;
+    color: #604a39;
+  }
+
+  .hint-legend {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #71695f;
   }
 
   .answer-form {
@@ -636,11 +843,40 @@ HTML = r"""
 
   <div id="questionCard" class="question-card">
     <div class="qtop">
-      <div id="qCount" class="qcount">1 / 20</div>
+      <div>
+        <span id="qCount" class="qcount">1 / 20</span>
+        <span id="weakBadge" class="weak-badge">にがて克服</span>
+      </div>
       <div id="score" class="score">正解 0</div>
     </div>
 
     <div id="equation" class="equation"></div>
+
+    <div class="hint-launch">
+      <button type="button" id="hintBtn" class="hint-btn">
+        珠ヒントを見る
+      </button>
+    </div>
+
+    <div id="abacusHint" class="abacus-hint">
+      <div class="hint-head">
+        <div class="hint-title">そろばんの珠の動かし方</div>
+        <div class="hint-actions">
+          <button type="button" id="hintReplayBtn">もう一度</button>
+          <button type="button" id="hintCloseBtn">閉じる</button>
+        </div>
+      </div>
+
+      <div id="hintStep" class="hint-step"></div>
+
+      <div class="soroban-scroll">
+        <div id="sorobanBoard" class="soroban-board"></div>
+      </div>
+
+      <div class="hint-legend">
+        黄色く光っている位の珠が、いま動いているところです。
+      </div>
+    </div>
 
     <form id="answerForm" class="answer-form">
       <input
@@ -714,6 +950,10 @@ HTML = r"""
   const bar = $("#bar");
   const bgmBtn = $("#bgmBtn");
   const bgmName = $("#bgmName");
+  const hintBtn = $("#hintBtn");
+  const abacusHint = $("#abacusHint");
+  const hintStep = $("#hintStep");
+  const sorobanBoard = $("#sorobanBoard");
 
   const modeInfo = {
     ba1: { title: "初級・足し算1｜1桁の足し算" },
@@ -736,6 +976,29 @@ HTML = r"""
     divisionMustBeInteger: true
   });
 
+  // =====================================================
+  // 自動レベルアップ・苦手克服
+  // =====================================================
+  const LEARNING_STORAGE_KEY = "soroban_learning_stats_v1";
+
+  // 最初の5問（1〜5問目）には苦手克服問題を入れない。
+  // その後の15問の中へ、最大5問を分散して入れる。
+  const WEAKNESS_SLOTS = new Set([5, 8, 11, 14, 17]);
+
+  // 同じ苦手問題を「苦手克服問題」で2回正解すると克服扱い。
+  const RECOVERY_STREAK_TO_MASTER = 2;
+
+  // 同じ種類の学習内でのみ自動レベルアップする。
+  const NEXT_MODE = Object.freeze({
+    ba1: "ba2",
+    ba2: "ba3",
+    bs1: "bs2",
+    bs2: "bs3",
+    m1: "m2",
+    m2: "m3",
+    a2: "a3"
+  });
+
   let currentMode = null;
   let questions = [];
   let index = 0;
@@ -748,6 +1011,16 @@ HTML = r"""
   let bgmOn = true;
   let currentBgm = "0.mp3";
   let lastTenBgm = null;
+
+  let learningStats = loadLearningStats();
+  let sessionWeakAsked = 0;
+  let sessionWeakCorrect = 0;
+  let sessionWeakSeeds = [];
+  let promotedMode = null;
+
+  let hintRunToken = 0;
+  let hintDigitCount = 1;
+  let hintRods = [];
 
   const audio = new Audio();
   audio.loop = true;
@@ -879,6 +1152,218 @@ HTML = r"""
     throw new Error("整数になる割り算を生成できませんでした。");
   }
 
+  function loadLearningStats() {
+    try {
+      const raw = localStorage.getItem(LEARNING_STORAGE_KEY);
+      if (!raw) {
+        return { problems: {} };
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") {
+        return { problems: {} };
+      }
+
+      if (!parsed.problems || typeof parsed.problems !== "object") {
+        parsed.problems = {};
+      }
+
+      return parsed;
+    } catch (error) {
+      return { problems: {} };
+    }
+  }
+
+  function saveLearningStats() {
+    try {
+      localStorage.setItem(
+        LEARNING_STORAGE_KEY,
+        JSON.stringify(learningStats)
+      );
+    } catch (error) {
+      // 保存できない環境でもゲーム自体は継続する。
+    }
+  }
+
+  function problemKey(mode, q) {
+    return `${mode}|${q.op}|${q.a}|${q.b}`;
+  }
+
+  function getProblemStat(mode, q) {
+    const key = problemKey(mode, q);
+
+    if (!learningStats.problems[key]) {
+      learningStats.problems[key] = {
+        key,
+        mode,
+        a: q.a,
+        b: q.b,
+        op: q.op,
+        attempts: 0,
+        correct: 0,
+        wrong: 0,
+        recoveryStreak: 0,
+        mastered: false,
+        lastAt: 0
+      };
+    }
+
+    return learningStats.problems[key];
+  }
+
+  function recordAnswer(mode, q, ok) {
+    const stat = getProblemStat(mode, q);
+
+    stat.attempts += 1;
+    stat.lastAt = Date.now();
+
+    if (ok) {
+      stat.correct += 1;
+
+      if (q.isWeakness) {
+        stat.recoveryStreak += 1;
+
+        if (stat.recoveryStreak >= RECOVERY_STREAK_TO_MASTER) {
+          stat.mastered = true;
+        }
+      }
+    } else {
+      stat.wrong += 1;
+      stat.recoveryStreak = 0;
+      stat.mastered = false;
+    }
+
+    saveLearningStats();
+  }
+
+  function getWeakCandidates(mode) {
+    return Object.values(learningStats.problems)
+      .filter((stat) =>
+        stat.mode === mode &&
+        stat.wrong > 0 &&
+        !stat.mastered
+      )
+      .sort((a, b) => {
+        const scoreA =
+          a.wrong * 4 -
+          a.correct +
+          Math.max(0, 2 - a.recoveryStreak) * 2;
+
+        const scoreB =
+          b.wrong * 4 -
+          b.correct +
+          Math.max(0, 2 - b.recoveryStreak) * 2;
+
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+
+        return b.lastAt - a.lastAt;
+      });
+  }
+
+  function statToWeakQuestion(stat) {
+    const q = makeQuestionFromFinal(
+      stat.a,
+      stat.op,
+      stat.b
+    );
+
+    q.isWeakness = true;
+    q.weaknessKey = stat.key;
+
+    return q;
+  }
+
+  function makeQuestionFromFinal(a, op, b) {
+    const q = {
+      a,
+      op,
+      b,
+      answer: calculate(a, op, b),
+      isWeakness: false,
+      weaknessKey: null
+    };
+
+    if (!isValidQuestion(q)) {
+      throw new Error(
+        `苦手問題の復元に失敗: ${a} ${op} ${b}`
+      );
+    }
+
+    return q;
+  }
+
+  function getWeaknessQuestion(mode) {
+    const active = getWeakCandidates(mode);
+
+    let source = null;
+
+    if (active.length > 0) {
+      source = active[0];
+    } else if (sessionWeakSeeds.length > 0) {
+      // すでに克服扱いになった場合でも、
+      // このセッションでは5問程度の克服練習を完了できるよう再利用する。
+      source = sessionWeakSeeds[
+        sessionWeakAsked % sessionWeakSeeds.length
+      ];
+    }
+
+    if (!source) {
+      return null;
+    }
+
+    if (
+      !sessionWeakSeeds.some((stat) => stat.key === source.key)
+    ) {
+      sessionWeakSeeds.push({ ...source });
+    }
+
+    return statToWeakQuestion(source);
+  }
+
+  function makeQuestionForIndex(questionIndex, mode) {
+    // 1〜5問目は必ず通常問題。
+    if (questionIndex < 5) {
+      const q = makeOneQuestion(mode);
+      q.isWeakness = false;
+      return q;
+    }
+
+    // 6問目以降の指定スロットでは苦手問題を優先。
+    if (WEAKNESS_SLOTS.has(questionIndex)) {
+      const weak = getWeaknessQuestion(mode);
+
+      if (weak) {
+        sessionWeakAsked += 1;
+        return weak;
+      }
+    }
+
+    const q = makeOneQuestion(mode);
+    q.isWeakness = false;
+    return q;
+  }
+
+  function shouldLevelUp(mode, finalScore) {
+    const activeWeakLeft = getWeakCandidates(mode).length;
+
+    // 苦手克服問題が出た場合：
+    // 3問以上出題され、すべて正解し、未克服の苦手が残っていないこと。
+    if (sessionWeakAsked > 0) {
+      return (
+        sessionWeakAsked >= 3 &&
+        sessionWeakCorrect === sessionWeakAsked &&
+        activeWeakLeft === 0 &&
+        finalScore >= 16
+      );
+    }
+
+    // 苦手がまだ一つも記録されていない場合は、
+    // 18/20以上なら「苦手なし」とみなし次レベルへ。
+    return activeWeakLeft === 0 && finalScore >= 18;
+  }
+
   function makeOneQuestion(mode) {
     if (mode === "ba1") return makeAdditionOnly(1, 9);
     if (mode === "ba2") return makeAdditionOnly(10, 99);
@@ -920,15 +1405,298 @@ HTML = r"""
   }
 
   function generateQuestions(mode) {
-    const out = [];
+    // 問題はセッション中に1問ずつ生成する。
+    // これにより最初の5問で見つかった苦手も、
+    // 6問目以降の苦手克服問題へ反映できる。
+    return [];
+  }
 
-    while (out.length < 20) {
-      const q = makeOneQuestion(mode);
-      if (!isValidQuestion(q)) continue;
-      out.push(q);
+  function placeName(place) {
+    const names = {
+      1: "一の位",
+      10: "十の位",
+      100: "百の位",
+      1000: "千の位",
+      10000: "万の位",
+      100000: "十万の位",
+      1000000: "百万の位"
+    };
+
+    return names[place] || `${place}の位`;
+  }
+
+  function shortPlaceName(place) {
+    const names = {
+      1: "一",
+      10: "十",
+      100: "百",
+      1000: "千",
+      10000: "万",
+      100000: "十万",
+      1000000: "百万"
+    };
+
+    return names[place] || "";
+  }
+
+  function buildSorobanBoard(digitCount) {
+    hintDigitCount = Math.max(1, digitCount);
+    hintRods = [];
+    sorobanBoard.innerHTML = "";
+
+    for (let i = 0; i < hintDigitCount; i += 1) {
+      const place = 10 ** (hintDigitCount - 1 - i);
+
+      const rod = document.createElement("div");
+      rod.className = "soroban-rod";
+      rod.dataset.place = String(place);
+
+      const line = document.createElement("div");
+      line.className = "rod-line";
+      rod.appendChild(line);
+
+      const upper = document.createElement("div");
+      upper.className = "soroban-bead upper-bead";
+      rod.appendChild(upper);
+
+      const lowers = [];
+
+      for (let j = 0; j < 4; j += 1) {
+        const bead = document.createElement("div");
+        bead.className = "soroban-bead lower-bead";
+        bead.style.top = `${112 + j * 18}px`;
+        rod.appendChild(bead);
+        lowers.push(bead);
+      }
+
+      const label = document.createElement("div");
+      label.className = "rod-place";
+      label.textContent = shortPlaceName(place);
+      rod.appendChild(label);
+
+      sorobanBoard.appendChild(rod);
+
+      hintRods.push({
+        rod,
+        place,
+        upper,
+        lowers
+      });
     }
+  }
+
+  function setRodDigit(rodInfo, digit) {
+    const safeDigit = Math.max(0, Math.min(9, Number(digit) || 0));
+    const upperOn = safeDigit >= 5;
+    const lowerCount = safeDigit % 5;
+
+    rodInfo.upper.style.top =
+      upperOn ? "50px" : "13px";
+
+    rodInfo.lowers.forEach((bead, index) => {
+      const top = index < lowerCount
+        ? 89 + index * 18
+        : 121 + index * 18;
+
+      bead.style.top = `${top}px`;
+    });
+  }
+
+  function showSorobanNumber(value, activePlace = null) {
+    const safeValue = Math.max(
+      0,
+      Math.floor(Math.abs(Number(value) || 0))
+    );
+
+    const digits = String(safeValue)
+      .padStart(hintDigitCount, "0")
+      .slice(-hintDigitCount)
+      .split("")
+      .map(Number);
+
+    hintRods.forEach((rodInfo, index) => {
+      setRodDigit(rodInfo, digits[index]);
+
+      rodInfo.rod.classList.toggle(
+        "active",
+        activePlace !== null &&
+        rodInfo.place === activePlace
+      );
+    });
+  }
+
+  function decomposeByPlace(value) {
+    const out = [];
+    const digits = String(Math.abs(Math.floor(value))).split("");
+
+    digits.forEach((char, index) => {
+      const digit = Number(char);
+      if (digit === 0) return;
+
+      const place =
+        10 ** (digits.length - 1 - index);
+
+      out.push({
+        digit,
+        place,
+        amount: digit * place
+      });
+    });
 
     return out;
+  }
+
+  function buildAddSubHintSteps(q) {
+    const steps = [
+      {
+        value: q.a,
+        activePlace: null,
+        text: `まず ${q.a} をそろばんに置きます。`
+      }
+    ];
+
+    const parts = decomposeByPlace(q.b);
+    let current = q.a;
+
+    parts.forEach((part) => {
+      if (q.op === "＋") {
+        current += part.amount;
+
+        steps.push({
+          value: current,
+          activePlace: part.place,
+          text:
+            `${placeName(part.place)}で ${part.amount} を足します。` +
+            ` 光っている位の珠の動きを見てね。`
+        });
+      } else {
+        current -= part.amount;
+
+        steps.push({
+          value: current,
+          activePlace: part.place,
+          text:
+            `${placeName(part.place)}で ${part.amount} をひきます。` +
+            ` 光っている位の珠の動きを見てね。`
+        });
+      }
+    });
+
+    steps.push({
+      value: q.answer,
+      activePlace: null,
+      text: `この珠の形で完成です。`
+    });
+
+    return steps;
+  }
+
+  function buildResultPlacementSteps(q) {
+    const answer = Math.max(0, Math.floor(q.answer));
+    const parts = decomposeByPlace(answer);
+
+    const steps = [
+      {
+        value: 0,
+        activePlace: null,
+        text:
+          q.op === "×"
+            ? "掛け算では、答えの珠の置き方を位ごとに見てみます。"
+            : "割り算では、答えの珠の置き方を位ごとに見てみます。"
+      }
+    ];
+
+    let current = 0;
+
+    parts.forEach((part) => {
+      current += part.amount;
+
+      steps.push({
+        value: current,
+        activePlace: part.place,
+        text:
+          `${placeName(part.place)}に ${part.digit} を置きます。`
+      });
+    });
+
+    steps.push({
+      value: answer,
+      activePlace: null,
+      text: "この珠の形で完成です。"
+    });
+
+    return steps;
+  }
+
+  function buildHintSteps(q) {
+    if (q.op === "＋" || q.op === "－") {
+      return buildAddSubHintSteps(q);
+    }
+
+    return buildResultPlacementSteps(q);
+  }
+
+  function stopSorobanHintAnimation() {
+    hintRunToken += 1;
+  }
+
+  function hideSorobanHint() {
+    stopSorobanHintAnimation();
+    abacusHint.classList.remove("show");
+    hintStep.textContent = "";
+    sorobanBoard.innerHTML = "";
+    hintRods = [];
+  }
+
+  function runSorobanHint() {
+    if (index >= 20 || !questions[index]) {
+      return;
+    }
+
+    const q = questions[index];
+    const steps = buildHintSteps(q);
+
+    const maxValue = Math.max(
+      q.a,
+      q.b,
+      Math.abs(q.answer),
+      ...steps.map((step) => Math.abs(step.value))
+    );
+
+    const digitCount = Math.max(
+      1,
+      String(Math.floor(maxValue)).length
+    );
+
+    stopSorobanHintAnimation();
+    const token = hintRunToken;
+
+    buildSorobanBoard(digitCount);
+    abacusHint.classList.add("show");
+
+    let stepIndex = 0;
+
+    const showStep = () => {
+      if (token !== hintRunToken) {
+        return;
+      }
+
+      const step = steps[stepIndex];
+
+      hintStep.textContent = step.text;
+      showSorobanNumber(
+        step.value,
+        step.activePlace
+      );
+
+      stepIndex += 1;
+
+      if (stepIndex < steps.length) {
+        setTimeout(showStep, 1250);
+      }
+    };
+
+    showStep();
   }
 
   function desiredBgmName(streak) {
@@ -1097,7 +1865,7 @@ HTML = r"""
 
   function startMode(mode) {
     currentMode = mode;
-    questions = generateQuestions(mode);
+    questions = [];
 
     index = 0;
     score = 0;
@@ -1107,6 +1875,15 @@ HTML = r"""
     correctStreak = 0;
     currentBgm = "0.mp3";
     lastTenBgm = null;
+
+    sessionWeakAsked = 0;
+    sessionWeakCorrect = 0;
+    sessionWeakSeeds = getWeakCandidates(mode)
+      .slice(0, 5)
+      .map((stat) => ({ ...stat }));
+    promotedMode = null;
+
+    $("#retryBtn").textContent = "同じモードをもう一度";
 
     menuView.classList.add("hidden");
     workspace.classList.add("show");
@@ -1136,6 +1913,12 @@ HTML = r"""
   }
 
   function renderQuestion() {
+    hideSorobanHint();
+
+    if (!questions[index]) {
+      questions[index] = makeQuestionForIndex(index, currentMode);
+    }
+
     const q = questions[index];
 
     if (!isValidQuestion(q)) {
@@ -1146,6 +1929,11 @@ HTML = r"""
 
     $("#qCount").textContent = `${index + 1} / 20`;
     $("#score").textContent = `正解 ${score}`;
+
+    $("#weakBadge").classList.toggle(
+      "show",
+      Boolean(q.isWeakness)
+    );
     bar.style.width = `${(index / 20) * 100}%`;
 
     equation.textContent = `${q.a} ${q.op} ${q.b} ＝ ?`;
@@ -1156,7 +1944,7 @@ HTML = r"""
   }
 
   function submitAnswer() {
-    if (locked || index >= questions.length) return;
+    if (locked || index >= 20) return;
 
     const raw = String(answerInput.value || "").trim();
 
@@ -1173,6 +1961,12 @@ HTML = r"""
 
     const q = questions[index];
     const ok = user === q.answer;
+
+    recordAnswer(currentMode, q, ok);
+
+    if (q.isWeakness && ok) {
+      sessionWeakCorrect += 1;
+    }
 
     if (ok) {
       score += 1;
@@ -1199,7 +1993,7 @@ HTML = r"""
     setTimeout(() => {
       index += 1;
 
-      if (index >= questions.length) {
+      if (index >= 20) {
         finish(false);
       } else {
         renderQuestion();
@@ -1229,6 +2023,7 @@ HTML = r"""
   function finish(timeup) {
     stopTimer();
     stopBgm();
+    hideSorobanHint();
 
     if (timeup && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -1237,7 +2032,11 @@ HTML = r"""
     locked = true;
 
     if (timeup) {
-      for (let i = index; i < questions.length; i += 1) {
+      for (let i = index; i < 20; i += 1) {
+        if (!questions[i]) {
+          questions[i] = makeQuestionForIndex(i, currentMode);
+        }
+
         answers.push({
           q: questions[i],
           user: null,
@@ -1251,9 +2050,36 @@ HTML = r"""
 
     $("#resultScore").textContent = `${score} / 20`;
 
-    $("#resultNote").textContent = timeup
-      ? `10分になりました。正解は${score}問です。`
-      : `20問終了。残り時間は${timerEl.textContent}、正解は${score}問です。`;
+    const weakSummary =
+      sessionWeakAsked > 0
+        ? `苦手克服 ${sessionWeakCorrect}/${sessionWeakAsked}問。`
+        : "今回は苦手克服問題なし。";
+
+    const canPromote =
+      !timeup &&
+      Boolean(NEXT_MODE[currentMode]) &&
+      shouldLevelUp(currentMode, score);
+
+    promotedMode = canPromote
+      ? NEXT_MODE[currentMode]
+      : null;
+
+    let resultMessage = timeup
+      ? `10分になりました。正解は${score}問です。${weakSummary}`
+      : `20問終了。残り時間は${timerEl.textContent}、正解は${score}問です。${weakSummary}`;
+
+    if (promotedMode) {
+      resultMessage +=
+        ` 苦手を克服できたので、次は「${modeInfo[promotedMode].title}」へレベルアップします。`;
+
+      $("#retryBtn").textContent =
+        "レベルアップして次へ";
+    } else if (!timeup && sessionWeakAsked > 0) {
+      resultMessage +=
+        " 苦手は次回も優先して出題します。";
+    }
+
+    $("#resultNote").textContent = resultMessage;
 
     const review = $("#review");
     review.innerHTML = "";
@@ -1261,8 +2087,12 @@ HTML = r"""
     answers.forEach((entry, i) => {
       const div = document.createElement("div");
       div.className = `review-item ${entry.ok ? "correct" : "wrong"}`;
+      const weakMark = entry.q.isWeakness
+        ? "【苦手克服】"
+        : "";
+
       div.textContent =
-        `${i + 1}. ${entry.q.a} ${entry.q.op} ${entry.q.b}` +
+        `${i + 1}. ${weakMark}${entry.q.a} ${entry.q.op} ${entry.q.b}` +
         ` ＝ ${entry.q.answer}｜` +
         (entry.user === null ? "未回答" : `回答 ${entry.user}`);
       review.appendChild(div);
@@ -1272,6 +2102,7 @@ HTML = r"""
   function goMenu() {
     stopTimer();
     stopBgm();
+    hideSorobanHint();
 
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -1286,6 +2117,18 @@ HTML = r"""
     correctStreak = 0;
     updateStreakFrame(0);
   }
+
+  hintBtn.addEventListener("click", () => {
+    runSorobanHint();
+  });
+
+  $("#hintReplayBtn").addEventListener("click", () => {
+    runSorobanHint();
+  });
+
+  $("#hintCloseBtn").addEventListener("click", () => {
+    hideSorobanHint();
+  });
 
   $("#keypad").addEventListener("pointerup", (event) => {
     const button = event.target.closest("button");
@@ -1331,7 +2174,14 @@ HTML = r"""
   $("#menuBtn").addEventListener("click", goMenu);
 
   $("#retryBtn").addEventListener("click", () => {
-    if (currentMode) startMode(currentMode);
+    if (promotedMode) {
+      startMode(promotedMode);
+      return;
+    }
+
+    if (currentMode) {
+      startMode(currentMode);
+    }
   });
 
   updateBgmButton();
