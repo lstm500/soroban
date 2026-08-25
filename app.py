@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V31-BGM-FIXED-4-2026-08-25
+# VERSION: CLEAN-V32-PERFECT-SCORE-VOICE-2026-08-25
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V31-BGM-FIXED-4"
+APP_VERSION = "CLEAN-V32-PERFECT-SCORE-VOICE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3680,7 +3680,7 @@ HTML = r"""
     }, 2200);
   }
 
-  function speakFinalScore(points) {
+  function speakFinalScore(scoreInfo) {
     if (
       !("speechSynthesis" in window) ||
       typeof SpeechSynthesisUtterance === "undefined"
@@ -3690,22 +3690,91 @@ HTML = r"""
 
     window.speechSynthesis.cancel();
 
-    const utterance =
-      new SpeechSynthesisUtterance(
-        `得点は、${points}点！`
-      );
+    const points = scoreInfo.finalScore;
 
-    utterance.lang = "ja-JP";
-    utterance.rate = 1.22;
-    utterance.pitch = 1.62;
-    utterance.volume = 1.0;
+    let openingMessage = null;
 
-    const voice = getJapaneseVoice();
-    if (voice) {
-      utterance.voice = voice;
+    if (
+      scoreInfo.correctCount === TOTAL_QUESTIONS &&
+      scoreInfo.wrongCount === 0
+    ) {
+      openingMessage =
+        "お見事！パーフェクト！";
+    } else if (
+      scoreInfo.correctCount === TOTAL_QUESTIONS - 1 &&
+      scoreInfo.wrongCount === 1
+    ) {
+      openingMessage =
+        "惜しい！もう少しでパーフェクト！";
     }
 
-    window.speechSynthesis.speak(utterance);
+    const speakPoints = () => {
+      const scoreUtterance =
+        new SpeechSynthesisUtterance(
+          `得点は、${points}点！`
+        );
+
+      scoreUtterance.lang = "ja-JP";
+      scoreUtterance.rate = 1.22;
+      scoreUtterance.pitch = 1.62;
+      scoreUtterance.volume = 1.0;
+
+      const voice = getJapaneseVoice();
+      if (voice) {
+        scoreUtterance.voice = voice;
+      }
+
+      window.speechSynthesis.speak(
+        scoreUtterance
+      );
+    };
+
+    // パーフェクト／1問ミスのときは、
+    // 先に専用メッセージを読み上げてから得点を読む。
+    if (openingMessage) {
+      const openingUtterance =
+        new SpeechSynthesisUtterance(
+          openingMessage
+        );
+
+      openingUtterance.lang = "ja-JP";
+      openingUtterance.rate = 1.18;
+      openingUtterance.pitch = 1.55;
+      openingUtterance.volume = 1.0;
+
+      const voice = getJapaneseVoice();
+      if (voice) {
+        openingUtterance.voice = voice;
+      }
+
+      let continued = false;
+
+      const continueToScore = () => {
+        if (continued) {
+          return;
+        }
+
+        continued = true;
+
+        setTimeout(() => {
+          speakPoints();
+        }, 220);
+      };
+
+      openingUtterance.onend =
+        continueToScore;
+
+      openingUtterance.onerror =
+        continueToScore;
+
+      window.speechSynthesis.speak(
+        openingUtterance
+      );
+
+      return;
+    }
+
+    speakPoints();
   }
 
   function runScoreRoulette(scoreInfo) {
@@ -3788,7 +3857,7 @@ HTML = r"""
 
       setTimeout(() => {
         if (token === scoreAnimationToken) {
-          speakFinalScore(finalPoints);
+          speakFinalScore(scoreInfo);
         }
       }, 380);
 
