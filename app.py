@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V34-5MIN-CHALLENGE-COUNT-2026-08-26
+# VERSION: CLEAN-V35-SEPARATE-MUL-DIV-2026-08-26
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V34-5MIN-CHALLENGE-COUNT"
+APP_VERSION = "CLEAN-V35-SEPARATE-MUL-DIV"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1120,30 +1120,57 @@ HTML = r"""
     </article>
   </div>
 
-  <div class="level-title">中級モード</div>
+  <div class="level-title">中級モード｜掛け算のみ</div>
   <div class="mode-grid">
     <article class="mode-card">
-      <div class="mode-no">INTERMEDIATE 1</div>
-      <div class="mode-name">1桁の掛け算・割り算</div>
-      <div class="mode-desc">1〜9同士の掛け算と、整数になる割り算です。</div>
+      <div class="mode-no">INTERMEDIATE MUL 1</div>
+      <div class="mode-name">1桁×1桁</div>
+      <div class="mode-desc">1〜9同士の掛け算のみ12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
-      <button type="button" class="primary start-mode" data-mode="m1">はじめる</button>
+      <button type="button" class="primary start-mode" data-mode="mm1">はじめる</button>
     </article>
 
     <article class="mode-card">
-      <div class="mode-no">INTERMEDIATE 2</div>
-      <div class="mode-name">2桁×1桁 / 3桁÷1桁</div>
-      <div class="mode-desc">2桁×1桁の掛け算と、3桁÷1桁の整数解です。</div>
+      <div class="mode-no">INTERMEDIATE MUL 2</div>
+      <div class="mode-name">2桁×1桁</div>
+      <div class="mode-desc">2桁×1桁の掛け算のみ12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
-      <button type="button" class="primary start-mode" data-mode="m2">はじめる</button>
+      <button type="button" class="primary start-mode" data-mode="mm2">はじめる</button>
     </article>
 
     <article class="mode-card">
-      <div class="mode-no">INTERMEDIATE 3</div>
-      <div class="mode-name">2桁×2桁 / 3桁÷2桁</div>
-      <div class="mode-desc">2桁同士の掛け算と、3桁÷2桁の整数解です。</div>
+      <div class="mode-no">INTERMEDIATE MUL 3</div>
+      <div class="mode-name">2桁×2桁</div>
+      <div class="mode-desc">2桁同士の掛け算のみ12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
-      <button type="button" class="primary start-mode" data-mode="m3">はじめる</button>
+      <button type="button" class="primary start-mode" data-mode="mm3">はじめる</button>
+    </article>
+  </div>
+
+  <div class="level-title">中級モード｜割り算のみ</div>
+  <div class="mode-grid">
+    <article class="mode-card">
+      <div class="mode-no">INTERMEDIATE DIV 1</div>
+      <div class="mode-name">1〜81 ÷ 1桁</div>
+      <div class="mode-desc">1〜81を1桁で割り、答えが整数になる割り算のみ12問です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
+      <button type="button" class="primary start-mode" data-mode="md1">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">INTERMEDIATE DIV 2</div>
+      <div class="mode-name">3桁÷1桁</div>
+      <div class="mode-desc">100〜999を1桁で割り、答えが整数になる割り算のみ12問です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
+      <button type="button" class="primary start-mode" data-mode="md2">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">INTERMEDIATE DIV 3</div>
+      <div class="mode-name">3桁÷2桁</div>
+      <div class="mode-desc">100〜999を2桁で割り、答えが整数になる割り算のみ12問です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip">5分</span></div>
+      <button type="button" class="primary start-mode" data-mode="md3">はじめる</button>
     </article>
   </div>
 
@@ -1353,9 +1380,12 @@ HTML = r"""
     bs1: { title: "初級・引き算1｜1桁の引き算" },
     bs2: { title: "初級・引き算2｜2桁の引き算" },
     bs3: { title: "初級・引き算3｜3桁の引き算" },
-    m1: { title: "中級1｜1桁の掛け算・割り算" },
-    m2: { title: "中級2｜2桁×1桁 / 3桁÷1桁" },
-    m3: { title: "中級3｜2桁×2桁 / 3桁÷2桁" },
+    mm1: { title: "中級・掛け算1｜1桁×1桁" },
+    mm2: { title: "中級・掛け算2｜2桁×1桁" },
+    mm3: { title: "中級・掛け算3｜2桁×2桁" },
+    md1: { title: "中級・割り算1｜1〜81÷1桁" },
+    md2: { title: "中級・割り算2｜3桁÷1桁" },
+    md3: { title: "中級・割り算3｜3桁÷2桁" },
     a1: { title: "上級1｜4桁の足し算・引き算" },
     a2: { title: "上級2｜3桁×2桁 / 4桁÷2桁" },
     a3: { title: "上級3｜3桁×3桁 / 5桁÷3桁" }
@@ -1391,8 +1421,10 @@ HTML = r"""
     ba2: "ba3",
     bs1: "bs2",
     bs2: "bs3",
-    m1: "m2",
-    m2: "m3",
+    mm1: "mm2",
+    mm2: "mm3",
+    md1: "md2",
+    md2: "md3",
     a2: "a3"
   });
 
@@ -2629,22 +2661,28 @@ HTML = r"""
     if (mode === "bs2") return makeSubtractionOnly(10, 99);
     if (mode === "bs3") return makeSubtractionOnly(100, 999);
 
-    if (mode === "m1") {
-      return coin()
-        ? makeMul(1, 9, 1, 9)
-        : makeExactDivision(1, 81, 1, 9);
+    if (mode === "mm1") {
+      return makeMul(1, 9, 1, 9);
     }
 
-    if (mode === "m2") {
-      return coin()
-        ? makeMul(10, 99, 1, 9)
-        : makeExactDivision(100, 999, 1, 9);
+    if (mode === "mm2") {
+      return makeMul(10, 99, 1, 9);
     }
 
-    if (mode === "m3") {
-      return coin()
-        ? makeMul(10, 99, 10, 99)
-        : makeExactDivision(100, 999, 10, 99);
+    if (mode === "mm3") {
+      return makeMul(10, 99, 10, 99);
+    }
+
+    if (mode === "md1") {
+      return makeExactDivision(1, 81, 1, 9);
+    }
+
+    if (mode === "md2") {
+      return makeExactDivision(100, 999, 1, 9);
+    }
+
+    if (mode === "md3") {
+      return makeExactDivision(100, 999, 10, 99);
     }
 
     if (mode === "a1") return makeAddSub(1000, 9999);
