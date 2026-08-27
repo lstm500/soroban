@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V37-PRACTICE-TEXTINPUT-FIX-2026-08-27
+# VERSION: CLEAN-V38-PRACTICE-CHALLENGE-UI-2026-08-28
 
 import hashlib
 import io
@@ -18,7 +18,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V37-PRACTICE-TEXTINPUT-FIX"
+APP_VERSION = "CLEAN-V38-PRACTICE-CHALLENGE-UI"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -274,10 +274,12 @@ def parse_transcribed_integer(value):
 
 def reset_practice_session(mode):
     st.session_state.practice_active_mode = mode
+    st.session_state.practice_screen = "game"
     st.session_state.practice_index = 0
     st.session_state.practice_question = make_practice_question(mode)
     st.session_state.practice_feedback = None
     st.session_state.practice_transcript = ""
+    st.session_state.practice_manual_buffer = ""
     st.session_state.practice_answer_serial = (
         st.session_state.get("practice_answer_serial", 0) + 1
     )
@@ -292,46 +294,479 @@ def next_practice_question():
         st.session_state.practice_finished = True
         st.session_state.practice_feedback = None
         st.session_state.practice_transcript = ""
+        st.session_state.practice_manual_buffer = ""
         return
 
     st.session_state.practice_index = next_index
     st.session_state.practice_question = make_practice_question(mode)
     st.session_state.practice_feedback = None
     st.session_state.practice_transcript = ""
+    st.session_state.practice_manual_buffer = ""
     st.session_state.practice_answer_serial += 1
 
 
 def retry_practice_voice():
     st.session_state.practice_feedback = None
     st.session_state.practice_transcript = ""
+    st.session_state.practice_manual_buffer = ""
     st.session_state.practice_answer_serial += 1
 
 
+def practice_go_menu():
+    st.session_state.practice_screen = "menu"
+    st.session_state.practice_feedback = None
+    st.session_state.practice_transcript = ""
+    st.session_state.practice_manual_buffer = ""
+
+
+def practice_submit_manual(question):
+    raw = st.session_state.get(
+        "practice_manual_buffer",
+        "",
+    )
+
+    parsed = parse_transcribed_integer(raw)
+
+    if parsed is None:
+        st.session_state.practice_feedback = {
+            "kind": "retry",
+            "message": "数字を入力してください。",
+        }
+        return
+
+    if parsed == question["answer"]:
+        st.session_state.practice_feedback = {
+            "kind": "correct",
+            "message": "お見事！",
+        }
+    else:
+        st.session_state.practice_feedback = {
+            "kind": "wrong",
+            "message": (
+                f"残念！ 答えは {question['answer']} です。"
+            ),
+        }
+
+
+def practice_keypad_press(value):
+    current = str(
+        st.session_state.get(
+            "practice_manual_buffer",
+            "",
+        )
+    )
+
+    if value == "clear":
+        st.session_state.practice_manual_buffer = ""
+        return
+
+    if value == "backspace":
+        st.session_state.practice_manual_buffer = current[:-1]
+        return
+
+    if len(current) >= 10:
+        return
+
+    digit = str(value)
+    st.session_state.practice_manual_buffer = (
+        digit
+        if current == "0"
+        else current + digit
+    )
+
+
 def render_practice_mode():
-    st.markdown("## 練習モード")
-    st.caption(
-        "時間制限なし・得点なし。ランキングや総チャレンジ回数にも加算しません。"
+    st.markdown(
+        """
+        <style>
+        /* 練習モードをチャレンジモードと近い外観にする */
+        [data-testid="stAppViewContainer"] {
+            background: #f7f5ef;
+            color: #24231f;
+        }
+
+        [data-testid="stHeader"] {
+            background: rgba(247,245,239,.94);
+        }
+
+        [data-testid="stMainBlockContainer"] {
+            max-width: 1180px;
+            padding-top: 1rem;
+        }
+
+        .practice-head {
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-end;
+            gap:16px;
+            margin:4px 0 18px;
+        }
+
+        .practice-lead {
+            max-width:820px;
+            color:#66635d;
+            font-size:14px;
+            line-height:1.7;
+        }
+
+        .practice-badge {
+            white-space:nowrap;
+            border:1px solid #d8d2c6;
+            border-radius:999px;
+            padding:8px 12px;
+            color:#24231f;
+            font-size:13px;
+            font-weight:850;
+        }
+
+        .practice-level-title {
+            margin:22px 0 8px;
+            color:#24231f;
+            font-size:20px;
+            font-weight:900;
+        }
+
+        /* モードカード */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.practice-mode-card-marker) {
+            min-height:196px;
+            padding:2px;
+            border:1px solid #ddd7ca !important;
+            border-radius:18px !important;
+            background:#fff !important;
+            box-shadow:none !important;
+        }
+
+        .practice-mode-no {
+            color:#817b70;
+            font-size:11px;
+            font-weight:900;
+            letter-spacing:.08em;
+        }
+
+        .practice-mode-name {
+            margin:5px 0 6px;
+            color:#24231f;
+            font-size:18px;
+            font-weight:900;
+        }
+
+        .practice-mode-desc {
+            min-height:42px;
+            color:#66635d;
+            font-size:12px;
+            line-height:1.55;
+        }
+
+        .practice-chip {
+            display:inline-block;
+            margin:8px 4px 7px 0;
+            padding:5px 8px;
+            border-radius:999px;
+            background:#f2eee5;
+            color:#4e4942;
+            font-size:11px;
+            font-weight:800;
+        }
+
+        /* Streamlit buttonをチャレンジモード風に */
+        .stButton > button,
+        .stFormSubmitButton > button {
+            min-height:46px;
+            border-radius:12px;
+            border:0;
+            font-weight:800;
+        }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.practice-mode-card-marker)
+        .stButton > button {
+            width:100%;
+            background:#315f86;
+            color:#fff;
+        }
+
+        /* ステータスバー */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.practice-status-marker) {
+            padding:2px;
+            border:1px solid #ddd7ca !important;
+            border-radius:18px !important;
+            background:#fff !important;
+        }
+
+        .practice-status-title {
+            color:#24231f;
+            font-size:16px;
+            font-weight:900;
+        }
+
+        .practice-status-sub {
+            margin-top:3px;
+            color:#706c64;
+            font-size:12px;
+        }
+
+        .practice-status-pill {
+            display:inline-block;
+            padding:8px 11px;
+            border-radius:999px;
+            background:#f2eee5;
+            color:#4e4942;
+            font-size:12px;
+            font-weight:850;
+        }
+
+        /* 問題カード */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.practice-question-marker) {
+            margin-top:14px;
+            padding:8px 10px 12px;
+            border:2px solid #ddd7ca !important;
+            border-radius:22px !important;
+            background:#fff !important;
+            box-shadow:none !important;
+        }
+
+        .practice-qtop {
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            color:#706c64;
+            font-size:13px;
+            font-weight:850;
+        }
+
+        .practice-equation {
+            margin:28px 0 20px;
+            text-align:center;
+            color:#24231f;
+            font-size:clamp(42px,7vw,68px);
+            font-weight:950;
+            letter-spacing:.03em;
+        }
+
+        .practice-voice-label {
+            margin:4px 0 4px;
+            text-align:center;
+            color:#706c64;
+            font-size:12px;
+            font-weight:800;
+        }
+
+        [data-testid="stAudioInput"] {
+            max-width:430px;
+            margin:0 auto;
+        }
+
+        .practice-answer-display {
+            width:min(280px,100%);
+            min-height:62px;
+            margin:12px auto 8px;
+            padding:10px 12px;
+            border:2px solid #c8c1b4;
+            border-radius:14px;
+            background:#fff;
+            color:#24231f;
+            text-align:center;
+            font-size:30px;
+            font-weight:900;
+        }
+
+        .practice-keypad-label {
+            margin:8px 0 6px;
+            text-align:center;
+            color:#706c64;
+            font-size:13px;
+            font-weight:850;
+        }
+
+        /* 問題カード内の数字ボタンをテンキー風に */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.practice-question-marker)
+        .stButton > button {
+            width:100%;
+            min-height:58px;
+            border:1px solid #d4cec1;
+            background:#f3efe7;
+            color:#24231f;
+            font-size:22px;
+            font-weight:900;
+        }
+
+        .practice-feedback {
+            min-height:36px;
+            margin:12px 0 4px;
+            text-align:center;
+            font-size:20px;
+            font-weight:900;
+        }
+
+        .practice-feedback.correct { color:#2f6a43; }
+        .practice-feedback.wrong { color:#a14428; }
+        .practice-feedback.retry { color:#846b20; }
+
+        .practice-finish {
+            padding:26px 18px;
+            border:2px solid #ddd7ca;
+            border-radius:22px;
+            background:#fff;
+            text-align:center;
+        }
+
+        .practice-finish-title {
+            color:#24231f;
+            font-size:28px;
+            font-weight:950;
+        }
+
+        .practice-finish-sub {
+            margin-top:8px;
+            color:#706c64;
+            font-size:13px;
+        }
+
+        @media (max-width: 700px) {
+            .practice-head {
+                align-items:flex-start;
+                flex-direction:column;
+            }
+
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.practice-mode-card-marker) {
+                min-height:0;
+            }
+
+            .practice-equation {
+                margin-top:22px;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
 
-    mode_ids = list(PRACTICE_MODES.keys())
+    if "practice_screen" not in st.session_state:
+        st.session_state.practice_screen = "menu"
 
-    selected_mode = st.selectbox(
-        "練習するレベル",
-        options=mode_ids,
-        format_func=lambda x: PRACTICE_MODES[x],
-        key="practice_mode_select",
+    # -------------------------------
+    # モード選択画面
+    # -------------------------------
+    if st.session_state.practice_screen != "game":
+        st.markdown(
+            """
+            <div class="practice-head">
+              <div class="practice-lead">
+                時間制限なし・得点なしの練習モードです。
+                ランキングや総チャレンジ回数には加算しません。
+              </div>
+              <div class="practice-badge">12問 / 時間制限なし</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        mode_groups = [
+            (
+                "初級モード｜足し算のみ",
+                [
+                    ("ba1", "BEGINNER ADD 1", "1桁の足し算", "1〜9の足し算のみ"),
+                    ("ba2", "BEGINNER ADD 2", "2桁の足し算", "10〜99の足し算のみ"),
+                    ("ba3", "BEGINNER ADD 3", "3桁の足し算", "100〜999の足し算のみ"),
+                ],
+            ),
+            (
+                "初級モード｜引き算のみ",
+                [
+                    ("bs1", "BEGINNER SUB 1", "1桁の引き算", "1〜9の引き算のみ"),
+                    ("bs2", "BEGINNER SUB 2", "2桁の引き算", "10〜99の引き算のみ"),
+                    ("bs3", "BEGINNER SUB 3", "3桁の引き算", "100〜999の引き算のみ"),
+                ],
+            ),
+            (
+                "中級モード｜掛け算のみ",
+                [
+                    ("mm1", "INTERMEDIATE MUL 1", "1桁×1桁", "1〜9同士の掛け算"),
+                    ("mm2", "INTERMEDIATE MUL 2", "2桁×1桁", "2桁×1桁の掛け算"),
+                    ("mm3", "INTERMEDIATE MUL 3", "2桁×2桁", "2桁同士の掛け算"),
+                ],
+            ),
+            (
+                "中級モード｜割り算のみ",
+                [
+                    ("md1", "INTERMEDIATE DIV 1", "1〜81÷1桁", "整数になる割り算"),
+                    ("md2", "INTERMEDIATE DIV 2", "3桁÷1桁", "整数になる割り算"),
+                    ("md3", "INTERMEDIATE DIV 3", "3桁÷2桁", "整数になる割り算"),
+                ],
+            ),
+            (
+                "上級モード",
+                [
+                    ("a1", "ADVANCED 1", "4桁の足し算・引き算", "4桁の加減算"),
+                    ("a2", "ADVANCED 2", "3桁×2桁 / 4桁÷2桁", "掛け算・整数の割り算"),
+                    ("a3", "ADVANCED 3", "3桁×3桁 / 5桁÷3桁", "掛け算・整数の割り算"),
+                ],
+            ),
+        ]
+
+        for group_title, modes in mode_groups:
+            st.markdown(
+                f'<div class="practice-level-title">{group_title}</div>',
+                unsafe_allow_html=True,
+            )
+
+            cols = st.columns(3)
+
+            for col, (mode, no, name, desc) in zip(cols, modes):
+                with col:
+                    with st.container(border=True):
+                        st.markdown(
+                            '<div class="practice-mode-card-marker"></div>',
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(
+                            f"""
+                            <div class="practice-mode-no">{no}</div>
+                            <div class="practice-mode-name">{name}</div>
+                            <div class="practice-mode-desc">{desc}</div>
+                            <span class="practice-chip">12問</span>
+                            <span class="practice-chip">時間制限なし</span>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+
+                        if st.button(
+                            "はじめる",
+                            key=f"practice_start_{mode}",
+                            use_container_width=True,
+                        ):
+                            reset_practice_session(mode)
+                            st.rerun()
+
+        return
+
+    # -------------------------------
+    # ゲーム画面
+    # -------------------------------
+    selected_mode = st.session_state.get(
+        "practice_active_mode",
+        "ba1",
     )
 
-    if (
-        st.session_state.get("practice_active_mode")
-        != selected_mode
-    ):
+    if selected_mode not in PRACTICE_MODES:
+        selected_mode = "ba1"
         reset_practice_session(selected_mode)
 
+    # 終了画面
     if st.session_state.get("practice_finished", False):
-        st.success("12問の練習が終わりました。得点はつきません。")
+        st.markdown(
+            """
+            <div class="practice-finish">
+              <div class="practice-finish-title">12問の練習が終わりました</div>
+              <div class="practice-finish-sub">
+                練習モードなので、得点・ランキング・総チャレンジ回数には反映しません。
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         col1, col2 = st.columns(2)
+
         with col1:
             if st.button(
                 "同じモードをもう12問",
@@ -342,192 +777,285 @@ def render_practice_mode():
                 st.rerun()
 
         with col2:
-            st.caption(
-                "上の「練習するレベル」を変えると別のモードを始められます。"
-            )
+            if st.button(
+                "モード選択へ",
+                use_container_width=True,
+            ):
+                practice_go_menu()
+                st.rerun()
+
         return
 
     question = st.session_state.practice_question
     index = st.session_state.practice_index
 
-    st.caption(
-        f"問題 {index + 1} / {PRACTICE_TOTAL_QUESTIONS}"
-    )
-
-    st.markdown(
-        f"""
-        <div style="
-            padding:28px 16px;
-            margin:10px 0 18px;
-            border:1px solid #ddd7ca;
-            border-radius:18px;
-            background:white;
-            text-align:center;
-            font-size:clamp(38px,7vw,72px);
-            font-weight:900;
-        ">
-          {question['a']} {question['op']} {question['b']} ＝ ?
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("#### 音声で答える")
-    st.caption(
-        "ぶらり旅と同じ方式です。マイクを押して答えを話し、もう一度押して録音を止めてください。"
-    )
-
-    voice_available = bool(
-        st.secrets.get("OPENAI_API_KEY", "")
-    )
-
-    if not voice_available:
-        st.warning(
-            "音声入力を使うには Streamlit Secrets に "
-            "OPENAI_API_KEY を追加してください。"
+    # Status bar
+    with st.container(border=True):
+        st.markdown(
+            '<div class="practice-status-marker"></div>',
+            unsafe_allow_html=True,
         )
 
-    answer_audio = st.audio_input(
-        "マイクを押して答えてください",
-        sample_rate=16000,
-        key=(
-            f"practice_voice_{selected_mode}_"
-            f"{index}_{st.session_state.practice_answer_serial}"
-        ),
-        disabled=not voice_available,
-    )
-
-    if answer_audio is not None and voice_available:
-        digest = audio_digest(answer_audio)
-        digest_key = (
-            f"practice_digest_{selected_mode}_{index}_"
-            f"{st.session_state.practice_answer_serial}"
+        c1, c2, c3 = st.columns(
+            [3.8, 1.25, 1.15],
+            vertical_alignment="center",
         )
 
-        if (
-            digest
-            and st.session_state.get(digest_key)
-            != digest
-        ):
-            st.session_state[digest_key] = digest
+        with c1:
+            st.markdown(
+                f"""
+                <div class="practice-status-title">
+                  {PRACTICE_MODES[selected_mode]}
+                </div>
+                <div class="practice-status-sub">
+                  12問・時間制限なし・得点なし
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-            try:
-                with st.spinner("声を聞いています…"):
-                    transcript = transcribe_practice_answer(
-                        answer_audio,
-                        question,
+        with c2:
+            st.markdown(
+                '<div class="practice-status-pill">時間制限なし</div>',
+                unsafe_allow_html=True,
+            )
+
+        with c3:
+            if st.button(
+                "終了",
+                key="practice_quit",
+                use_container_width=True,
+            ):
+                practice_go_menu()
+                st.rerun()
+
+    # Question card
+    with st.container(border=True):
+        st.markdown(
+            '<div class="practice-question-marker"></div>',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            f"""
+            <div class="practice-qtop">
+              <span>問題 {index + 1} / {PRACTICE_TOTAL_QUESTIONS}</span>
+              <span>練習モード</span>
+            </div>
+            <div class="practice-equation">
+              {question['a']} {question['op']} {question['b']} ＝ ?
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        voice_available = bool(
+            st.secrets.get("OPENAI_API_KEY", "")
+        )
+
+        st.markdown(
+            '<div class="practice-voice-label">音声で答える</div>',
+            unsafe_allow_html=True,
+        )
+
+        if not voice_available:
+            st.warning(
+                "音声入力を使うには Streamlit Secrets に "
+                "OPENAI_API_KEY を追加してください。"
+            )
+
+        answer_audio = st.audio_input(
+            "マイクを押して答えてください",
+            sample_rate=16000,
+            key=(
+                f"practice_voice_{selected_mode}_"
+                f"{index}_{st.session_state.practice_answer_serial}"
+            ),
+            disabled=not voice_available,
+            label_visibility="collapsed",
+        )
+
+        if answer_audio is not None and voice_available:
+            digest = audio_digest(answer_audio)
+            digest_key = (
+                f"practice_digest_{selected_mode}_{index}_"
+                f"{st.session_state.practice_answer_serial}"
+            )
+
+            if (
+                digest
+                and st.session_state.get(digest_key)
+                != digest
+            ):
+                st.session_state[digest_key] = digest
+
+                try:
+                    with st.spinner("声を聞いています…"):
+                        transcript = transcribe_practice_answer(
+                            answer_audio,
+                            question,
+                        )
+
+                    parsed = parse_transcribed_integer(
+                        transcript
                     )
 
-                parsed = parse_transcribed_integer(
-                    transcript
-                )
+                    st.session_state.practice_transcript = transcript
 
-                st.session_state.practice_transcript = transcript
+                    if parsed is None:
+                        st.session_state.practice_feedback = {
+                            "kind": "retry",
+                            "message": (
+                                f"「{transcript}」と聞こえました。"
+                                "数字として認識できませんでした。"
+                            ),
+                        }
+                    elif parsed == question["answer"]:
+                        st.session_state.practice_feedback = {
+                            "kind": "correct",
+                            "message": "お見事！",
+                        }
+                    else:
+                        st.session_state.practice_feedback = {
+                            "kind": "wrong",
+                            "message": (
+                                f"残念！ 「{transcript}」→ {parsed}。"
+                                f" 答えは {question['answer']} です。"
+                            ),
+                        }
 
-                if parsed is None:
+                    st.rerun()
+
+                except Exception:
                     st.session_state.practice_feedback = {
                         "kind": "retry",
                         "message": (
-                            f"「{transcript}」と聞こえました。"
-                            "数字として認識できなかったので、もう一度お願いします。"
+                            "音声を認識できませんでした。"
+                            "もう一度お試しください。"
                         ),
                     }
-                elif parsed == question["answer"]:
-                    st.session_state.practice_feedback = {
-                        "kind": "correct",
-                        "message": f"お見事！　答えは {question['answer']} です。",
-                    }
-                else:
-                    st.session_state.practice_feedback = {
-                        "kind": "wrong",
-                        "message": (
-                            f"残念！ 「{transcript}」→ {parsed} と認識しました。"
-                            f" 正しい答えは {question['answer']} です。"
-                        ),
-                    }
+                    st.rerun()
 
-                st.rerun()
+        # Manual answer display and keypad
+        manual_value = str(
+            st.session_state.get(
+                "practice_manual_buffer",
+                "",
+            )
+        )
 
-            except Exception as exc:
-                st.session_state.practice_feedback = {
-                    "kind": "retry",
-                    "message": "音声を認識できませんでした。もう一度お試しください。",
-                }
-                st.error(str(exc))
+        st.markdown(
+            f"""
+            <div class="practice-answer-display">
+              {manual_value if manual_value else "&nbsp;"}
+            </div>
+            <div class="practice-keypad-label">
+              画面の数字でも答えられます
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    feedback = st.session_state.get(
-        "practice_feedback"
-    )
+        keypad_rows = [
+            ["7", "8", "9"],
+            ["4", "5", "6"],
+            ["1", "2", "3"],
+        ]
 
-    if feedback:
-        kind = feedback.get("kind")
-        message = feedback.get("message", "")
+        for row_i, row in enumerate(keypad_rows):
+            cols = st.columns(3)
+            for col, digit in zip(cols, row):
+                with col:
+                    if st.button(
+                        digit,
+                        key=f"practice_key_{index}_{row_i}_{digit}",
+                        use_container_width=True,
+                    ):
+                        practice_keypad_press(digit)
+                        st.rerun()
 
-        if kind == "correct":
-            st.success(message)
-        elif kind == "wrong":
-            st.error(message)
-        else:
-            st.warning(message)
+        cols = st.columns(3)
 
-        if kind == "correct":
+        with cols[0]:
             if st.button(
-                "次の問題",
-                type="primary",
+                "クリア",
+                key=f"practice_clear_{index}",
                 use_container_width=True,
             ):
-                next_practice_question()
+                practice_keypad_press("clear")
                 st.rerun()
-        else:
-            col1, col2 = st.columns(2)
-            with col1:
+
+        with cols[1]:
+            if st.button(
+                "0",
+                key=f"practice_key_{index}_0",
+                use_container_width=True,
+            ):
+                practice_keypad_press("0")
+                st.rerun()
+
+        with cols[2]:
+            if st.button(
+                "← 1つ消す",
+                key=f"practice_back_{index}",
+                use_container_width=True,
+            ):
+                practice_keypad_press("backspace")
+                st.rerun()
+
+        if st.button(
+            "答える",
+            type="primary",
+            key=f"practice_submit_{index}",
+            use_container_width=True,
+        ):
+            practice_submit_manual(question)
+            st.rerun()
+
+        feedback = st.session_state.get(
+            "practice_feedback"
+        )
+
+        if feedback:
+            kind = feedback.get("kind", "retry")
+            message = feedback.get("message", "")
+
+            st.markdown(
+                f'<div class="practice-feedback {kind}">{message}</div>',
+                unsafe_allow_html=True,
+            )
+
+            if kind == "correct":
                 if st.button(
-                    "もう一度、音声で答える",
+                    "次の問題",
                     type="primary",
-                    use_container_width=True,
-                ):
-                    retry_practice_voice()
-                    st.rerun()
-            with col2:
-                if st.button(
-                    "次の問題へ",
+                    key=f"practice_next_{index}",
                     use_container_width=True,
                 ):
                     next_practice_question()
                     st.rerun()
-
-    with st.expander("数字を手で入力する"):
-        with st.form(
-            key=f"practice_manual_form_{selected_mode}_{index}"
-        ):
-            manual = st.text_input(
-                "答え",
-                placeholder="数字を入力",
-            )
-            submitted = st.form_submit_button(
-                "答える",
-                use_container_width=True,
-            )
-
-        if submitted:
-            parsed = parse_transcribed_integer(manual)
-
-            if parsed is None:
-                st.warning("数字を入力してください。")
-            elif parsed == question["answer"]:
-                st.session_state.practice_feedback = {
-                    "kind": "correct",
-                    "message": f"お見事！　答えは {question['answer']} です。",
-                }
-                st.rerun()
             else:
-                st.session_state.practice_feedback = {
-                    "kind": "wrong",
-                    "message": (
-                        f"残念！ 正しい答えは {question['answer']} です。"
-                    ),
-                }
-                st.rerun()
+                c1, c2 = st.columns(2)
+
+                with c1:
+                    if st.button(
+                        "もう一度",
+                        key=f"practice_retry_{index}",
+                        use_container_width=True,
+                    ):
+                        retry_practice_voice()
+                        st.rerun()
+
+                with c2:
+                    if st.button(
+                        "次の問題へ",
+                        key=f"practice_skip_{index}",
+                        use_container_width=True,
+                    ):
+                        next_practice_question()
+                        st.rerun()
+
+
 
 
 @st.cache_resource
