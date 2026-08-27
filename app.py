@@ -1,9 +1,14 @@
-# VERSION: CLEAN-V35-SEPARATE-MUL-DIV-2026-08-26
+# VERSION: CLEAN-V36-PRACTICE-OPENAI-VOICE-2026-08-27
 
+import hashlib
+import io
 import json
+import random
+import re
 
 import streamlit as st
 import streamlit.components.v1 as components
+from openai import OpenAI
 from supabase import create_client
 
 
@@ -13,7 +18,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V35-SEPARATE-MUL-DIV"
+APP_VERSION = "CLEAN-V36-PRACTICE-OPENAI-VOICE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -23,6 +28,506 @@ BGM_FILES = [
     "7.mp3", "8.mp3", "9.mp3",
     "10-1.mp3", "10-2.mp3", "10-3.mp3",
 ]
+
+
+
+PRACTICE_TOTAL_QUESTIONS = 12
+
+PRACTICE_MODES = {
+    "ba1": "初級・足し算1｜1桁の足し算",
+    "ba2": "初級・足し算2｜2桁の足し算",
+    "ba3": "初級・足し算3｜3桁の足し算",
+    "bs1": "初級・引き算1｜1桁の引き算",
+    "bs2": "初級・引き算2｜2桁の引き算",
+    "bs3": "初級・引き算3｜3桁の引き算",
+    "mm1": "中級・掛け算1｜1桁×1桁",
+    "mm2": "中級・掛け算2｜2桁×1桁",
+    "mm3": "中級・掛け算3｜2桁×2桁",
+    "md1": "中級・割り算1｜1〜81÷1桁",
+    "md2": "中級・割り算2｜3桁÷1桁",
+    "md3": "中級・割り算3｜3桁÷2桁",
+    "a1": "上級1｜4桁の足し算・引き算",
+    "a2": "上級2｜3桁×2桁 / 4桁÷2桁",
+    "a3": "上級3｜3桁×3桁 / 5桁÷3桁",
+}
+
+
+@st.cache_resource(show_spinner=False)
+def get_openai_client():
+    api_key = st.secrets.get("OPENAI_API_KEY", "")
+    if not api_key:
+        raise RuntimeError(
+            "Streamlit Secrets に OPENAI_API_KEY を設定してください。"
+        )
+    return OpenAI(api_key=api_key)
+
+
+def _practice_question(a, op, b):
+    if op == "＋":
+        answer = a + b
+    elif op == "－":
+        answer = a - b
+    elif op == "×":
+        answer = a * b
+    elif op == "÷":
+        answer = a // b
+    else:
+        raise ValueError(f"未対応の演算子です: {op}")
+
+    return {
+        "a": int(a),
+        "op": op,
+        "b": int(b),
+        "answer": int(answer),
+    }
+
+
+def _practice_add(final_min, final_max):
+    return _practice_question(
+        random.randint(final_min, final_max),
+        "＋",
+        random.randint(final_min, final_max),
+    )
+
+
+def _practice_sub(final_min, final_max):
+    a = random.randint(final_min, final_max)
+    b = random.randint(final_min, a)
+    return _practice_question(a, "－", b)
+
+
+def _practice_mul(a_min, a_max, b_min, b_max):
+    return _practice_question(
+        random.randint(a_min, a_max),
+        "×",
+        random.randint(b_min, b_max),
+    )
+
+
+def _practice_div(numerator_min, numerator_max, divisor_min, divisor_max):
+    for _ in range(1000):
+        divisor = random.randint(max(1, divisor_min), divisor_max)
+        q_min = max(1, (numerator_min + divisor - 1) // divisor)
+        q_max = numerator_max // divisor
+
+        if q_min <= q_max:
+            quotient = random.randint(q_min, q_max)
+            return _practice_question(
+                divisor * quotient,
+                "÷",
+                divisor,
+            )
+
+    raise RuntimeError("整数になる割り算を生成できませんでした。")
+
+
+def make_practice_question(mode):
+    if mode == "ba1":
+        return _practice_add(1, 9)
+    if mode == "ba2":
+        return _practice_add(10, 99)
+    if mode == "ba3":
+        return _practice_add(100, 999)
+
+    if mode == "bs1":
+        return _practice_sub(1, 9)
+    if mode == "bs2":
+        return _practice_sub(10, 99)
+    if mode == "bs3":
+        return _practice_sub(100, 999)
+
+    if mode == "mm1":
+        return _practice_mul(1, 9, 1, 9)
+    if mode == "mm2":
+        return _practice_mul(10, 99, 1, 9)
+    if mode == "mm3":
+        return _practice_mul(10, 99, 10, 99)
+
+    if mode == "md1":
+        return _practice_div(1, 81, 1, 9)
+    if mode == "md2":
+        return _practice_div(100, 999, 1, 9)
+    if mode == "md3":
+        return _practice_div(100, 999, 10, 99)
+
+    if mode == "a1":
+        if random.choice([True, False]):
+            return _practice_add(1000, 9999)
+        return _practice_sub(1000, 9999)
+
+    if mode == "a2":
+        if random.choice([True, False]):
+            return _practice_mul(100, 999, 10, 99)
+        return _practice_div(1000, 9999, 10, 99)
+
+    if mode == "a3":
+        if random.choice([True, False]):
+            return _practice_mul(100, 999, 100, 999)
+        return _practice_div(10000, 99999, 100, 999)
+
+    raise ValueError(f"不明な練習モードです: {mode}")
+
+
+def audio_digest(uploaded_audio):
+    if uploaded_audio is None:
+        return None
+
+    try:
+        return hashlib.sha256(
+            uploaded_audio.getvalue()
+        ).hexdigest()
+    except Exception:
+        return None
+
+
+def transcribe_practice_answer(uploaded_audio, question):
+    audio_file = io.BytesIO(
+        uploaded_audio.getvalue()
+    )
+    audio_file.name = "soroban_answer.wav"
+
+    context = (
+        f"そろばんの計算問題 "
+        f"{question['a']} {question['op']} {question['b']} "
+        "の答えを、5〜6歳の子どもが日本語で短く話しています。"
+        "聞こえた数値を、できるだけ半角数字だけで文字起こししてください。"
+        "説明や単位は付けないでください。"
+    )
+
+    result = (
+        get_openai_client()
+        .audio.transcriptions.create(
+            model="gpt-4o-mini-transcribe",
+            file=audio_file,
+            language="ja",
+            prompt=context,
+        )
+    )
+
+    return str(result.text or "").strip()
+
+
+def parse_transcribed_integer(value):
+    value = str(value or "").strip()
+
+    value = value.translate(
+        str.maketrans(
+            "０１２３４５６７８９",
+            "0123456789",
+        )
+    )
+
+    direct = re.search(r"-?\d+", value.replace(",", ""))
+    if direct:
+        try:
+            return int(direct.group(0))
+        except ValueError:
+            pass
+
+    kanji = (
+        value.replace("答えは", "")
+        .replace("答え", "")
+        .replace("です", "")
+        .replace("。", "")
+        .replace("、", "")
+        .strip()
+    )
+
+    digit_map = {
+        "〇": 0, "零": 0,
+        "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
+        "六": 6, "七": 7, "八": 8, "九": 9,
+    }
+
+    if kanji and all(ch in digit_map for ch in kanji):
+        return int("".join(str(digit_map[ch]) for ch in kanji))
+
+    if not kanji or not all(
+        ch in "〇零一二三四五六七八九十百千万"
+        for ch in kanji
+    ):
+        return None
+
+    total = 0
+    section = 0
+    number = 0
+
+    for ch in kanji:
+        if ch in digit_map:
+            number = digit_map[ch]
+        elif ch == "十":
+            section += (number or 1) * 10
+            number = 0
+        elif ch == "百":
+            section += (number or 1) * 100
+            number = 0
+        elif ch == "千":
+            section += (number or 1) * 1000
+            number = 0
+        elif ch == "万":
+            total += (section + number or 1) * 10000
+            section = 0
+            number = 0
+
+    return total + section + number
+
+
+def reset_practice_session(mode):
+    st.session_state.practice_active_mode = mode
+    st.session_state.practice_index = 0
+    st.session_state.practice_question = make_practice_question(mode)
+    st.session_state.practice_feedback = None
+    st.session_state.practice_transcript = ""
+    st.session_state.practice_answer_serial = (
+        st.session_state.get("practice_answer_serial", 0) + 1
+    )
+    st.session_state.practice_finished = False
+
+
+def next_practice_question():
+    mode = st.session_state.practice_active_mode
+    next_index = st.session_state.practice_index + 1
+
+    if next_index >= PRACTICE_TOTAL_QUESTIONS:
+        st.session_state.practice_finished = True
+        st.session_state.practice_feedback = None
+        st.session_state.practice_transcript = ""
+        return
+
+    st.session_state.practice_index = next_index
+    st.session_state.practice_question = make_practice_question(mode)
+    st.session_state.practice_feedback = None
+    st.session_state.practice_transcript = ""
+    st.session_state.practice_answer_serial += 1
+
+
+def retry_practice_voice():
+    st.session_state.practice_feedback = None
+    st.session_state.practice_transcript = ""
+    st.session_state.practice_answer_serial += 1
+
+
+def render_practice_mode():
+    st.markdown("## 練習モード")
+    st.caption(
+        "時間制限なし・得点なし。ランキングや総チャレンジ回数にも加算しません。"
+    )
+
+    mode_ids = list(PRACTICE_MODES.keys())
+
+    selected_mode = st.selectbox(
+        "練習するレベル",
+        options=mode_ids,
+        format_func=lambda x: PRACTICE_MODES[x],
+        key="practice_mode_select",
+    )
+
+    if (
+        st.session_state.get("practice_active_mode")
+        != selected_mode
+    ):
+        reset_practice_session(selected_mode)
+
+    if st.session_state.get("practice_finished", False):
+        st.success("12問の練習が終わりました。得点はつきません。")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button(
+                "同じモードをもう12問",
+                type="primary",
+                use_container_width=True,
+            ):
+                reset_practice_session(selected_mode)
+                st.rerun()
+
+        with col2:
+            st.caption(
+                "上の「練習するレベル」を変えると別のモードを始められます。"
+            )
+        return
+
+    question = st.session_state.practice_question
+    index = st.session_state.practice_index
+
+    st.caption(
+        f"問題 {index + 1} / {PRACTICE_TOTAL_QUESTIONS}"
+    )
+
+    st.markdown(
+        f"""
+        <div style="
+            padding:28px 16px;
+            margin:10px 0 18px;
+            border:1px solid #ddd7ca;
+            border-radius:18px;
+            background:white;
+            text-align:center;
+            font-size:clamp(38px,7vw,72px);
+            font-weight:900;
+        ">
+          {question['a']} {question['op']} {question['b']} ＝ ?
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### 音声で答える")
+    st.caption(
+        "ぶらり旅と同じ方式です。マイクを押して答えを話し、もう一度押して録音を止めてください。"
+    )
+
+    voice_available = bool(
+        st.secrets.get("OPENAI_API_KEY", "")
+    )
+
+    if not voice_available:
+        st.warning(
+            "音声入力を使うには Streamlit Secrets に "
+            "OPENAI_API_KEY を追加してください。"
+        )
+
+    answer_audio = st.audio_input(
+        "マイクを押して答えてください",
+        sample_rate=16000,
+        key=(
+            f"practice_voice_{selected_mode}_"
+            f"{index}_{st.session_state.practice_answer_serial}"
+        ),
+        disabled=not voice_available,
+    )
+
+    if answer_audio is not None and voice_available:
+        digest = audio_digest(answer_audio)
+        digest_key = (
+            f"practice_digest_{selected_mode}_{index}_"
+            f"{st.session_state.practice_answer_serial}"
+        )
+
+        if (
+            digest
+            and st.session_state.get(digest_key)
+            != digest
+        ):
+            st.session_state[digest_key] = digest
+
+            try:
+                with st.spinner("声を聞いています…"):
+                    transcript = transcribe_practice_answer(
+                        answer_audio,
+                        question,
+                    )
+
+                parsed = parse_transcribed_integer(
+                    transcript
+                )
+
+                st.session_state.practice_transcript = transcript
+
+                if parsed is None:
+                    st.session_state.practice_feedback = {
+                        "kind": "retry",
+                        "message": (
+                            f"「{transcript}」と聞こえました。"
+                            "数字として認識できなかったので、もう一度お願いします。"
+                        ),
+                    }
+                elif parsed == question["answer"]:
+                    st.session_state.practice_feedback = {
+                        "kind": "correct",
+                        "message": f"お見事！　答えは {question['answer']} です。",
+                    }
+                else:
+                    st.session_state.practice_feedback = {
+                        "kind": "wrong",
+                        "message": (
+                            f"残念！ 「{transcript}」→ {parsed} と認識しました。"
+                            f" 正しい答えは {question['answer']} です。"
+                        ),
+                    }
+
+                st.rerun()
+
+            except Exception as exc:
+                st.session_state.practice_feedback = {
+                    "kind": "retry",
+                    "message": "音声を認識できませんでした。もう一度お試しください。",
+                }
+                st.error(str(exc))
+
+    feedback = st.session_state.get(
+        "practice_feedback"
+    )
+
+    if feedback:
+        kind = feedback.get("kind")
+        message = feedback.get("message", "")
+
+        if kind == "correct":
+            st.success(message)
+        elif kind == "wrong":
+            st.error(message)
+        else:
+            st.warning(message)
+
+        if kind == "correct":
+            if st.button(
+                "次の問題",
+                type="primary",
+                use_container_width=True,
+            ):
+                next_practice_question()
+                st.rerun()
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(
+                    "もう一度、音声で答える",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    retry_practice_voice()
+                    st.rerun()
+            with col2:
+                if st.button(
+                    "次の問題へ",
+                    use_container_width=True,
+                ):
+                    next_practice_question()
+                    st.rerun()
+
+    with st.expander("数字を手で入力する"):
+        with st.form(
+            key=f"practice_manual_form_{selected_mode}_{index}"
+        ):
+            manual = st.text_input(
+                "答え",
+                inputmode="numeric",
+            )
+            submitted = st.form_submit_button(
+                "答える",
+                use_container_width=True,
+            )
+
+        if submitted:
+            parsed = parse_transcribed_integer(manual)
+
+            if parsed is None:
+                st.warning("数字を入力してください。")
+            elif parsed == question["answer"]:
+                st.session_state.practice_feedback = {
+                    "kind": "correct",
+                    "message": f"お見事！　答えは {question['answer']} です。",
+                }
+                st.rerun()
+            else:
+                st.session_state.practice_feedback = {
+                    "kind": "wrong",
+                    "message": (
+                        f"残念！ 正しい答えは {question['answer']} です。"
+                    ),
+                }
+                st.rerun()
 
 
 @st.cache_resource
@@ -60,6 +565,24 @@ def get_bgm_urls():
         urls[filename] = signed_url
 
     return urls
+
+
+st.caption(f"APP VERSION: {APP_VERSION}")
+
+play_style = st.radio(
+    "プレイ方法",
+    [
+        "チャレンジモード",
+        "練習モード（時間制限なし・得点なし）",
+    ],
+    horizontal=True,
+    label_visibility="collapsed",
+    key="play_style",
+)
+
+if play_style == "練習モード（時間制限なし・得点なし）":
+    render_practice_mode()
+    st.stop()
 
 
 try:
