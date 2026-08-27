@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V44-LEARNING-EXAMPLE-SLOW-2026-08-28
+# VERSION: CLEAN-V45-LEARNING-ANIMATION-STATES-2026-08-28
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V44-LEARNING-EXAMPLE-SLOW"
+APP_VERSION = "CLEAN-V45-LEARNING-ANIMATION-STATES"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -435,9 +435,35 @@ HTML = r"""
   .learning-quiz-card {
     margin-top: 12px;
     padding: 16px;
-    border: 1px solid #ddd7ca;
+    border: 2px solid #ddd7ca;
     border-radius: 20px;
     background: #fff;
+  }
+
+  .learning-video-card {
+    transition:
+      border-color .35s ease,
+      box-shadow .35s ease,
+      background .35s ease;
+  }
+
+  /* スタート前／ループ先頭は通常の枠色。 */
+  .learning-video-card.is-active {
+    border-color: #8eabc2;
+    background: #fbfdff;
+    box-shadow: 0 0 0 2px rgba(91, 132, 166, .10);
+  }
+
+  /* 答えの珠の形まで到達したら、もう一段階はっきり変える。 */
+  .learning-video-card.is-answer {
+    border-color: #78a276;
+    background: #fbfef9;
+    box-shadow: 0 0 0 3px rgba(78, 132, 76, .13);
+  }
+
+  .learning-answer-red {
+    color: #c9362b;
+    font-weight: 1000;
   }
 
   .learning-video-title {
@@ -1857,7 +1883,7 @@ HTML = r"""
       </div>
     </div>
 
-    <div class="learning-video-card">
+    <div id="learningVideoCard" class="learning-video-card">
       <div class="learning-video-title">
         <span>珠の動き動画</span>
         <span class="learning-video-badge">自動アニメーション</span>
@@ -2052,6 +2078,7 @@ HTML = r"""
   const learningLessonKicker = $("#learningLessonKicker");
   const learningLessonTitle = $("#learningLessonTitle");
   const learningExampleProblem = $("#learningExampleProblem");
+  const learningVideoCard = $("#learningVideoCard");
   const learningStepText = $("#learningStepText");
   const learningSorobanBoard = $("#learningSorobanBoard");
   const learningFrameCounter = $("#learningFrameCounter");
@@ -5691,6 +5718,77 @@ HTML = r"""
     learningAnimationPaused = false;
   }
 
+  function renderLearningAnimationState(
+    lesson,
+    frameIndex
+  ) {
+    const lastIndex =
+      lesson.frames.length - 1;
+
+    const isStart =
+      frameIndex === 0;
+
+    const isAnswer =
+      frameIndex === lastIndex &&
+      lastIndex > 0;
+
+    learningVideoCard.classList.remove(
+      "is-active",
+      "is-answer"
+    );
+
+    if (isAnswer) {
+      learningVideoCard.classList.add(
+        "is-answer"
+      );
+    } else if (!isStart) {
+      learningVideoCard.classList.add(
+        "is-active"
+      );
+    }
+
+    // ループ先頭へ戻ったら、必ず「?」へ戻す。
+    if (!isAnswer) {
+      learningExampleProblem.textContent =
+        lesson.example || "";
+      return;
+    }
+
+    // 完成形では「?」だけを赤い答えへ置き換える。
+    const answer =
+      String(
+        lesson.frames[lastIndex].value
+      );
+
+    const example =
+      String(
+        lesson.example || ""
+      );
+
+    const questionMarkIndex =
+      example.lastIndexOf("?");
+
+    if (questionMarkIndex < 0) {
+      learningExampleProblem.textContent =
+        `${example} ${answer}`;
+      return;
+    }
+
+    const before =
+      example.slice(
+        0,
+        questionMarkIndex
+      );
+
+    const after =
+      example.slice(
+        questionMarkIndex + 1
+      );
+
+    learningExampleProblem.innerHTML =
+      `${before}<span class="learning-answer-red">${answer}</span>${after}`;
+  }
+
   function renderLearningFrame(
     frameIndex
   ) {
@@ -5723,6 +5821,11 @@ HTML = r"""
 
     learningFrameCounter.textContent =
       `${safeIndex + 1} / ${lesson.frames.length}`;
+
+    renderLearningAnimationState(
+      lesson,
+      safeIndex
+    );
 
     showLearningNumber(
       frame.value,
@@ -5963,6 +6066,11 @@ HTML = r"""
 
     learningExampleProblem.textContent =
       lesson.example || "";
+
+    learningVideoCard.classList.remove(
+      "is-active",
+      "is-answer"
+    );
 
     learningBasicText.textContent =
       lesson.basic;
