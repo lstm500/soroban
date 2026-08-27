@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V43-LEARNING-MODE-2026-08-28
+# VERSION: CLEAN-V44-LEARNING-EXAMPLE-SLOW-2026-08-28
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V43-LEARNING-MODE"
+APP_VERSION = "CLEAN-V44-LEARNING-EXAMPLE-SLOW"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -396,6 +396,38 @@ HTML = r"""
     margin-top: 4px;
     font-size: clamp(22px, 4vw, 30px);
     font-weight: 1000;
+  }
+
+  .learning-example-card {
+    margin-top: 12px;
+    padding: 16px;
+    border: 2px solid #d8d0c2;
+    border-radius: 20px;
+    background: #fffdf8;
+    text-align: center;
+  }
+
+  .learning-example-label {
+    margin-bottom: 6px;
+    color: #81796f;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .08em;
+  }
+
+  .learning-example-problem {
+    font-size: clamp(34px, 7vw, 58px);
+    font-weight: 1000;
+    letter-spacing: .04em;
+    color: #24231f;
+    line-height: 1.25;
+  }
+
+  .learning-example-help {
+    margin-top: 7px;
+    color: #6d675f;
+    font-size: 12px;
+    line-height: 1.55;
   }
 
   .learning-video-card,
@@ -1817,6 +1849,14 @@ HTML = r"""
       <button type="button" id="learningLessonBackBtn">← STEP一覧へ</button>
     </div>
 
+    <div class="learning-example-card">
+      <div class="learning-example-label">この問題の珠の動きを見ます</div>
+      <div id="learningExampleProblem" class="learning-example-problem"></div>
+      <div class="learning-example-help">
+        まず問題全体を見てから、下の珠がどう動くかをゆっくり追ってください。
+      </div>
+    </div>
+
     <div class="learning-video-card">
       <div class="learning-video-title">
         <span>珠の動き動画</span>
@@ -2011,6 +2051,7 @@ HTML = r"""
   const learningStageHeading = $("#learningStageHeading");
   const learningLessonKicker = $("#learningLessonKicker");
   const learningLessonTitle = $("#learningLessonTitle");
+  const learningExampleProblem = $("#learningExampleProblem");
   const learningStepText = $("#learningStepText");
   const learningSorobanBoard = $("#learningSorobanBoard");
   const learningFrameCounter = $("#learningFrameCounter");
@@ -2082,6 +2123,7 @@ HTML = r"""
       lessons: [
         {
           id: "add1",
+          example: "2 ＋ 2 ＝ ?",
           title: "1〜4をそのまま足す",
           desc: "使える一珠を、そのまま梁へ寄せる基本。",
           basic: "足したい数だけ一珠が残っているときは、同じ位の一珠を梁へ寄せます。まずは珠を数えず、形で1〜4を見分けることが大切です。",
@@ -2096,6 +2138,7 @@ HTML = r"""
         },
         {
           id: "add2",
+          example: "5 ＋ 3 ＝ ?",
           title: "5珠と1珠を組み合わせる",
           desc: "5〜9の形をすばやく作る。",
           basic: "5は上の五珠を梁へ寄せます。6〜9は『5＋一珠』の形です。たとえば8は、五珠1つと一珠3つです。",
@@ -2111,6 +2154,7 @@ HTML = r"""
         },
         {
           id: "add3",
+          example: "2 ＋ 4 ＝ ?",
           title: "5の補数で足す",
           desc: "一珠が足りないときに『＋5 − 補数』を使う。",
           basic: "同じ位で一珠が足りないときは、5を足して余分な分を引きます。2＋4なら、4の5に対する補数は1なので『＋5 −1』です。",
@@ -2125,6 +2169,7 @@ HTML = r"""
         },
         {
           id: "add4",
+          example: "8 ＋ 7 ＝ ?",
           title: "10の補数で繰り上がる",
           desc: "9を超えるときに『＋10 − 補数』を使う。",
           basic: "一の位で9を超えるときは、十の位へ1を足して、一の位から10の補数を引きます。8＋7なら7の10の補数は3です。",
@@ -2139,6 +2184,7 @@ HTML = r"""
         },
         {
           id: "add5",
+          example: "36 ＋ 27 ＝ ?",
           title: "2桁の繰り上がり",
           desc: "十の位と一の位を分けて処理する。",
           basic: "2桁は大きい位から足します。36＋27なら、まず＋20で56。そのあと一の位の＋7を『＋10−3』で処理します。",
@@ -2161,6 +2207,7 @@ HTML = r"""
       lessons: [
         {
           id: "sub1",
+          example: "4 － 2 ＝ ?",
           title: "そのまま引く",
           desc: "取れる一珠があるときは直接梁から離す。",
           basic: "引きたい数だけ一珠が梁に寄っているときは、その珠を梁から離します。",
@@ -2175,6 +2222,7 @@ HTML = r"""
         },
         {
           id: "sub2",
+          example: "8 － 3 ＝ ?",
           title: "5珠から直接引く",
           desc: "8−3など、五珠を残して一珠を取る。",
           basic: "8は5＋3です。8−3なら、一珠3つをそのまま梁から離せば5が残ります。",
@@ -2190,6 +2238,7 @@ HTML = r"""
         },
         {
           id: "sub3",
+          example: "7 － 4 ＝ ?",
           title: "5の補数で引く",
           desc: "一珠だけでは引けないときに『−5＋補数』。",
           basic: "7−4では、一珠は2個しかないため4を直接取れません。そこで−5して、4の5に対する補数1を＋1します。",
@@ -2204,6 +2253,7 @@ HTML = r"""
         },
         {
           id: "sub4",
+          example: "12 － 7 ＝ ?",
           title: "10の補数で繰り下がる",
           desc: "一の位だけでは引けないときに『−10＋補数』。",
           basic: "12−7では一の位の2から7を引けません。十の位から1を下げて−10し、一の位へ7の10の補数3を足します。",
@@ -2218,6 +2268,7 @@ HTML = r"""
         },
         {
           id: "sub5",
+          example: "43 － 28 ＝ ?",
           title: "2桁の繰り下がり",
           desc: "43−28を位ごとに処理する。",
           basic: "43−28なら、まず−20で23。そのあと−8は一の位だけでは引けないので『−10＋2』にします。",
@@ -2240,6 +2291,7 @@ HTML = r"""
       lessons: [
         {
           id: "mul1",
+          example: "3 × 4 ＝ ?",
           title: "九九の答えを珠に置く",
           desc: "3×4＝12を十の位・一の位に置く。",
           basic: "掛け算ではまず九九で答えを作ります。12なら十の位に1、一の位に2を置きます。",
@@ -2254,6 +2306,7 @@ HTML = r"""
         },
         {
           id: "mul2",
+          example: "23 × 4 ＝ ?",
           title: "2桁×1桁の部分積",
           desc: "23×4を20×4と3×4に分ける。",
           basic: "23×4は『20×4＝80』と『3×4＝12』に分けます。部分積を位をそろえて足すと92です。",
@@ -2269,6 +2322,7 @@ HTML = r"""
         },
         {
           id: "mul3",
+          example: "24 × 13 ＝ ?",
           title: "2桁×2桁",
           desc: "24×13を×10と×3に分ける。",
           basic: "24×13は、24×10＝240と24×3＝72に分けます。240＋72＝312です。",
@@ -2284,6 +2338,7 @@ HTML = r"""
         },
         {
           id: "mul4",
+          example: "40 × 6 ＝ ?",
           title: "0がある数の位取り",
           desc: "40×6で、4ではなく40を掛けていると意識する。",
           basic: "40×6は4×6＝24を使いますが、4は十の位です。答えは24ではなく240です。",
@@ -2305,6 +2360,7 @@ HTML = r"""
       lessons: [
         {
           id: "div1",
+          example: "8 ÷ 4 ＝ ?",
           title: "1桁÷1桁",
           desc: "8÷4＝2。何個分あるかを考える。",
           basic: "割り算は『4が8の中に何個あるか』を考えます。4×2＝8なので商は2です。",
@@ -2318,6 +2374,7 @@ HTML = r"""
         },
         {
           id: "div2",
+          example: "84 ÷ 4 ＝ ?",
           title: "2桁÷1桁",
           desc: "84÷4を十の位から見る。",
           basic: "84÷4は、大きい位から見ます。8十÷4＝2十、次に4÷4＝1。答えは21です。",
@@ -2332,6 +2389,7 @@ HTML = r"""
         },
         {
           id: "div3",
+          example: "156 ÷ 3 ＝ ?",
           title: "3桁÷1桁",
           desc: "156÷3を左から順に処理する。",
           basic: "156÷3は、15十÷3＝5十、6÷3＝2と見ます。商は52です。",
@@ -2346,6 +2404,7 @@ HTML = r"""
         },
         {
           id: "div4",
+          example: "144 ÷ 12 ＝ ?",
           title: "2桁で割る",
           desc: "144÷12で商を見当づける。",
           basic: "2桁で割るときは『12×いくつなら今見ている数を超えないか』を考えます。144÷12は12です。",
@@ -5713,8 +5772,11 @@ HTML = r"""
         return;
       }
 
+      const frameBeingShown =
+        learningCurrentFrame;
+
       renderLearningFrame(
-        learningCurrentFrame
+        frameBeingShown
       );
 
       learningCurrentFrame += 1;
@@ -5725,17 +5787,23 @@ HTML = r"""
       ) {
         learningCurrentFrame = 0;
 
-        // 1周終わったら少し間を空けて自動で繰り返す。
+        // 1周終わったら、完成形を十分見てから繰り返す。
         setTimeout(
           showNext,
-          1500
+          3200
         );
         return;
       }
 
+      // STEPの最初は問題と初期配置を理解する時間を長めに取る。
+      const frameDelay =
+        frameBeingShown === 0
+          ? 3800
+          : 3200;
+
       setTimeout(
         showNext,
-        1150
+        frameDelay
       );
     };
 
@@ -5892,6 +5960,9 @@ HTML = r"""
 
     learningLessonTitle.textContent =
       lesson.title;
+
+    learningExampleProblem.textContent =
+      lesson.example || "";
 
     learningBasicText.textContent =
       lesson.basic;
