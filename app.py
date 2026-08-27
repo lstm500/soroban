@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V46-LEARNING-MINUS-FIRST-2026-08-28
+# VERSION: CLEAN-V47-LEARNING-VOICE-2026-08-28
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V46-LEARNING-MINUS-FIRST"
+APP_VERSION = "CLEAN-V47-LEARNING-VOICE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -513,6 +513,26 @@ HTML = r"""
     min-height: 38px;
     padding: 7px 11px;
     font-size: 12px;
+  }
+
+  .learning-voice-btn {
+    border: 1px solid #d1cabd;
+    background: #eee9df;
+  }
+
+  .learning-voice-btn.on {
+    border-color: #a9cfb3;
+    background: #dff1e3;
+    color: #285a36;
+  }
+
+  .learning-voice-note {
+    min-height: 22px;
+    margin-top: 7px;
+    text-align: center;
+    color: #756e65;
+    font-size: 11px;
+    font-weight: 750;
   }
 
   .learning-soroban-wrap {
@@ -1900,6 +1920,12 @@ HTML = r"""
       <div class="learning-video-controls">
         <button type="button" id="learningReplayBtn">↻ もう一度</button>
         <button type="button" id="learningPauseBtn">Ⅱ 一時停止</button>
+        <button type="button" id="learningVoiceBtn" class="learning-voice-btn">
+          🔊 音声解説 OFF
+        </button>
+      </div>
+      <div id="learningVoiceNote" class="learning-voice-note">
+        音声解説をONにすると、珠の動きをゆっくり読み上げます。
       </div>
     </div>
 
@@ -2090,6 +2116,8 @@ HTML = r"""
   const learningQuizFeedback = $("#learningQuizFeedback");
   const learningClearActions = $("#learningClearActions");
   const learningPauseBtn = $("#learningPauseBtn");
+  const learningVoiceBtn = $("#learningVoiceBtn");
+  const learningVoiceNote = $("#learningVoiceNote");
   const learningNextBtn = $("#learningNextBtn");
 
   const workspace = $("#workspace");
@@ -2448,6 +2476,104 @@ HTML = r"""
     }
   };
 
+  const learningVoiceScripts = {
+    add1: [
+      "2 たす 2 です。まず、2を おきます。",
+      "1つ、たします。",
+      "もう1つ たします。4です。"
+    ],
+    add2: [
+      "5 たす 3 です。まず、5を おきます。",
+      "1つ、たします。",
+      "もう1つ、たします。",
+      "もう1つ たして、8です。"
+    ],
+    add3: [
+      "2 たす 4 です。まず、2を おきます。",
+      "4は そのまま たせません。先に、1を ひきます。",
+      "つぎに、5を たします。6です。"
+    ],
+    add4: [
+      "8 たす 7 です。まず、8を おきます。",
+      "10を またぎます。先に、3を ひきます。",
+      "つぎに、10を たします。15です。"
+    ],
+    add5: [
+      "36 たす 27 です。まず、36を おきます。",
+      "先に、20を たします。56です。",
+      "つぎは 7。先に、3を ひきます。",
+      "さいごに、10を たします。63です。"
+    ],
+    sub1: [
+      "4 ひく 2 です。まず、4を おきます。",
+      "1つ、ひきます。",
+      "もう1つ ひきます。2です。"
+    ],
+    sub2: [
+      "8 ひく 3 です。まず、8を おきます。",
+      "1つ、ひきます。",
+      "もう1つ、ひきます。",
+      "もう1つ ひいて、5です。"
+    ],
+    sub3: [
+      "7 ひく 4 です。まず、7を おきます。",
+      "4を そのまま ひけません。先に、5を ひきます。",
+      "つぎに、1を たします。3です。"
+    ],
+    sub4: [
+      "12 ひく 7 です。まず、12を おきます。",
+      "7を そのまま ひけません。先に、10を ひきます。",
+      "つぎに、3を たします。5です。"
+    ],
+    sub5: [
+      "43 ひく 28 です。まず、43を おきます。",
+      "先に、20を ひきます。23です。",
+      "つぎは 8。先に、10を ひきます。",
+      "さいごに、2を たします。15です。"
+    ],
+    mul1: [
+      "3 かける 4 です。答えは 12です。",
+      "まず、10のくらいに 1を おきます。",
+      "1のくらいに 2を おきます。12です。"
+    ],
+    mul2: [
+      "23 かける 4 です。20と3に わけます。",
+      "20 かける 4 は、80です。",
+      "3 かける 4 は、12。まず、10を たします。",
+      "つぎに、2を たします。92です。"
+    ],
+    mul3: [
+      "24 かける 13 です。10と3に わけます。",
+      "24 かける 10 は、240です。",
+      "24 かける 3 は、72。まず、70を たします。",
+      "つぎに、2を たします。312です。"
+    ],
+    mul4: [
+      "40 かける 6 です。4 かける 6 は、24です。",
+      "40なので、くらいを 1つ ずらします。まず、200です。",
+      "つぎに、40を おきます。240です。"
+    ],
+    div1: [
+      "8 わる 4 です。4が いくつあるか、かんがえます。",
+      "4 かける 2 は 8。だから、答えは 2です。"
+    ],
+    div2: [
+      "84 わる 4 です。大きい くらいから みます。",
+      "8じゅう わる 4 は、2じゅう。20を おきます。",
+      "4 わる 4 は 1。答えは 21です。"
+    ],
+    div3: [
+      "156 わる 3 です。左から みます。",
+      "1だけでは われません。15 わる 3 は 5。50を おきます。",
+      "6 わる 3 は 2。答えは 52です。"
+    ],
+    div4: [
+      "144 わる 12 です。答えを だいたい かんがえます。",
+      "12 かける 10 は 120。まず、10を おきます。",
+      "のこりは 24。12が 2こ。答えは 12です。"
+    ]
+  };
+
   let learningProgress = loadTutorialProgress();
   let learningCurrentCategory = null;
   let learningCurrentLessonIndex = 0;
@@ -2455,6 +2581,8 @@ HTML = r"""
   let learningAnimationToken = 0;
   let learningAnimationPaused = false;
   let learningCurrentFrame = 0;
+  let learningVoiceEnabled = false;
+  let learningNarrationToken = 0;
 
   const RULES = Object.freeze({
     addSubOperandMin: 1,
@@ -5713,9 +5841,155 @@ HTML = r"""
     ] || null;
   }
 
+  function updateLearningVoiceUi() {
+    learningVoiceBtn.textContent =
+      learningVoiceEnabled
+        ? "🔊 音声解説 ON"
+        : "🔊 音声解説 OFF";
+
+    learningVoiceBtn.classList.toggle(
+      "on",
+      learningVoiceEnabled
+    );
+
+    learningVoiceNote.textContent =
+      learningVoiceEnabled
+        ? "音声解説：ON　ひとつずつ、ゆっくり説明します。"
+        : "音声解説をONにすると、珠の動きをゆっくり読み上げます。";
+  }
+
+  function stopLearningNarration() {
+    learningNarrationToken += 1;
+
+    if (
+      "speechSynthesis" in window
+    ) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  function learningNarrationText(
+    lesson,
+    frameIndex
+  ) {
+    const scripts =
+      learningVoiceScripts[
+        lesson.id
+      ];
+
+    if (
+      Array.isArray(scripts) &&
+      scripts[frameIndex]
+    ) {
+      return scripts[
+        frameIndex
+      ];
+    }
+
+    return String(
+      lesson.frames[
+        frameIndex
+      ]?.text || ""
+    );
+  }
+
+  function speakLearningFrame(
+    lesson,
+    frameIndex
+  ) {
+    if (!learningVoiceEnabled) {
+      return;
+    }
+
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance ===
+        "undefined"
+    ) {
+      learningVoiceNote.textContent =
+        "このブラウザでは音声解説を使えません。";
+      return;
+    }
+
+    const message =
+      learningNarrationText(
+        lesson,
+        frameIndex
+      );
+
+    if (!message) {
+      return;
+    }
+
+    // 前の説明が残っていたら止めて、
+    // 現在の珠の動きだけを説明する。
+    window.speechSynthesis.cancel();
+
+    const token =
+      ++learningNarrationToken;
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        message
+      );
+
+    utterance.lang = "ja-JP";
+
+    // 子どもが珠を見ながら追えるよう、
+    // 通常の読み上げよりかなりゆっくり。
+    utterance.rate = 0.72;
+    utterance.pitch = 1.18;
+    utterance.volume = 1.0;
+
+    const voice =
+      getJapaneseVoice();
+
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    utterance.onend = () => {
+      if (
+        token !==
+        learningNarrationToken
+      ) {
+        return;
+      }
+    };
+
+    utterance.onerror =
+      utterance.onend;
+
+    window.speechSynthesis.speak(
+      utterance
+    );
+  }
+
+  function setLearningVoiceEnabled(
+    enabled
+  ) {
+    learningVoiceEnabled =
+      Boolean(enabled);
+
+    stopLearningNarration();
+    updateLearningVoiceUi();
+
+    if (
+      learningVoiceEnabled &&
+      currentLearningLesson()
+    ) {
+      // ONにした瞬間から説明と珠の動きをそろえるため、
+      // 動画を先頭から再生する。
+      runLearningAnimation(
+        true
+      );
+    }
+  }
+
   function stopLearningAnimation() {
     learningAnimationToken += 1;
     learningAnimationPaused = false;
+    stopLearningNarration();
   }
 
   function renderLearningAnimationState(
@@ -5831,6 +6105,11 @@ HTML = r"""
       frame.value,
       frame.place
     );
+
+    speakLearningFrame(
+      lesson,
+      safeIndex
+    );
   }
 
   function runLearningAnimation(
@@ -5890,19 +6169,34 @@ HTML = r"""
       ) {
         learningCurrentFrame = 0;
 
-        // 1周終わったら、完成形を十分見てから繰り返す。
+        // 完成形を十分見せる。
+        // 音声ONのときは、読み上げが終わる時間も確保する。
+        const answerDelay =
+          learningVoiceEnabled
+            ? 7200
+            : 3200;
+
         setTimeout(
           showNext,
-          3200
+          answerDelay
         );
         return;
       }
 
-      // STEPの最初は問題と初期配置を理解する時間を長めに取る。
+      // 音声OFFはこれまでのゆっくり速度。
+      // 音声ONは、短い解説を聞き終えてから次へ進む。
       const frameDelay =
-        frameBeingShown === 0
-          ? 3800
-          : 3200;
+        learningVoiceEnabled
+          ? (
+              frameBeingShown === 0
+                ? 7600
+                : 6800
+            )
+          : (
+              frameBeingShown === 0
+                ? 3800
+                : 3200
+            );
 
       setTimeout(
         showNext,
@@ -6063,6 +6357,8 @@ HTML = r"""
 
     learningLessonTitle.textContent =
       lesson.title;
+
+    updateLearningVoiceUi();
 
     learningExampleProblem.textContent =
       lesson.example || "";
@@ -7375,6 +7671,42 @@ HTML = r"""
         learningAnimationPaused
           ? "▶ 再開"
           : "Ⅱ 一時停止";
+
+      if (
+        learningAnimationPaused
+      ) {
+        stopLearningNarration();
+      } else if (
+        learningVoiceEnabled
+      ) {
+        const lesson =
+          currentLearningLesson();
+
+        if (lesson) {
+          const displayedIndex =
+            Math.max(
+              0,
+              Math.min(
+                lesson.frames.length - 1,
+                learningCurrentFrame - 1
+              )
+            );
+
+          speakLearningFrame(
+            lesson,
+            displayedIndex
+          );
+        }
+      }
+    }
+  );
+
+  learningVoiceBtn.addEventListener(
+    "click",
+    () => {
+      setLearningVoiceEnabled(
+        !learningVoiceEnabled
+      );
     }
   );
 
@@ -7502,6 +7834,7 @@ HTML = r"""
   workspace.classList.remove("show");
 
   updateTimeLimitUi();
+  updateLearningVoiceUi();
   renderLearningCategories();
   installInAppBackGuard();
   updateBgmButton();
