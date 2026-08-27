@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V38-PRACTICE-CHALLENGE-UI-2026-08-28
+# VERSION: CLEAN-V39-INAPP-BACK-NAV-2026-08-28
 
 import hashlib
 import io
@@ -18,7 +18,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V38-PRACTICE-CHALLENGE-UI"
+APP_VERSION = "CLEAN-V39-INAPP-BACK-NAV"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -376,6 +376,34 @@ def practice_keypad_press(value):
 
 
 def render_practice_mode():
+    # ブラウザの「戻る」でもアプリ内の画面遷移になるよう、
+    # 練習モードの画面状態をURLにも同期する。
+    query_view = str(
+        st.query_params.get(
+            "practice_view",
+            "menu",
+        )
+    )
+    query_mode = str(
+        st.query_params.get(
+            "practice_mode",
+            "",
+        )
+    )
+
+    if query_view == "game" and query_mode in PRACTICE_MODES:
+        if (
+            st.session_state.get("practice_screen") != "game"
+            or st.session_state.get("practice_active_mode") != query_mode
+        ):
+            reset_practice_session(query_mode)
+    elif st.session_state.get("practice_screen") == "game":
+        # ブラウザBackで game のURLから戻った場合は練習TOPへ。
+        st.session_state.practice_screen = "menu"
+        st.session_state.practice_feedback = None
+        st.session_state.practice_transcript = ""
+        st.session_state.practice_manual_buffer = ""
+
     st.markdown(
         """
         <style>
@@ -735,6 +763,8 @@ def render_practice_mode():
                             use_container_width=True,
                         ):
                             reset_practice_session(mode)
+                            st.query_params["practice_view"] = "game"
+                            st.query_params["practice_mode"] = mode
                             st.rerun()
 
         return
@@ -774,6 +804,8 @@ def render_practice_mode():
                 use_container_width=True,
             ):
                 reset_practice_session(selected_mode)
+                st.query_params["practice_view"] = "game"
+                st.query_params["practice_mode"] = selected_mode
                 st.rerun()
 
         with col2:
@@ -782,6 +814,8 @@ def render_practice_mode():
                 use_container_width=True,
             ):
                 practice_go_menu()
+                st.query_params["practice_view"] = "menu"
+                st.query_params.pop("practice_mode", None)
                 st.rerun()
 
         return
@@ -827,6 +861,8 @@ def render_practice_mode():
                 use_container_width=True,
             ):
                 practice_go_menu()
+                st.query_params["practice_view"] = "menu"
+                st.query_params.pop("practice_mode", None)
                 st.rerun()
 
     # Question card
@@ -1111,6 +1147,12 @@ play_style = st.radio(
 if play_style == "練習モード（時間制限なし・得点なし）":
     render_practice_mode()
     st.stop()
+
+# チャレンジモードへ切り替えた場合は練習画面のURL状態を解除。
+if "practice_view" in st.query_params:
+    st.query_params.pop("practice_view", None)
+if "practice_mode" in st.query_params:
+    st.query_params.pop("practice_mode", None)
 
 
 try:
@@ -2503,6 +2545,9 @@ HTML = r"""
   let sessionRankingSaved = false;
   let sessionChallengeRecorded = false;
   let rankingModalMode = null;
+
+  let inAppBackGuardReady = false;
+  let handlingBrowserBack = false;
 
   let hintRunToken = 0;
   let hintDigitCount = 1;
@@ -5891,6 +5936,73 @@ HTML = r"""
     }, 450);
   }
 
+  function challengeIsOnTop() {
+    return (
+      !workspace.classList.contains("show") &&
+      !rankingModal.classList.contains("show")
+    );
+  }
+
+  function pushInAppBackGuard() {
+    try {
+      window.history.pushState(
+        {
+          sorobanInApp: true,
+          guard: Date.now()
+        },
+        "",
+        window.location.href
+      );
+    } catch (error) {}
+  }
+
+  function installInAppBackGuard() {
+    if (inAppBackGuardReady) {
+      return;
+    }
+
+    inAppBackGuardReady = true;
+
+    // 最初に1つアプリ内履歴を作っておく。
+    pushInAppBackGuard();
+
+    window.addEventListener(
+      "popstate",
+      () => {
+        if (handlingBrowserBack) {
+          return;
+        }
+
+        handlingBrowserBack = true;
+
+        try {
+          if (
+            rankingModal.classList.contains("show")
+          ) {
+            closeRankingModal();
+          } else if (
+            workspace.classList.contains("show") ||
+            results.classList.contains("show")
+          ) {
+            // ゲーム中／結果画面ならTOP（モード選択）へ。
+            goMenu();
+          } else {
+            // すでにTOPなら外へ出ず、そのままTOPを維持。
+            menuView.classList.remove("hidden");
+            workspace.classList.remove("show");
+            results.classList.remove("show");
+          }
+        } finally {
+          // 次回のBackもアプリ内で処理できるようガードを戻す。
+          setTimeout(() => {
+            pushInAppBackGuard();
+            handlingBrowserBack = false;
+          }, 30);
+        }
+      }
+    );
+  }
+
   function goMenu() {
     scoreAnimationToken += 1;
     closeRankingModal();
@@ -6000,6 +6112,7 @@ HTML = r"""
     }
   });
 
+  installInAppBackGuard();
   updateBgmButton();
   updateVoiceUi();
 })();
