@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V40-SINGLE-MODE-TIME-TOGGLE-2026-08-28
+# VERSION: CLEAN-V41-BGM-VOICE-ON4-OFF12-2026-08-28
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V40-SINGLE-MODE-TIME-TOGGLE"
+APP_VERSION = "CLEAN-V41-BGM-VOICE-ON4-OFF12"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1518,7 +1518,8 @@ HTML = r"""
   let voiceCalloutRunning = false;
   let voiceRestartTimer = null;
 
-  const BGM_VOLUME_FIXED = 0.04;
+  const BGM_VOLUME_VOICE_ON = 0.04;
+  const BGM_VOLUME_VOICE_OFF = 0.12;
 
   let bgmKeepAliveTimer = null;
 
@@ -1534,7 +1535,7 @@ HTML = r"""
       this.currentSourceGain = null;
 
       this.playGeneration = 0;
-      this.targetVolume = BGM_VOLUME_FIXED;
+      this.targetVolume = BGM_VOLUME_VOICE_OFF;
     }
 
     ensureContext() {
@@ -3063,9 +3064,11 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // BGMは常に4%固定。
-    // 音声モード、ゴワサン、音声認識、判定読み上げ中でも変えない。
-    return BGM_VOLUME_FIXED;
+    // 音声回答ONの間は常に4%。
+    // 音声回答OFFでは12%。
+    return voiceAnswerEnabled
+      ? BGM_VOLUME_VOICE_ON
+      : BGM_VOLUME_VOICE_OFF;
   }
 
   function refreshBgmVolume() {
