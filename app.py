@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V42-BGM-FIXED-6PCT-2026-08-28
+# VERSION: CLEAN-V43-LEARNING-MODE-2026-08-28
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V42-BGM-FIXED-6PCT"
+APP_VERSION = "CLEAN-V43-LEARNING-MODE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -129,6 +129,485 @@ HTML = r"""
     font-size: 11px;
     color: #8a857c;
     margin-bottom: 8px;
+  }
+
+  /* =====================================================
+     APP TOP
+     ===================================================== */
+  .app-home {
+    padding: 22px 0 12px;
+  }
+
+  .home-title {
+    margin: 6px 0 8px;
+    text-align: center;
+    font-size: clamp(26px, 5vw, 42px);
+    font-weight: 1000;
+    letter-spacing: .02em;
+  }
+
+  .home-sub {
+    margin: 0 auto 22px;
+    max-width: 760px;
+    text-align: center;
+    color: #6d675f;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .home-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .home-mode-btn {
+    min-height: 168px;
+    padding: 22px 18px;
+    border: 2px solid #d6cfc2;
+    border-radius: 22px;
+    background: #fff;
+    text-align: left;
+    box-shadow: 0 8px 24px rgba(60, 50, 40, .07);
+  }
+
+  .home-mode-btn.primary-home {
+    background: #315f86;
+    color: #fff;
+    border-color: #315f86;
+  }
+
+  .home-mode-kicker {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .1em;
+    opacity: .72;
+  }
+
+  .home-mode-name {
+    display: block;
+    margin-bottom: 9px;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 1000;
+  }
+
+  .home-mode-desc {
+    display: block;
+    font-size: 13px;
+    line-height: 1.6;
+    opacity: .86;
+  }
+
+  .subview-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 14px;
+  }
+
+  .subview-topbar-title {
+    font-size: 14px;
+    font-weight: 950;
+    color: #5f5951;
+  }
+
+  .top-back-btn {
+    min-height: 38px;
+    padding: 7px 11px;
+    font-size: 12px;
+    background: #eee9df;
+  }
+
+  /* =====================================================
+     LEARNING MODE
+     ===================================================== */
+  .learning-view {
+    display: none;
+  }
+
+  .learning-view.show {
+    display: block;
+  }
+
+  .learning-hero {
+    padding: 18px 18px 16px;
+    border: 1px solid #dcd5c8;
+    border-radius: 20px;
+    background: #fff;
+  }
+
+  .learning-hero h2 {
+    margin: 0 0 6px;
+    font-size: clamp(24px, 4vw, 34px);
+  }
+
+  .learning-hero p {
+    margin: 0;
+    color: #6b655d;
+    line-height: 1.7;
+    font-size: 13px;
+  }
+
+  .learning-progress-summary {
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 850;
+    color: #5d574f;
+  }
+
+  .learning-progress-track {
+    height: 10px;
+    margin-top: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #ebe6dd;
+  }
+
+  .learning-progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: #5d8c62;
+    transition: width .3s ease;
+  }
+
+  .learning-category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .learning-category-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 208px;
+    padding: 18px;
+    border: 1px solid #ddd7ca;
+    border-radius: 20px;
+    background: #fff;
+  }
+
+  .learning-category-symbol {
+    font-size: 34px;
+    font-weight: 1000;
+    line-height: 1;
+  }
+
+  .learning-category-title {
+    margin: 10px 0 5px;
+    font-size: 21px;
+    font-weight: 1000;
+  }
+
+  .learning-category-desc {
+    flex: 1;
+    color: #6b655d;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .learning-stars {
+    margin: 10px 0;
+    font-size: 14px;
+    font-weight: 950;
+    letter-spacing: .06em;
+    color: #7e6c35;
+  }
+
+  .learning-stage-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .learning-stage-card {
+    position: relative;
+    min-height: 154px;
+    padding: 16px;
+    border: 1px solid #ddd7ca;
+    border-radius: 18px;
+    background: #fff;
+  }
+
+  .learning-stage-card.locked {
+    opacity: .53;
+    background: #f1eee8;
+  }
+
+  .learning-stage-card.cleared {
+    border-color: #a8c4a7;
+    background: #f7fbf5;
+  }
+
+  .learning-stage-no {
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .08em;
+    color: #8a8277;
+  }
+
+  .learning-stage-title {
+    margin: 6px 0 5px;
+    font-size: 17px;
+    font-weight: 950;
+  }
+
+  .learning-stage-desc {
+    min-height: 38px;
+    color: #6d675f;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .learning-stage-status {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .learning-stage-card button {
+    width: 100%;
+    margin-top: 10px;
+    min-height: 40px;
+    padding: 7px 10px;
+  }
+
+  .learning-lesson-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin: 4px 0 14px;
+  }
+
+  .learning-lesson-kicker {
+    font-size: 11px;
+    font-weight: 950;
+    color: #81796f;
+    letter-spacing: .08em;
+  }
+
+  .learning-lesson-title {
+    margin-top: 4px;
+    font-size: clamp(22px, 4vw, 30px);
+    font-weight: 1000;
+  }
+
+  .learning-video-card,
+  .learning-explain-card,
+  .learning-quiz-card {
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid #ddd7ca;
+    border-radius: 20px;
+    background: #fff;
+  }
+
+  .learning-video-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    font-weight: 950;
+  }
+
+  .learning-video-badge {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #e8f0e2;
+    color: #355635;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .learning-step-text {
+    min-height: 52px;
+    margin: 8px 0 10px;
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 900;
+    color: #4b463f;
+  }
+
+  .learning-frame-counter {
+    text-align: center;
+    font-size: 11px;
+    color: #847c72;
+  }
+
+  .learning-video-controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .learning-video-controls button {
+    min-height: 38px;
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+
+  .learning-soroban-wrap {
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+  }
+
+  .learning-soroban-board {
+    --rod-width: 64px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 5px;
+    min-width: max-content;
+    padding: 12px 14px 8px;
+    border: 5px solid #73543a;
+    border-radius: 14px;
+    background: #e8c895;
+    box-shadow:
+      inset 0 0 0 2px rgba(255,255,255,.35),
+      0 6px 15px rgba(72, 54, 37, .12);
+  }
+
+  .learning-soroban-board::before {
+    content: "";
+    position: absolute;
+    left: 7px;
+    right: 7px;
+    top: 78px;
+    height: 8px;
+    border-radius: 5px;
+    background: #66452f;
+    z-index: 3;
+  }
+
+  .learning-point-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .learning-point {
+    padding: 12px;
+    border-radius: 14px;
+    background: #f7f4ee;
+  }
+
+  .learning-point.trouble {
+    background: #fff6df;
+  }
+
+  .learning-point-label {
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .learning-point-text {
+    color: #5f5951;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .learning-rule-box {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-left: 5px solid #6f936c;
+    border-radius: 10px;
+    background: #f3f8f1;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.65;
+  }
+
+  .learning-quiz-question {
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: 950;
+    line-height: 1.55;
+  }
+
+  .learning-quiz-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .learning-quiz-option {
+    min-height: 54px;
+    font-size: 16px;
+  }
+
+  .learning-quiz-option.correct-choice {
+    background: #dff1e3;
+    color: #285a36;
+  }
+
+  .learning-quiz-option.wrong-choice {
+    background: #f4ded8;
+    color: #8a3d28;
+  }
+
+  .learning-quiz-feedback {
+    min-height: 34px;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 950;
+  }
+
+  .learning-clear-actions {
+    display: none;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .learning-clear-actions.show {
+    display: flex;
+  }
+
+  .learning-clear-actions button {
+    flex: 1;
+  }
+
+  @media (max-width: 640px) {
+    .home-mode-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .home-mode-btn {
+      min-height: 148px;
+      padding: 14px 10px;
+    }
+
+    .home-mode-name {
+      font-size: 20px;
+    }
+
+    .home-mode-desc {
+      font-size: 11px;
+    }
+
+    .learning-category-grid,
+    .learning-stage-grid,
+    .learning-point-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .learning-quiz-options {
+      grid-template-columns: 1fr;
+    }
   }
 
   .intro {
@@ -1095,7 +1574,36 @@ HTML = r"""
 
 <div id="versionLabel" class="version"></div>
 
-<div id="menuView">
+<div id="homeView" class="app-home">
+  <div class="home-title">そろばん</div>
+  <div class="home-sub">
+    計算に挑戦するか、珠の動かし方を順番に学ぶかを選んでください。
+  </div>
+
+  <div class="home-mode-grid">
+    <button type="button" id="homeChallengeBtn" class="home-mode-btn primary-home">
+      <span class="home-mode-kicker">CHALLENGE</span>
+      <span class="home-mode-name">チャレンジモード</span>
+      <span class="home-mode-desc">
+        これまでの計算トレーニング。12問に挑戦し、得点やランキングを記録します。
+      </span>
+    </button>
+
+    <button type="button" id="homeLearningBtn" class="home-mode-btn">
+      <span class="home-mode-kicker">LEARNING</span>
+      <span class="home-mode-name">学習モード</span>
+      <span class="home-mode-desc">
+        足し算・引き算・掛け算・割り算の珠の動きを動画のようなアニメーションで学びます。
+      </span>
+    </button>
+  </div>
+</div>
+
+<div id="menuView" class="hidden">
+  <div class="subview-topbar">
+    <button type="button" id="challengeTopBtn" class="top-back-btn">← TOPへ</button>
+    <div class="subview-topbar-title">チャレンジモード</div>
+  </div>
   <div class="intro">
     <div class="lead">
       各モード12問です。
@@ -1265,6 +1773,102 @@ HTML = r"""
   </div>
 </div>
 
+
+<div id="learningView" class="learning-view">
+  <div class="subview-topbar">
+    <button type="button" id="learningTopBtn" class="top-back-btn">← TOPへ</button>
+    <div class="subview-topbar-title">学習モード</div>
+  </div>
+
+  <div id="learningCategoryView">
+    <div class="learning-hero">
+      <h2>珠の動かし方を順番に学ぶ</h2>
+      <p>
+        まず動画のような珠の動きを見て、ポイントを確認し、最後に理解チェックをします。
+        各計算はSTEP 1から少しずつ難しくなります。
+      </p>
+      <div id="learningOverallText" class="learning-progress-summary"></div>
+      <div class="learning-progress-track">
+        <div id="learningOverallBar" class="learning-progress-bar"></div>
+      </div>
+    </div>
+
+    <div id="learningCategoryGrid" class="learning-category-grid"></div>
+  </div>
+
+  <div id="learningStageView" class="hidden">
+    <div class="learning-lesson-head">
+      <div>
+        <div id="learningStageKicker" class="learning-lesson-kicker"></div>
+        <div id="learningStageHeading" class="learning-lesson-title"></div>
+      </div>
+      <button type="button" id="learningStageBackBtn">← 計算の種類へ</button>
+    </div>
+
+    <div id="learningStageGrid" class="learning-stage-grid"></div>
+  </div>
+
+  <div id="learningLessonView" class="hidden">
+    <div class="learning-lesson-head">
+      <div>
+        <div id="learningLessonKicker" class="learning-lesson-kicker"></div>
+        <div id="learningLessonTitle" class="learning-lesson-title"></div>
+      </div>
+      <button type="button" id="learningLessonBackBtn">← STEP一覧へ</button>
+    </div>
+
+    <div class="learning-video-card">
+      <div class="learning-video-title">
+        <span>珠の動き動画</span>
+        <span class="learning-video-badge">自動アニメーション</span>
+      </div>
+
+      <div id="learningStepText" class="learning-step-text"></div>
+
+      <div class="learning-soroban-wrap">
+        <div id="learningSorobanBoard" class="learning-soroban-board"></div>
+      </div>
+
+      <div id="learningFrameCounter" class="learning-frame-counter"></div>
+
+      <div class="learning-video-controls">
+        <button type="button" id="learningReplayBtn">↻ もう一度</button>
+        <button type="button" id="learningPauseBtn">Ⅱ 一時停止</button>
+      </div>
+    </div>
+
+    <div class="learning-explain-card">
+      <div class="learning-point-grid">
+        <div class="learning-point">
+          <div class="learning-point-label">今回の基本</div>
+          <div id="learningBasicText" class="learning-point-text"></div>
+        </div>
+        <div class="learning-point trouble">
+          <div class="learning-point-label">つまずきやすいところ</div>
+          <div id="learningTroubleText" class="learning-point-text"></div>
+        </div>
+      </div>
+
+      <div id="learningRuleBox" class="learning-rule-box"></div>
+    </div>
+
+    <div class="learning-quiz-card">
+      <div class="learning-video-title">
+        <span>理解チェック</span>
+        <span class="learning-video-badge">クリアで ★</span>
+      </div>
+      <div id="learningQuizQuestion" class="learning-quiz-question"></div>
+      <div id="learningQuizOptions" class="learning-quiz-options"></div>
+      <div id="learningQuizFeedback" class="learning-quiz-feedback"></div>
+
+      <div id="learningClearActions" class="learning-clear-actions">
+        <button type="button" id="learningAgainBtn">動画をもう一度</button>
+        <button type="button" id="learningNextBtn" class="primary">次のSTEPへ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <section id="workspace" class="workspace">
   <div class="statusbar">
     <div>
@@ -1393,7 +1997,33 @@ HTML = r"""
 
   $("#versionLabel").textContent = `APP VERSION: ${APP_VERSION}`;
 
+  const homeView = $("#homeView");
   const menuView = $("#menuView");
+  const learningView = $("#learningView");
+  const learningCategoryView = $("#learningCategoryView");
+  const learningStageView = $("#learningStageView");
+  const learningLessonView = $("#learningLessonView");
+  const learningCategoryGrid = $("#learningCategoryGrid");
+  const learningStageGrid = $("#learningStageGrid");
+  const learningOverallText = $("#learningOverallText");
+  const learningOverallBar = $("#learningOverallBar");
+  const learningStageKicker = $("#learningStageKicker");
+  const learningStageHeading = $("#learningStageHeading");
+  const learningLessonKicker = $("#learningLessonKicker");
+  const learningLessonTitle = $("#learningLessonTitle");
+  const learningStepText = $("#learningStepText");
+  const learningSorobanBoard = $("#learningSorobanBoard");
+  const learningFrameCounter = $("#learningFrameCounter");
+  const learningBasicText = $("#learningBasicText");
+  const learningTroubleText = $("#learningTroubleText");
+  const learningRuleBox = $("#learningRuleBox");
+  const learningQuizQuestion = $("#learningQuizQuestion");
+  const learningQuizOptions = $("#learningQuizOptions");
+  const learningQuizFeedback = $("#learningQuizFeedback");
+  const learningClearActions = $("#learningClearActions");
+  const learningPauseBtn = $("#learningPauseBtn");
+  const learningNextBtn = $("#learningNextBtn");
+
   const workspace = $("#workspace");
   const questionCard = $("#questionCard");
   const results = $("#results");
@@ -1440,6 +2070,305 @@ HTML = r"""
     a2: { title: "上級2｜3桁×2桁 / 4桁÷2桁" },
     a3: { title: "上級3｜3桁×3桁 / 5桁÷3桁" }
   };
+
+  const LEARNING_PROGRESS_STORAGE_KEY =
+    "soroban_tutorial_progress_v1";
+
+  const learningCategories = {
+    add: {
+      symbol: "＋",
+      title: "足し算",
+      desc: "一珠・五珠から、5の補数、10の補数、2桁の繰り上がりへ進みます。",
+      lessons: [
+        {
+          id: "add1",
+          title: "1〜4をそのまま足す",
+          desc: "使える一珠を、そのまま梁へ寄せる基本。",
+          basic: "足したい数だけ一珠が残っているときは、同じ位の一珠を梁へ寄せます。まずは珠を数えず、形で1〜4を見分けることが大切です。",
+          trouble: "指で珠を1個ずつ数え続けると速くなりません。『2の形』『3の形』を一目で見る練習をします。",
+          rule: "足せる珠がある → そのまま足す。",
+          frames: [
+            { value: 2, place: 1, text: "まず 2 を置きます。" },
+            { value: 3, place: 1, text: "＋2 の1個目。1の珠を1つ梁へ寄せます。" },
+            { value: 4, place: 1, text: "＋2 の2個目。もう1つ寄せて 4 です。" }
+          ],
+          quiz: { q: "2 ＋ 2 の答えは？", options: ["3", "4", "5"], answer: "4" }
+        },
+        {
+          id: "add2",
+          title: "5珠と1珠を組み合わせる",
+          desc: "5〜9の形をすばやく作る。",
+          basic: "5は上の五珠を梁へ寄せます。6〜9は『5＋一珠』の形です。たとえば8は、五珠1つと一珠3つです。",
+          trouble: "6〜9を一珠6個のように考えないこと。『5といくつ』で見ると珠の形が安定します。",
+          rule: "6〜9は『5 ＋ 1〜4』で見る。",
+          frames: [
+            { value: 5, place: 1, text: "まず 5。上の五珠を梁へ寄せます。" },
+            { value: 6, place: 1, text: "＋3 の1個目。一珠を1つ寄せます。" },
+            { value: 7, place: 1, text: "2個目を寄せます。" },
+            { value: 8, place: 1, text: "3個目を寄せて 8 です。" }
+          ],
+          quiz: { q: "そろばんの 8 は『5 ＋ いくつ』？", options: ["2", "3", "4"], answer: "3" }
+        },
+        {
+          id: "add3",
+          title: "5の補数で足す",
+          desc: "一珠が足りないときに『＋5 − 補数』を使う。",
+          basic: "同じ位で一珠が足りないときは、5を足して余分な分を引きます。2＋4なら、4の5に対する補数は1なので『＋5 −1』です。",
+          trouble: "『何を引くか』を毎回数えないこと。1と4、2と3を5の組として覚えます。",
+          rule: "＋4 ＝ ＋5 −1 ／ ＋3 ＝ ＋5 −2。",
+          frames: [
+            { value: 2, place: 1, text: "2 ＋ 4。2を置きます。" },
+            { value: 7, place: 1, text: "4をそのまま足せないので、まず ＋5。2 → 7。" },
+            { value: 6, place: 1, text: "5では1多いので −1。答えは 6。" }
+          ],
+          quiz: { q: "2 ＋ 4 は、そろばんではどの動き？", options: ["＋5−1", "＋5−2", "＋10−4"], answer: "＋5−1" }
+        },
+        {
+          id: "add4",
+          title: "10の補数で繰り上がる",
+          desc: "9を超えるときに『＋10 − 補数』を使う。",
+          basic: "一の位で9を超えるときは、十の位へ1を足して、一の位から10の補数を引きます。8＋7なら7の10の補数は3です。",
+          trouble: "先に一の位を無理に動かそうとすると混乱します。『十の位を1上げる → 一の位を補数だけ引く』の順に固定します。",
+          rule: "＋7 ＝ ＋10 −3 ／ ＋8 ＝ ＋10 −2 ／ ＋9 ＝ ＋10 −1。",
+          frames: [
+            { value: 8, place: 1, text: "8 ＋ 7。まず8を置きます。" },
+            { value: 18, place: 10, text: "7を足すと10を超えるので、十の位へ ＋10。" },
+            { value: 15, place: 1, text: "7の補数は3。一の位から −3。答えは15。" }
+          ],
+          quiz: { q: "8 ＋ 7 で使う10の補数は？", options: ["2", "3", "4"], answer: "3" }
+        },
+        {
+          id: "add5",
+          title: "2桁の繰り上がり",
+          desc: "十の位と一の位を分けて処理する。",
+          basic: "2桁は大きい位から足します。36＋27なら、まず＋20で56。そのあと一の位の＋7を『＋10−3』で処理します。",
+          trouble: "20と7を一度に処理しようとしないこと。『十の位 → 一の位』と分けると、どこで繰り上がったかが見えます。",
+          rule: "2桁は位ごとに分解。大きい位から順番に。",
+          frames: [
+            { value: 36, place: null, text: "36 ＋ 27。まず36を置きます。" },
+            { value: 56, place: 10, text: "27の十の位、＋20。36 → 56。" },
+            { value: 66, place: 10, text: "一の位で＋7。まず ＋10。56 → 66。" },
+            { value: 63, place: 1, text: "7の補数3を −3。答えは63。" }
+          ],
+          quiz: { q: "36 ＋ 27 で最初に足すのは？", options: ["7", "20", "27全部"], answer: "20" }
+        }
+      ]
+    },
+    sub: {
+      symbol: "－",
+      title: "引き算",
+      desc: "そのまま引くところから、5の補数、10の補数、2桁の繰り下がりへ。",
+      lessons: [
+        {
+          id: "sub1",
+          title: "そのまま引く",
+          desc: "取れる一珠があるときは直接梁から離す。",
+          basic: "引きたい数だけ一珠が梁に寄っているときは、その珠を梁から離します。",
+          trouble: "答えの珠を新しく作るのではなく、『今ある珠から取る』と考えます。",
+          rule: "取れる珠がある → そのまま引く。",
+          frames: [
+            { value: 4, place: 1, text: "4 − 2。まず4を置きます。" },
+            { value: 3, place: 1, text: "一珠を1つ梁から離します。" },
+            { value: 2, place: 1, text: "もう1つ離して、答えは2。" }
+          ],
+          quiz: { q: "4 − 2 の答えは？", options: ["1", "2", "3"], answer: "2" }
+        },
+        {
+          id: "sub2",
+          title: "5珠から直接引く",
+          desc: "8−3など、五珠を残して一珠を取る。",
+          basic: "8は5＋3です。8−3なら、一珠3つをそのまま梁から離せば5が残ります。",
+          trouble: "五珠まで動かしてしまわないこと。まず『取れる一珠が何個あるか』を見ます。",
+          rule: "8 −3 → 一珠3つをそのまま取る。",
+          frames: [
+            { value: 8, place: 1, text: "8は『5＋3』の形です。" },
+            { value: 7, place: 1, text: "一珠を1つ取ります。" },
+            { value: 6, place: 1, text: "2つ目を取ります。" },
+            { value: 5, place: 1, text: "3つ目を取って5。" }
+          ],
+          quiz: { q: "8 − 3 では、最初にどの珠を見る？", options: ["一珠", "十の位", "全部動かす"], answer: "一珠" }
+        },
+        {
+          id: "sub3",
+          title: "5の補数で引く",
+          desc: "一珠だけでは引けないときに『−5＋補数』。",
+          basic: "7−4では、一珠は2個しかないため4を直接取れません。そこで−5して、4の5に対する補数1を＋1します。",
+          trouble: "『−5したから終わり』ではありません。必ず補数を戻します。",
+          rule: "−4 ＝ −5 ＋1 ／ −3 ＝ −5 ＋2。",
+          frames: [
+            { value: 7, place: 1, text: "7 − 4。7を置きます。" },
+            { value: 2, place: 1, text: "4を直接取れないので、まず −5。7 → 2。" },
+            { value: 3, place: 1, text: "4の補数1を ＋1。答えは3。" }
+          ],
+          quiz: { q: "7 − 4 の珠の動きは？", options: ["−5＋1", "−5＋2", "−10＋4"], answer: "−5＋1" }
+        },
+        {
+          id: "sub4",
+          title: "10の補数で繰り下がる",
+          desc: "一の位だけでは引けないときに『−10＋補数』。",
+          basic: "12−7では一の位の2から7を引けません。十の位から1を下げて−10し、一の位へ7の10の補数3を足します。",
+          trouble: "『借りた10』を頭の中だけで処理しないこと。十の位の珠を実際に1つ下げる動きを先にします。",
+          rule: "−7 ＝ −10 ＋3 ／ −8 ＝ −10 ＋2 ／ −9 ＝ −10 ＋1。",
+          frames: [
+            { value: 12, place: 1, text: "12 − 7。まず12を置きます。" },
+            { value: 2, place: 10, text: "一の位だけでは引けないので、十の位から −10。" },
+            { value: 5, place: 1, text: "7の補数3を一の位へ ＋3。答えは5。" }
+          ],
+          quiz: { q: "12 − 7 で足し戻す数は？", options: ["2", "3", "7"], answer: "3" }
+        },
+        {
+          id: "sub5",
+          title: "2桁の繰り下がり",
+          desc: "43−28を位ごとに処理する。",
+          basic: "43−28なら、まず−20で23。そのあと−8は一の位だけでは引けないので『−10＋2』にします。",
+          trouble: "28を一気に引かないこと。十の位20と一の位8を分ければ、補数を使う場所が明確になります。",
+          rule: "2桁の引き算も、大きい位から順番に。",
+          frames: [
+            { value: 43, place: null, text: "43 − 28。まず43を置きます。" },
+            { value: 23, place: 10, text: "十の位の −20。43 → 23。" },
+            { value: 13, place: 10, text: "一の位の−8は直接できないので、まず −10。" },
+            { value: 15, place: 1, text: "8の補数2を ＋2。答えは15。" }
+          ],
+          quiz: { q: "43 − 28 で最初に引くのは？", options: ["8", "20", "28全部"], answer: "20" }
+        }
+      ]
+    },
+    mul: {
+      symbol: "×",
+      title: "掛け算",
+      desc: "九九→部分積→位取り。答えをどの位の珠へ置くかを段階的に学びます。",
+      lessons: [
+        {
+          id: "mul1",
+          title: "九九の答えを珠に置く",
+          desc: "3×4＝12を十の位・一の位に置く。",
+          basic: "掛け算ではまず九九で答えを作ります。12なら十の位に1、一の位に2を置きます。",
+          trouble: "『12』を一の位に12個置こうとしないこと。必ず十の位1、一の位2に分けます。",
+          rule: "九九の答えも、位に分けて珠へ置く。",
+          frames: [
+            { value: 0, place: null, text: "3 × 4。九九で答えは12です。" },
+            { value: 10, place: 10, text: "12の十の位、1を置きます。" },
+            { value: 12, place: 1, text: "一の位に2を置いて12。" }
+          ],
+          quiz: { q: "3 × 4 の答え12。十の位に置く数は？", options: ["1", "2", "12"], answer: "1" }
+        },
+        {
+          id: "mul2",
+          title: "2桁×1桁の部分積",
+          desc: "23×4を20×4と3×4に分ける。",
+          basic: "23×4は『20×4＝80』と『3×4＝12』に分けます。部分積を位をそろえて足すと92です。",
+          trouble: "2×4＝8を『8』として一の位へ置かないこと。2は十の位なので、20×4＝80です。",
+          rule: "元の数字の位を、掛けた後も忘れない。",
+          frames: [
+            { value: 0, place: null, text: "23 × 4。まず20×4を考えます。" },
+            { value: 80, place: 10, text: "20 × 4 ＝ 80。80を置きます。" },
+            { value: 90, place: 10, text: "次に3×4＝12。まず十の位の10を加えます。" },
+            { value: 92, place: 1, text: "一の位の2を加えて92。" }
+          ],
+          quiz: { q: "23 × 4 で、20 × 4 は？", options: ["8", "80", "800"], answer: "80" }
+        },
+        {
+          id: "mul3",
+          title: "2桁×2桁",
+          desc: "24×13を×10と×3に分ける。",
+          basic: "24×13は、24×10＝240と24×3＝72に分けます。240＋72＝312です。",
+          trouble: "13を『1と3』として同じ位に扱わないこと。1は十の位なので×10です。",
+          rule: "2桁の掛ける数は『十の位の部分積＋一の位の部分積』。",
+          frames: [
+            { value: 0, place: null, text: "24 × 13。13を10と3に分けます。" },
+            { value: 240, place: 10, text: "24 × 10 ＝ 240。" },
+            { value: 310, place: 10, text: "24 × 3 ＝72。まず70を加えます。" },
+            { value: 312, place: 1, text: "残り2を加えて312。" }
+          ],
+          quiz: { q: "24 × 13 で、最初の大きな部分積は？", options: ["24×1", "24×10", "24×3"], answer: "24×10" }
+        },
+        {
+          id: "mul4",
+          title: "0がある数の位取り",
+          desc: "40×6で、4ではなく40を掛けていると意識する。",
+          basic: "40×6は4×6＝24を使いますが、4は十の位です。答えは24ではなく240です。",
+          trouble: "途中の0を『何もしないから無視』して位まで消してしまうこと。0は珠を置かなくても、位は残ります。",
+          rule: "0の珠は置かなくても、0が示す位は消えない。",
+          frames: [
+            { value: 0, place: null, text: "40 × 6。4×6＝24を使います。" },
+            { value: 200, place: 100, text: "40の4は十の位。答え24も1桁左へずれて240。" },
+            { value: 240, place: 10, text: "十の位に4を置いて240。" }
+          ],
+          quiz: { q: "40 × 6 の答えは？", options: ["24", "240", "2400"], answer: "240" }
+        }
+      ]
+    },
+    div: {
+      symbol: "÷",
+      title: "割り算",
+      desc: "商を見つけ、位をそろえて答えの珠を置くところから始めます。",
+      lessons: [
+        {
+          id: "div1",
+          title: "1桁÷1桁",
+          desc: "8÷4＝2。何個分あるかを考える。",
+          basic: "割り算は『4が8の中に何個あるか』を考えます。4×2＝8なので商は2です。",
+          trouble: "引き算を何回も繰り返すだけにしないこと。九九の逆として『4×いくつ＝8』を使います。",
+          rule: "割り算は九九を逆向きに使う。",
+          frames: [
+            { value: 0, place: null, text: "8 ÷ 4。4×いくつで8になるか考えます。" },
+            { value: 2, place: 1, text: "4×2＝8なので、商は2。答えの珠に2を置きます。" }
+          ],
+          quiz: { q: "8 ÷ 4 は？", options: ["2", "3", "4"], answer: "2" }
+        },
+        {
+          id: "div2",
+          title: "2桁÷1桁",
+          desc: "84÷4を十の位から見る。",
+          basic: "84÷4は、大きい位から見ます。8十÷4＝2十、次に4÷4＝1。答えは21です。",
+          trouble: "84を一気に考えようとしないこと。十の位→一の位に分けます。",
+          rule: "割り算も大きい位から商を決める。",
+          frames: [
+            { value: 0, place: null, text: "84 ÷ 4。まず8十を4で割ります。" },
+            { value: 20, place: 10, text: "8十 ÷4＝2十。十の位へ2。" },
+            { value: 21, place: 1, text: "残る4 ÷4＝1。一の位へ1。答え21。" }
+          ],
+          quiz: { q: "84 ÷ 4 の十の位の商は？", options: ["1", "2", "4"], answer: "2" }
+        },
+        {
+          id: "div3",
+          title: "3桁÷1桁",
+          desc: "156÷3を左から順に処理する。",
+          basic: "156÷3は、15十÷3＝5十、6÷3＝2と見ます。商は52です。",
+          trouble: "最初の1だけを3で割れないから止まらないこと。必要なら次の桁と合わせて15として見ます。",
+          rule: "先頭の数字が割れなければ、次の桁までまとめる。",
+          frames: [
+            { value: 0, place: null, text: "156 ÷ 3。先頭の1だけでは3で割れません。" },
+            { value: 50, place: 10, text: "15を3で割ると5。十の位に5を置きます。" },
+            { value: 52, place: 1, text: "残る6を3で割ると2。答え52。" }
+          ],
+          quiz: { q: "156 ÷ 3 で、最初に『15』を見る理由は？", options: ["1だけでは3で割れない", "6があるから", "いつも15を見る"], answer: "1だけでは3で割れない" }
+        },
+        {
+          id: "div4",
+          title: "2桁で割る",
+          desc: "144÷12で商を見当づける。",
+          basic: "2桁で割るときは『12×いくつなら今見ている数を超えないか』を考えます。144÷12は12です。",
+          trouble: "大きすぎる商を置いてから戻す回数を減らすため、まず上の桁を使って商を見当づけます。",
+          rule: "商は『割る数×商が、今の数を超えない最大』を探す。",
+          frames: [
+            { value: 0, place: null, text: "144 ÷ 12。まず商の十の位を考えます。" },
+            { value: 10, place: 10, text: "12×10＝120。144を超えないので十の位に1。" },
+            { value: 12, place: 1, text: "残り24には12が2個。商は12。" }
+          ],
+          quiz: { q: "144 ÷ 12 の商は？", options: ["10", "12", "14"], answer: "12" }
+        }
+      ]
+    }
+  };
+
+  let learningProgress = loadTutorialProgress();
+  let learningCurrentCategory = null;
+  let learningCurrentLessonIndex = 0;
+  let learningRods = [];
+  let learningAnimationToken = 0;
+  let learningAnimationPaused = false;
+  let learningCurrentFrame = 0;
 
   const RULES = Object.freeze({
     addSubOperandMin: 1,
@@ -4110,6 +5039,953 @@ HTML = r"""
     }, 1200);
   }
 
+  function loadTutorialProgress() {
+    try {
+      const raw =
+        localStorage.getItem(
+          LEARNING_PROGRESS_STORAGE_KEY
+        );
+
+      if (!raw) {
+        return {
+          cleared: {}
+        };
+      }
+
+      const parsed =
+        JSON.parse(raw);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object"
+      ) {
+        return {
+          cleared: {}
+        };
+      }
+
+      if (
+        !parsed.cleared ||
+        typeof parsed.cleared !== "object"
+      ) {
+        parsed.cleared = {};
+      }
+
+      return parsed;
+    } catch (error) {
+      return {
+        cleared: {}
+      };
+    }
+  }
+
+  function saveTutorialProgress() {
+    try {
+      localStorage.setItem(
+        LEARNING_PROGRESS_STORAGE_KEY,
+        JSON.stringify(
+          learningProgress
+        )
+      );
+    } catch (error) {}
+  }
+
+  function allTutorialLessons() {
+    return Object.values(
+      learningCategories
+    ).flatMap(
+      (category) =>
+        category.lessons
+    );
+  }
+
+  function isTutorialLessonCleared(
+    lessonId
+  ) {
+    return Boolean(
+      learningProgress
+        .cleared[lessonId]
+    );
+  }
+
+  function tutorialCategoryStats(
+    categoryKey
+  ) {
+    const lessons =
+      learningCategories[
+        categoryKey
+      ].lessons;
+
+    const cleared =
+      lessons.filter(
+        (lesson) =>
+          isTutorialLessonCleared(
+            lesson.id
+          )
+      ).length;
+
+    return {
+      cleared,
+      total: lessons.length
+    };
+  }
+
+  function tutorialLessonUnlocked(
+    categoryKey,
+    index
+  ) {
+    if (index === 0) {
+      return true;
+    }
+
+    const lessons =
+      learningCategories[
+        categoryKey
+      ].lessons;
+
+    return isTutorialLessonCleared(
+      lessons[index - 1].id
+    );
+  }
+
+  function updateTutorialOverallProgress() {
+    const all =
+      allTutorialLessons();
+
+    const cleared =
+      all.filter(
+        (lesson) =>
+          isTutorialLessonCleared(
+            lesson.id
+          )
+      ).length;
+
+    const total =
+      all.length;
+
+    learningOverallText.textContent =
+      `全体 ${cleared} / ${total} STEP クリア`;
+
+    learningOverallBar.style.width =
+      `${total ? (cleared / total) * 100 : 0}%`;
+  }
+
+  function showHome() {
+    stopTimer();
+    stopBgm();
+    hideSorobanHint();
+    stopLearningAnimation();
+    setVoiceAnswerEnabled(false);
+
+    workspace.classList.remove(
+      "show"
+    );
+    results.classList.remove(
+      "show"
+    );
+    menuView.classList.add(
+      "hidden"
+    );
+    learningView.classList.remove(
+      "show"
+    );
+    homeView.classList.remove(
+      "hidden"
+    );
+
+    currentMode = null;
+  }
+
+  function showChallengeMenu() {
+    stopLearningAnimation();
+
+    homeView.classList.add(
+      "hidden"
+    );
+    learningView.classList.remove(
+      "show"
+    );
+    workspace.classList.remove(
+      "show"
+    );
+    results.classList.remove(
+      "show"
+    );
+    menuView.classList.remove(
+      "hidden"
+    );
+  }
+
+  function showLearningHome() {
+    stopTimer();
+    stopBgm();
+    hideSorobanHint();
+    setVoiceAnswerEnabled(false);
+
+    homeView.classList.add(
+      "hidden"
+    );
+    menuView.classList.add(
+      "hidden"
+    );
+    workspace.classList.remove(
+      "show"
+    );
+    results.classList.remove(
+      "show"
+    );
+
+    learningView.classList.add(
+      "show"
+    );
+
+    learningCategoryView.classList.remove(
+      "hidden"
+    );
+    learningStageView.classList.add(
+      "hidden"
+    );
+    learningLessonView.classList.add(
+      "hidden"
+    );
+
+    learningCurrentCategory = null;
+    stopLearningAnimation();
+    renderLearningCategories();
+  }
+
+  function renderLearningCategories() {
+    learningCategoryGrid.innerHTML =
+      "";
+
+    updateTutorialOverallProgress();
+
+    Object.entries(
+      learningCategories
+    ).forEach(
+      ([key, category]) => {
+        const stats =
+          tutorialCategoryStats(
+            key
+          );
+
+        const card =
+          document.createElement(
+            "article"
+          );
+
+        card.className =
+          "learning-category-card";
+
+        const starsFilled =
+          "★".repeat(
+            stats.cleared
+          );
+
+        const starsEmpty =
+          "☆".repeat(
+            stats.total -
+            stats.cleared
+          );
+
+        card.innerHTML = `
+          <div class="learning-category-symbol">${category.symbol}</div>
+          <div class="learning-category-title">${category.title}</div>
+          <div class="learning-category-desc">${category.desc}</div>
+          <div class="learning-stars">${starsFilled}${starsEmpty} ${stats.cleared}/${stats.total}</div>
+        `;
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+
+        button.className =
+          "primary";
+
+        button.textContent =
+          stats.cleared === 0
+            ? "STEP 1から学ぶ"
+            : stats.cleared === stats.total
+              ? "復習する"
+              : "続きから学ぶ";
+
+        button.addEventListener(
+          "click",
+          () => {
+            showLearningStages(
+              key
+            );
+          }
+        );
+
+        card.appendChild(button);
+        learningCategoryGrid.appendChild(
+          card
+        );
+      }
+    );
+  }
+
+  function showLearningStages(
+    categoryKey
+  ) {
+    learningCurrentCategory =
+      categoryKey;
+
+    stopLearningAnimation();
+
+    learningCategoryView.classList.add(
+      "hidden"
+    );
+
+    learningLessonView.classList.add(
+      "hidden"
+    );
+
+    learningStageView.classList.remove(
+      "hidden"
+    );
+
+    const category =
+      learningCategories[
+        categoryKey
+      ];
+
+    learningStageKicker.textContent =
+      `${category.symbol} ${category.title}`;
+
+    learningStageHeading.textContent =
+      "少しずつSTEP UP";
+
+    learningStageGrid.innerHTML =
+      "";
+
+    category.lessons.forEach(
+      (lesson, index) => {
+        const unlocked =
+          tutorialLessonUnlocked(
+            categoryKey,
+            index
+          );
+
+        const cleared =
+          isTutorialLessonCleared(
+            lesson.id
+          );
+
+        const card =
+          document.createElement(
+            "article"
+          );
+
+        card.className =
+          "learning-stage-card";
+
+        if (!unlocked) {
+          card.classList.add(
+            "locked"
+          );
+        }
+
+        if (cleared) {
+          card.classList.add(
+            "cleared"
+          );
+        }
+
+        card.innerHTML = `
+          <div class="learning-stage-no">STEP ${index + 1}</div>
+          <div class="learning-stage-title">${lesson.title}</div>
+          <div class="learning-stage-desc">${lesson.desc}</div>
+          <div class="learning-stage-status">${
+            cleared
+              ? "★ クリア"
+              : unlocked
+                ? "○ 学習できます"
+                : "🔒 1つ前のSTEPをクリアすると開きます"
+          }</div>
+        `;
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+
+        button.disabled =
+          !unlocked;
+
+        button.textContent =
+          cleared
+            ? "もう一度見る"
+            : unlocked
+              ? "学習スタート"
+              : "ロック中";
+
+        if (unlocked) {
+          button.className =
+            "primary";
+
+          button.addEventListener(
+            "click",
+            () => {
+              openLearningLesson(
+                categoryKey,
+                index
+              );
+            }
+          );
+        }
+
+        card.appendChild(
+          button
+        );
+
+        learningStageGrid.appendChild(
+          card
+        );
+      }
+    );
+  }
+
+  function buildLearningBoard(
+    digitCount
+  ) {
+    learningRods = [];
+    learningSorobanBoard.innerHTML =
+      "";
+
+    const safeCount =
+      Math.max(
+        1,
+        digitCount
+      );
+
+    for (
+      let i = 0;
+      i < safeCount;
+      i += 1
+    ) {
+      const place =
+        10 ** (
+          safeCount -
+          1 -
+          i
+        );
+
+      const rod =
+        document.createElement(
+          "div"
+        );
+
+      rod.className =
+        "soroban-rod";
+
+      rod.dataset.place =
+        String(place);
+
+      const line =
+        document.createElement(
+          "div"
+        );
+
+      line.className =
+        "rod-line";
+
+      rod.appendChild(
+        line
+      );
+
+      const upper =
+        document.createElement(
+          "div"
+        );
+
+      upper.className =
+        "soroban-bead upper-bead";
+
+      rod.appendChild(
+        upper
+      );
+
+      const lowers = [];
+
+      for (
+        let j = 0;
+        j < 4;
+        j += 1
+      ) {
+        const bead =
+          document.createElement(
+            "div"
+          );
+
+        bead.className =
+          "soroban-bead lower-bead";
+
+        bead.style.top =
+          `${112 + j * 18}px`;
+
+        rod.appendChild(
+          bead
+        );
+
+        lowers.push(
+          bead
+        );
+      }
+
+      const label =
+        document.createElement(
+          "div"
+        );
+
+      label.className =
+        "rod-place";
+
+      label.textContent =
+        shortPlaceName(
+          place
+        );
+
+      rod.appendChild(
+        label
+      );
+
+      learningSorobanBoard.appendChild(
+        rod
+      );
+
+      learningRods.push({
+        rod,
+        place,
+        upper,
+        lowers
+      });
+    }
+  }
+
+  function showLearningNumber(
+    value,
+    activePlace = null
+  ) {
+    const safeValue =
+      Math.max(
+        0,
+        Math.floor(
+          Math.abs(
+            Number(value) || 0
+          )
+        )
+      );
+
+    const digits =
+      String(safeValue)
+        .padStart(
+          learningRods.length,
+          "0"
+        )
+        .slice(
+          -learningRods.length
+        )
+        .split("")
+        .map(Number);
+
+    learningRods.forEach(
+      (rodInfo, index) => {
+        setRodDigit(
+          rodInfo,
+          digits[index]
+        );
+
+        rodInfo.rod
+          .classList.toggle(
+            "active",
+            activePlace !== null &&
+            rodInfo.place ===
+              activePlace
+          );
+      }
+    );
+  }
+
+  function currentLearningLesson() {
+    if (!learningCurrentCategory) {
+      return null;
+    }
+
+    return learningCategories[
+      learningCurrentCategory
+    ].lessons[
+      learningCurrentLessonIndex
+    ] || null;
+  }
+
+  function stopLearningAnimation() {
+    learningAnimationToken += 1;
+    learningAnimationPaused = false;
+  }
+
+  function renderLearningFrame(
+    frameIndex
+  ) {
+    const lesson =
+      currentLearningLesson();
+
+    if (!lesson) {
+      return;
+    }
+
+    const safeIndex =
+      Math.max(
+        0,
+        Math.min(
+          lesson.frames.length - 1,
+          frameIndex
+        )
+      );
+
+    const frame =
+      lesson.frames[
+        safeIndex
+      ];
+
+    learningCurrentFrame =
+      safeIndex;
+
+    learningStepText.textContent =
+      frame.text;
+
+    learningFrameCounter.textContent =
+      `${safeIndex + 1} / ${lesson.frames.length}`;
+
+    showLearningNumber(
+      frame.value,
+      frame.place
+    );
+  }
+
+  function runLearningAnimation(
+    restart = true
+  ) {
+    const lesson =
+      currentLearningLesson();
+
+    if (!lesson) {
+      return;
+    }
+
+    if (restart) {
+      stopLearningAnimation();
+      learningCurrentFrame = 0;
+    }
+
+    const token =
+      learningAnimationToken;
+
+    learningAnimationPaused =
+      false;
+
+    learningPauseBtn.textContent =
+      "Ⅱ 一時停止";
+
+    const showNext = () => {
+      if (
+        token !==
+        learningAnimationToken
+      ) {
+        return;
+      }
+
+      if (
+        learningAnimationPaused
+      ) {
+        setTimeout(
+          showNext,
+          180
+        );
+        return;
+      }
+
+      renderLearningFrame(
+        learningCurrentFrame
+      );
+
+      learningCurrentFrame += 1;
+
+      if (
+        learningCurrentFrame >=
+        lesson.frames.length
+      ) {
+        learningCurrentFrame = 0;
+
+        // 1周終わったら少し間を空けて自動で繰り返す。
+        setTimeout(
+          showNext,
+          1500
+        );
+        return;
+      }
+
+      setTimeout(
+        showNext,
+        1150
+      );
+    };
+
+    showNext();
+  }
+
+  function renderLearningQuiz(
+    lesson
+  ) {
+    learningQuizQuestion.textContent =
+      lesson.quiz.q;
+
+    learningQuizOptions.innerHTML =
+      "";
+
+    learningQuizFeedback.textContent =
+      "";
+
+    learningClearActions.classList.remove(
+      "show"
+    );
+
+    lesson.quiz.options.forEach(
+      (option) => {
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+
+        button.className =
+          "learning-quiz-option";
+
+        button.textContent =
+          option;
+
+        button.addEventListener(
+          "click",
+          () => {
+            const correct =
+              option ===
+              lesson.quiz.answer;
+
+            learningQuizOptions
+              .querySelectorAll(
+                "button"
+              )
+              .forEach(
+                (item) => {
+                  item.disabled =
+                    true;
+
+                  if (
+                    item.textContent ===
+                    lesson.quiz.answer
+                  ) {
+                    item.classList.add(
+                      "correct-choice"
+                    );
+                  }
+                }
+              );
+
+            if (correct) {
+              learningProgress
+                .cleared[
+                  lesson.id
+                ] = true;
+
+              saveTutorialProgress();
+
+              learningQuizFeedback
+                .textContent =
+                "★ クリア！ 次のSTEPが開きました。";
+
+              learningQuizFeedback
+                .style.color =
+                "#2f6a43";
+
+              learningClearActions
+                .classList.add(
+                  "show"
+                );
+
+              renderLearningCategories();
+            } else {
+              button.classList.add(
+                "wrong-choice"
+              );
+
+              learningQuizFeedback
+                .textContent =
+                `もう一度動画を見てみよう。正解は「${lesson.quiz.answer}」。`;
+
+              learningQuizFeedback
+                .style.color =
+                "#a14428";
+
+              learningClearActions
+                .classList.add(
+                  "show"
+                );
+            }
+          }
+        );
+
+        learningQuizOptions
+          .appendChild(
+            button
+          );
+      }
+    );
+  }
+
+  function openLearningLesson(
+    categoryKey,
+    lessonIndex
+  ) {
+    learningCurrentCategory =
+      categoryKey;
+
+    learningCurrentLessonIndex =
+      lessonIndex;
+
+    const category =
+      learningCategories[
+        categoryKey
+      ];
+
+    const lesson =
+      category.lessons[
+        lessonIndex
+      ];
+
+    learningCategoryView
+      .classList.add(
+        "hidden"
+      );
+
+    learningStageView
+      .classList.add(
+        "hidden"
+      );
+
+    learningLessonView
+      .classList.remove(
+        "hidden"
+      );
+
+    learningLessonKicker.textContent =
+      `${category.symbol} ${category.title} / STEP ${lessonIndex + 1}`;
+
+    learningLessonTitle.textContent =
+      lesson.title;
+
+    learningBasicText.textContent =
+      lesson.basic;
+
+    learningTroubleText.textContent =
+      lesson.trouble;
+
+    learningRuleBox.textContent =
+      lesson.rule;
+
+    const maxValue =
+      Math.max(
+        0,
+        ...lesson.frames.map(
+          (frame) =>
+            Math.abs(
+              Number(
+                frame.value
+              ) || 0
+            )
+        )
+      );
+
+    const digitCount =
+      Math.max(
+        1,
+        String(
+          Math.floor(
+            maxValue
+          )
+        ).length
+      );
+
+    buildLearningBoard(
+      digitCount
+    );
+
+    renderLearningQuiz(
+      lesson
+    );
+
+    renderLearningFrame(
+      0
+    );
+
+    runLearningAnimation(
+      true
+    );
+
+    const nextExists =
+      Boolean(
+        category.lessons[
+          lessonIndex + 1
+        ]
+      );
+
+    learningNextBtn.textContent =
+      nextExists
+        ? "次のSTEPへ"
+        : "STEP一覧へ";
+  }
+
+  function goNextLearningLesson() {
+    const category =
+      learningCategories[
+        learningCurrentCategory
+      ];
+
+    const nextIndex =
+      learningCurrentLessonIndex +
+      1;
+
+    if (
+      category &&
+      category.lessons[
+        nextIndex
+      ] &&
+      tutorialLessonUnlocked(
+        learningCurrentCategory,
+        nextIndex
+      )
+    ) {
+      openLearningLesson(
+        learningCurrentCategory,
+        nextIndex
+      );
+      return;
+    }
+
+    showLearningStages(
+      learningCurrentCategory
+    );
+  }
+
   const TIME_LIMIT_STORAGE_KEY =
     "soroban_time_limit_enabled_v1";
 
@@ -4219,6 +6095,8 @@ HTML = r"""
 
     $("#retryBtn").textContent = "同じモードをもう一度";
 
+    homeView.classList.add("hidden");
+    learningView.classList.remove("show");
     menuView.classList.add("hidden");
     workspace.classList.add("show");
     questionCard.classList.remove(
@@ -5201,13 +7079,34 @@ HTML = r"""
             workspace.classList.contains("show") ||
             results.classList.contains("show")
           ) {
-            // ゲーム中／結果画面ならTOP（モード選択）へ。
+            // チャレンジ中／結果画面 → チャレンジのモード選択。
             goMenu();
+          } else if (
+            !learningLessonView.classList.contains("hidden")
+          ) {
+            // 学習STEP詳細 → STEP一覧。
+            showLearningStages(
+              learningCurrentCategory
+            );
+          } else if (
+            learningView.classList.contains("show") &&
+            !learningStageView.classList.contains("hidden")
+          ) {
+            // STEP一覧 → 足し算・引き算などの種類選択。
+            showLearningHome();
+          } else if (
+            learningView.classList.contains("show")
+          ) {
+            // 学習モードの種類選択 → アプリTOP。
+            showHome();
+          } else if (
+            !menuView.classList.contains("hidden")
+          ) {
+            // チャレンジのモード選択 → アプリTOP。
+            showHome();
           } else {
-            // すでにTOPなら外へ出ず、そのままTOPを維持。
-            menuView.classList.remove("hidden");
-            workspace.classList.remove("show");
-            results.classList.remove("show");
+            // アプリTOPでは外へ抜けず、そのまま維持。
+            showHome();
           }
         } finally {
           // 次回のBackもアプリ内で処理できるようガードを戻す。
@@ -5233,6 +7132,8 @@ HTML = r"""
     }
 
     workspace.classList.remove("show");
+    homeView.classList.add("hidden");
+    learningView.classList.remove("show");
     menuView.classList.remove("hidden");
     results.classList.remove("show");
     questionCard.classList.remove("hidden");
@@ -5241,6 +7142,85 @@ HTML = r"""
     correctStreak = 0;
     updateStreakFrame(0);
   }
+
+  $("#homeChallengeBtn").addEventListener(
+    "click",
+    showChallengeMenu
+  );
+
+  $("#homeLearningBtn").addEventListener(
+    "click",
+    showLearningHome
+  );
+
+  $("#challengeTopBtn").addEventListener(
+    "click",
+    showHome
+  );
+
+  $("#learningTopBtn").addEventListener(
+    "click",
+    showHome
+  );
+
+  $("#learningStageBackBtn").addEventListener(
+    "click",
+    showLearningHome
+  );
+
+  $("#learningLessonBackBtn").addEventListener(
+    "click",
+    () => {
+      showLearningStages(
+        learningCurrentCategory
+      );
+    }
+  );
+
+  $("#learningReplayBtn").addEventListener(
+    "click",
+    () => {
+      runLearningAnimation(
+        true
+      );
+    }
+  );
+
+  learningPauseBtn.addEventListener(
+    "click",
+    () => {
+      learningAnimationPaused =
+        !learningAnimationPaused;
+
+      learningPauseBtn.textContent =
+        learningAnimationPaused
+          ? "▶ 再開"
+          : "Ⅱ 一時停止";
+    }
+  );
+
+  $("#learningAgainBtn").addEventListener(
+    "click",
+    () => {
+      const lesson =
+        currentLearningLesson();
+
+      if (lesson) {
+        renderLearningQuiz(
+          lesson
+        );
+      }
+
+      runLearningAnimation(
+        true
+      );
+    }
+  );
+
+  learningNextBtn.addEventListener(
+    "click",
+    goNextLearningLesson
+  );
 
   voiceBtn.addEventListener("click", () => {
     setVoiceAnswerEnabled(!voiceAnswerEnabled);
@@ -5337,7 +7317,13 @@ HTML = r"""
   timeLimitEnabled =
     loadTimeLimitSetting();
 
+  homeView.classList.remove("hidden");
+  menuView.classList.add("hidden");
+  learningView.classList.remove("show");
+  workspace.classList.remove("show");
+
   updateTimeLimitUi();
+  renderLearningCategories();
   installInAppBackGuard();
   updateBgmButton();
   updateVoiceUi();
