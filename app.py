@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V36-PRACTICE-OPENAI-VOICE-2026-08-27
+# VERSION: CLEAN-V37-PRACTICE-TEXTINPUT-FIX-2026-08-27
 
 import hashlib
 import io
@@ -18,7 +18,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V36-PRACTICE-OPENAI-VOICE"
+APP_VERSION = "CLEAN-V37-PRACTICE-TEXTINPUT-FIX"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -502,7 +502,7 @@ def render_practice_mode():
         ):
             manual = st.text_input(
                 "答え",
-                inputmode="numeric",
+                placeholder="数字を入力",
             )
             submitted = st.form_submit_button(
                 "答える",
