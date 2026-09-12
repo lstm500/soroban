@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V50-LOUD-BGM-SAFE-MIC-2026-09-13
+# VERSION: CLEAN-V51-MUSIC-DURING-THINKING-2026-09-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V50-LOUD-BGM-SAFE-MIC"
+APP_VERSION = "CLEAN-V51-MUSIC-DURING-THINKING"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2066,7 +2066,7 @@ HTML = r"""
 
     <article class="setting-card">
       <div class="setting-title">BGM</div>
-      <div class="setting-desc">チャレンジ中のBGMを最初からON/OFFにします。通常時は楽しめる音量、音声認識中は自動で無音になります。</div>
+      <div class="setting-desc">チャレンジ中のBGMを最初からON/OFFにします。マイクON中も音楽は流れ、答えを話した瞬間だけ自動で下がります。</div>
       <div id="settingBgmValue" class="setting-value">ON</div>
       <button type="button" id="settingBgmBtn">切り替える</button>
     </article>
@@ -3040,6 +3040,7 @@ HTML = r"""
   let anzanRecognition = null;
   let anzanListening = false;
   let anzanListeningStartedAt = 0;
+  let anzanSpeechDetected = false;
   let anzanLocked = false;
 
   const RULES = Object.freeze({
@@ -3119,13 +3120,14 @@ HTML = r"""
   let voiceCalloutRunning = false;
   let voiceRestartTimer = null;
   let voiceListeningStartedAt = 0;
+  let voiceSpeechDetected = false;
 
-  // スピーカーから出た直前のBGMや読み上げの余韻を
-  // マイクが回答として拾わないための無音時間。
-  const MIC_PRE_SILENCE_MS = 700;
-  const MIC_RESULT_GUARD_MS = 450;
+  // 「ゴワサン！」の直後だけ短く余韻を待つ。
+  // 問題を解いている間はBGMを止めない。
+  const MIC_PRE_SILENCE_MS = 450;
+  const MIC_RESULT_GUARD_MS = 350;
 
-  const BGM_VOLUME_NORMAL = 0.12;
+  const BGM_VOLUME_NORMAL = 0.14;
   const BGM_VOLUME_APP_SPEECH = 0.03;
   const BGM_VOLUME_LISTENING = 0.00;
 
@@ -4672,13 +4674,11 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // 通常は8%。
-    // アプリ自身の読み上げ中は3%。
-    // マイクが回答を聞いている間は0%にして、
-    // スピーカーのBGMを回答として拾いにくくする。
+    // 問題を考えている間は、マイクがONでもBGMを通常音量で流す。
+    // 実際の発話をSpeechRecognitionが検知した瞬間だけ0%へ下げる。
     if (
-      voiceRecognitionRunning ||
-      anzanListening
+      voiceSpeechDetected ||
+      anzanSpeechDetected
     ) {
       return BGM_VOLUME_LISTENING;
     }
@@ -5152,6 +5152,15 @@ HTML = r"""
           ? rawConfidence
           : 0;
 
+      // ブラウザがconfidenceを返している場合、
+      // 極端に低い数字候補はBGMや環境音の誤認識として捨てる。
+      if (
+        confidence > 0 &&
+        confidence < 0.22
+      ) {
+        continue;
+      }
+
       const normalized =
         normalizeNumericSpeechText(
           transcript
@@ -5289,6 +5298,28 @@ HTML = r"""
       }, delay);
   }
 
+  function scheduleSilentVoiceRestart(
+    delay = 320
+  ) {
+    if (
+      !voiceAnswerEnabled ||
+      voicePauseForFeedback ||
+      voiceCalloutRunning ||
+      locked ||
+      !workspace.classList.contains("show") ||
+      results.classList.contains("show")
+    ) {
+      return;
+    }
+
+    clearVoiceRestartTimer();
+
+    voiceRestartTimer =
+      setTimeout(() => {
+        startMicrophoneRecognition();
+      }, delay);
+  }
+
   function handleRecognizedSpeech(
     event
   ) {
@@ -5347,6 +5378,10 @@ HTML = r"""
         selected.value
       );
 
+    // この認識結果は回答として採用する。
+    // stop()後のonendが、回答確定前にマイクを再起動しないようにする。
+    voicePauseForFeedback = true;
+
     updateVoiceUi(
       `音声回答：「${selected.transcript}」→ ${selected.value}`
     );
@@ -5380,22 +5415,37 @@ HTML = r"""
       voiceRecognitionRunning = true;
       voiceListeningStartedAt =
         Date.now();
+      voiceSpeechDetected = false;
 
+      // マイクがONでも、考えている間のBGMは通常音量。
       refreshBgmVolume();
       bgmEngine.ensureRunning();
       startBgmKeepAlive();
 
       updateVoiceUi(
-        "音声回答：聞き取り中"
+        "音声回答：数字を話してください"
       );
 
       // ① ゴワサン終了
       // ② マイクの onstart を確認
       // ③ ここで初めて問題を生成・表示する
       renderQuestion(true);
+    };
+
+    recognition.onspeechstart = () => {
+      // ブラウザが人の発話を検知した瞬間だけBGMを消す。
+      voiceSpeechDetected = true;
+      refreshBgmVolume();
 
       updateVoiceUi(
-        "音声回答：数字を話してください"
+        "音声回答：聞いています…"
+      );
+    };
+
+    recognition.onspeechend = () => {
+      // 結果確定まではBGMを戻さず、語尾をBGMで汚さない。
+      updateVoiceUi(
+        "音声回答：確認中…"
       );
     };
 
@@ -5405,6 +5455,7 @@ HTML = r"""
     recognition.onend = () => {
       voiceRecognitionRunning = false;
       voiceListeningStartedAt = 0;
+      voiceSpeechDetected = false;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -5417,9 +5468,11 @@ HTML = r"""
         workspace.classList.contains("show") &&
         !results.classList.contains("show")
       ) {
-        // 無音や認識失敗で終了した場合も、
-        // 次回は必ず「ゴワサン！」から再開する。
-        scheduleVoiceRestart(350);
+        // 無音タイムアウトでは「ゴワサン！」を言い直さない。
+        // 同じ問題を表示したまま、マイクだけ静かに再開する。
+        scheduleSilentVoiceRestart(
+          320
+        );
       } else {
         updateVoiceUi();
       }
@@ -5430,6 +5483,7 @@ HTML = r"""
     ) => {
       voiceRecognitionRunning = false;
       voiceListeningStartedAt = 0;
+      voiceSpeechDetected = false;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -5458,7 +5512,7 @@ HTML = r"""
           !voiceCalloutRunning &&
           !locked
         ) {
-          scheduleVoiceRestart(
+          scheduleSilentVoiceRestart(
             380
           );
         }
@@ -5475,7 +5529,7 @@ HTML = r"""
         !voiceCalloutRunning &&
         !locked
       ) {
-        scheduleVoiceRestart(500);
+        scheduleSilentVoiceRestart(500);
       }
     };
 
@@ -5519,19 +5573,20 @@ HTML = r"""
       );
     }
 
-    // 700msの無音時間の後も、そのまま0%を維持。
-    // マイク起動直後にもアプリ音が入らないようにする。
-    bgmEngine.setVolume(
-      BGM_VOLUME_LISTENING,
-      0.04
-    );
+    // マイクを開いているだけではBGMを止めない。
+    // 発話検知(onspeechstart)が来た瞬間だけ0%へ下げる。
+    voiceSpeechDetected = false;
+    refreshBgmVolume();
 
     try {
       voiceRecognition.start();
     } catch (error) {
       voiceRecognitionRunning = false;
+      voiceSpeechDetected = false;
       refreshBgmVolume();
-      scheduleVoiceRestart(500);
+      scheduleSilentVoiceRestart(
+        500
+      );
     }
   }
 
@@ -5591,16 +5646,15 @@ HTML = r"""
         return;
       }
 
-      // ここで通常音量へ戻さない。
-      // BGMを先に完全ミュートし、端末スピーカーの余韻が
-      // 消えてからマイクを開く。
+      // 「ゴワサン！」の余韻だけはマイクへ入れない。
+      // この短い待機中だけ無音にし、問題表示後はBGMを通常音量へ戻す。
       bgmEngine.setVolume(
         BGM_VOLUME_LISTENING,
         0.06
       );
 
       updateVoiceUi(
-        "音声回答：まもなく聞き取り開始"
+        "音声回答：まもなく問題スタート"
       );
 
       setTimeout(() => {
@@ -5613,6 +5667,8 @@ HTML = r"""
           return;
         }
 
+        voiceSpeechDetected = false;
+        refreshBgmVolume();
         startMicrophoneRecognition();
       }, MIC_PRE_SILENCE_MS);
     };
@@ -5665,8 +5721,8 @@ HTML = r"""
   }
 
   function startVoiceRecognition() {
-    // 音声入力を開始するたびに必ず
-    // 「ゴワサン！」→マイク開始の順序にする。
+    // 新しい問題の開始時だけ「ゴワサン！」。
+    // 無音タイムアウトによるマイク再接続では呼ばない。
     speakGowasanThenListen();
   }
 
@@ -7162,6 +7218,7 @@ HTML = r"""
     if (!anzanRecognition) {
       anzanListening = false;
       anzanListeningStartedAt = 0;
+      anzanSpeechDetected = false;
       refreshBgmVolume();
       return;
     }
@@ -7174,6 +7231,7 @@ HTML = r"""
     anzanRecognition = null;
     anzanListening = false;
     anzanListeningStartedAt = 0;
+    anzanSpeechDetected = false;
     refreshBgmVolume();
   }
 
@@ -7481,13 +7539,8 @@ HTML = r"""
         if (
           preferredVoiceAnswerEnabled
         ) {
-          // 答え画面に切り替わった直後からBGMを消し、
-          // スピーカーの余韻が消えてからマイクを開く。
-          bgmEngine.setVolume(
-            BGM_VOLUME_LISTENING,
-            0.06
-          );
-
+          // 答え画面になったらそのままマイクを開始。
+          // BGMは流したまま、実際の発話時だけ自動で下げる。
           setTimeout(
             () => {
               if (
@@ -7496,7 +7549,7 @@ HTML = r"""
                 startAnzanVoiceRecognition();
               }
             },
-            500
+            180
           );
         }
 
@@ -7562,9 +7615,24 @@ HTML = r"""
       anzanListening = true;
       anzanListeningStartedAt =
         Date.now();
+      anzanSpeechDetected = false;
       refreshBgmVolume();
+
       anzanVoiceStatus.textContent =
-        "🎤 聞いています";
+        "🎤 答えを言ってね";
+    };
+
+    recognition.onspeechstart = () => {
+      anzanSpeechDetected = true;
+      refreshBgmVolume();
+
+      anzanVoiceStatus.textContent =
+        "🎤 聞いています…";
+    };
+
+    recognition.onspeechend = () => {
+      anzanVoiceStatus.textContent =
+        "🎤 確認中…";
     };
 
     recognition.onresult =
@@ -7605,6 +7673,7 @@ HTML = r"""
     recognition.onerror = () => {
       anzanListening = false;
       anzanListeningStartedAt = 0;
+      anzanSpeechDetected = false;
       refreshBgmVolume();
       anzanVoiceStatus.textContent =
         "うまく聞き取れませんでした。数字でも答えられます。";
@@ -7613,14 +7682,14 @@ HTML = r"""
     recognition.onend = () => {
       anzanListening = false;
       anzanListeningStartedAt = 0;
+      anzanSpeechDetected = false;
       refreshBgmVolume();
     };
 
-    // 暗算でも聞き取り開始直前はアプリBGMを0%へ。
-    bgmEngine.setVolume(
-      BGM_VOLUME_LISTENING,
-      0.04
-    );
+    // 暗算でも、マイクONだけではBGMを止めない。
+    // 実際の発話検知時だけ0%へ下げる。
+    anzanSpeechDetected = false;
+    refreshBgmVolume();
 
     try {
       recognition.start();
