@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V48-ANZAN-SETTINGS-KPI-2026-09-13
+# VERSION: CLEAN-V50-LOUD-BGM-SAFE-MIC-2026-09-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V48-ANZAN-SETTINGS-KPI"
+APP_VERSION = "CLEAN-V50-LOUD-BGM-SAFE-MIC"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2066,7 +2066,7 @@ HTML = r"""
 
     <article class="setting-card">
       <div class="setting-title">BGM</div>
-      <div class="setting-desc">チャレンジ中のBGMを最初からON/OFFにします。</div>
+      <div class="setting-desc">チャレンジ中のBGMを最初からON/OFFにします。通常時は楽しめる音量、音声認識中は自動で無音になります。</div>
       <div id="settingBgmValue" class="setting-value">ON</div>
       <button type="button" id="settingBgmBtn">切り替える</button>
     </article>
@@ -3039,6 +3039,7 @@ HTML = r"""
   let anzanRunToken = 0;
   let anzanRecognition = null;
   let anzanListening = false;
+  let anzanListeningStartedAt = 0;
   let anzanLocked = false;
 
   const RULES = Object.freeze({
@@ -3117,9 +3118,16 @@ HTML = r"""
   let voicePauseForFeedback = false;
   let voiceCalloutRunning = false;
   let voiceRestartTimer = null;
+  let voiceListeningStartedAt = 0;
 
-  const BGM_VOLUME_VOICE_ON = 0.06;
-  const BGM_VOLUME_VOICE_OFF = 0.06;
+  // スピーカーから出た直前のBGMや読み上げの余韻を
+  // マイクが回答として拾わないための無音時間。
+  const MIC_PRE_SILENCE_MS = 700;
+  const MIC_RESULT_GUARD_MS = 450;
+
+  const BGM_VOLUME_NORMAL = 0.12;
+  const BGM_VOLUME_APP_SPEECH = 0.03;
+  const BGM_VOLUME_LISTENING = 0.00;
 
   let bgmKeepAliveTimer = null;
 
@@ -3135,7 +3143,7 @@ HTML = r"""
       this.currentSourceGain = null;
 
       this.playGeneration = 0;
-      this.targetVolume = BGM_VOLUME_VOICE_OFF;
+      this.targetVolume = BGM_VOLUME_NORMAL;
     }
 
     ensureContext() {
@@ -4664,10 +4672,25 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // 音声回答ON/OFFともにBGMは6%固定。
-    return voiceAnswerEnabled
-      ? BGM_VOLUME_VOICE_ON
-      : BGM_VOLUME_VOICE_OFF;
+    // 通常は8%。
+    // アプリ自身の読み上げ中は3%。
+    // マイクが回答を聞いている間は0%にして、
+    // スピーカーのBGMを回答として拾いにくくする。
+    if (
+      voiceRecognitionRunning ||
+      anzanListening
+    ) {
+      return BGM_VOLUME_LISTENING;
+    }
+
+    if (
+      voiceCalloutRunning ||
+      voicePauseForFeedback
+    ) {
+      return BGM_VOLUME_APP_SPEECH;
+    }
+
+    return BGM_VOLUME_NORMAL;
   }
 
   function refreshBgmVolume() {
@@ -5014,6 +5037,158 @@ HTML = r"""
       : value;
   }
 
+  function normalizeNumericSpeechText(
+    input
+  ) {
+    return String(
+      input || ""
+    )
+      .toLowerCase()
+      .replace(
+        /[,\s、。,.！!？?]/g,
+        ""
+      )
+      .replace(
+        /答えは|答え|こたえは|こたえ|です|だよ|だね|だ|かな|えっと|えーと|ええと|えー|うーん|はい/g,
+        ""
+      )
+      .replace(
+        /マイナス|minus/g,
+        "-"
+      )
+      .replace(/いち/g, "一")
+      .replace(/に/g, "二")
+      .replace(/さん/g, "三")
+      .replace(/よん|し/g, "四")
+      .replace(/ご/g, "五")
+      .replace(/ろく/g, "六")
+      .replace(/なな|しち/g, "七")
+      .replace(/はち/g, "八")
+      .replace(/きゅう|く/g, "九")
+      .replace(/れい|ぜろ/g, "零")
+      .replace(/じゅう/g, "十")
+      .replace(/ひゃく/g, "百")
+      .replace(/せん/g, "千")
+      .replace(/まん/g, "万");
+  }
+
+  function isLikelyNumericSpeech(
+    input
+  ) {
+    const normalized =
+      normalizeNumericSpeechText(
+        input
+      );
+
+    if (!normalized) {
+      return false;
+    }
+
+    // 数字・漢数字以外の言葉が残っている候補は、
+    // BGMや周囲の会話の可能性が高いので採用しない。
+    return (
+      /^-?\d+$/.test(
+        normalized
+      ) ||
+      /^-?[一二三四五六七八九〇零十百千万]+$/.test(
+        normalized
+      )
+    );
+  }
+
+  function selectBestNumericSpeech(
+    result
+  ) {
+    if (!result) {
+      return null;
+    }
+
+    let best = null;
+
+    for (
+      let i = 0;
+      i < result.length;
+      i += 1
+    ) {
+      const alternative =
+        result[i];
+
+      const transcript =
+        String(
+          alternative?.transcript || ""
+        ).trim();
+
+      if (
+        !transcript ||
+        !isLikelyNumericSpeech(
+          transcript
+        )
+      ) {
+        continue;
+      }
+
+      const value =
+        japaneseIntegerToNumber(
+          transcript
+        );
+
+      if (
+        value === null ||
+        !Number.isInteger(value) ||
+        value < 0
+      ) {
+        continue;
+      }
+
+      const rawConfidence =
+        Number(
+          alternative?.confidence
+        );
+
+      const confidence =
+        Number.isFinite(
+          rawConfidence
+        )
+          ? rawConfidence
+          : 0;
+
+      const normalized =
+        normalizeNumericSpeechText(
+          transcript
+        );
+
+      const digitOnlyBonus =
+        /^-?\d+$/.test(
+          normalized
+        )
+          ? 0.15
+          : 0;
+
+      const score =
+        confidence +
+        digitOnlyBonus -
+        Math.min(
+          0.12,
+          transcript.length *
+            0.002
+        );
+
+      if (
+        !best ||
+        score > best.score
+      ) {
+        best = {
+          value,
+          transcript,
+          confidence,
+          score
+        };
+      }
+    }
+
+    return best;
+  }
+
   function updateVoiceUi(
     message = null
   ) {
@@ -5133,54 +5308,47 @@ HTML = r"""
       return;
     }
 
-    const alternatives = [];
-
-    for (
-      let i = 0;
-      i < result.length;
-      i += 1
+    // 問題はマイクonstart後に初めて表示されるため、
+    // 450ms未満で返る認識結果は子どもの回答とは考えにくい。
+    // 直前のBGM・ゴワサンの残響として捨てる。
+    if (
+      voiceListeningStartedAt > 0 &&
+      Date.now() -
+        voiceListeningStartedAt <
+        MIC_RESULT_GUARD_MS
     ) {
-      alternatives.push(
-        result[i].transcript
+      updateVoiceUi(
+        "音声回答：数字を話してください"
       );
+      return;
     }
 
-    let parsed = null;
-    let recognizedText = "";
+    const selected =
+      selectBestNumericSpeech(
+        result
+      );
 
-    for (
-      const transcript
-      of alternatives
-    ) {
-      const value =
-        japaneseIntegerToNumber(
-          transcript
+    if (!selected) {
+      const firstText =
+        String(
+          result[0]?.transcript || ""
         );
 
-      if (
-        value !== null &&
-        Number.isInteger(value) &&
-        value >= 0
-      ) {
-        parsed = value;
-        recognizedText =
-          transcript;
-        break;
-      }
-    }
-
-    if (parsed === null) {
       updateVoiceUi(
-        `音声回答：「${alternatives[0] || ""}」を数字として認識できませんでした`
+        firstText
+          ? "音声回答：数字だけを、もう一度話してください"
+          : "音声回答：もう一度話してください"
       );
       return;
     }
 
     answerInput.value =
-      String(parsed);
+      String(
+        selected.value
+      );
 
     updateVoiceUi(
-      `音声回答：「${recognizedText}」→ ${parsed}`
+      `音声回答：「${selected.transcript}」→ ${selected.value}`
     );
 
     stopVoiceRecognition();
@@ -5210,6 +5378,8 @@ HTML = r"""
 
     recognition.onstart = () => {
       voiceRecognitionRunning = true;
+      voiceListeningStartedAt =
+        Date.now();
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -5234,6 +5404,7 @@ HTML = r"""
 
     recognition.onend = () => {
       voiceRecognitionRunning = false;
+      voiceListeningStartedAt = 0;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -5258,6 +5429,7 @@ HTML = r"""
       event
     ) => {
       voiceRecognitionRunning = false;
+      voiceListeningStartedAt = 0;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -5347,11 +5519,18 @@ HTML = r"""
       );
     }
 
-    refreshBgmVolume();
+    // 700msの無音時間の後も、そのまま0%を維持。
+    // マイク起動直後にもアプリ音が入らないようにする。
+    bgmEngine.setVolume(
+      BGM_VOLUME_LISTENING,
+      0.04
+    );
 
     try {
       voiceRecognition.start();
     } catch (error) {
+      voiceRecognitionRunning = false;
+      refreshBgmVolume();
       scheduleVoiceRestart(500);
     }
   }
@@ -5403,22 +5582,39 @@ HTML = r"""
       voiceCalloutRunning = false;
       voicePauseForFeedback = false;
 
-      // ゴワサン終了時点では、まだ問題は作らず表示もしない。
-      // 次にマイクを開始し、recognition.onstart が発火してから
-      // 初めて問題を生成・表示する。
-      refreshBgmVolume();
-
       if (
         !voiceAnswerEnabled ||
         locked ||
         results.classList.contains("show")
       ) {
+        refreshBgmVolume();
         return;
       }
 
+      // ここで通常音量へ戻さない。
+      // BGMを先に完全ミュートし、端末スピーカーの余韻が
+      // 消えてからマイクを開く。
+      bgmEngine.setVolume(
+        BGM_VOLUME_LISTENING,
+        0.06
+      );
+
+      updateVoiceUi(
+        "音声回答：まもなく聞き取り開始"
+      );
+
       setTimeout(() => {
+        if (
+          !voiceAnswerEnabled ||
+          locked ||
+          results.classList.contains("show")
+        ) {
+          refreshBgmVolume();
+          return;
+        }
+
         startMicrophoneRecognition();
-      }, 220);
+      }, MIC_PRE_SILENCE_MS);
     };
 
     if (
@@ -5553,7 +5749,7 @@ HTML = r"""
     streak
   ) {
     // 判定音声中はマイクだけ一時停止。
-    // BGM再生ノードは止めず、4%へGainを下げる。
+    // BGM再生ノードは止めず、読み上げ用の3%へ下げる。
     voicePauseForFeedback = true;
 
     stopVoiceRecognition();
@@ -6965,6 +7161,8 @@ HTML = r"""
   function stopAnzanRecognition() {
     if (!anzanRecognition) {
       anzanListening = false;
+      anzanListeningStartedAt = 0;
+      refreshBgmVolume();
       return;
     }
 
@@ -6975,6 +7173,8 @@ HTML = r"""
 
     anzanRecognition = null;
     anzanListening = false;
+    anzanListeningStartedAt = 0;
+    refreshBgmVolume();
   }
 
   function stopAnzanSession() {
@@ -7281,7 +7481,23 @@ HTML = r"""
         if (
           preferredVoiceAnswerEnabled
         ) {
-          startAnzanVoiceRecognition();
+          // 答え画面に切り替わった直後からBGMを消し、
+          // スピーカーの余韻が消えてからマイクを開く。
+          bgmEngine.setVolume(
+            BGM_VOLUME_LISTENING,
+            0.06
+          );
+
+          setTimeout(
+            () => {
+              if (
+                !anzanLocked
+              ) {
+                startAnzanVoiceRecognition();
+              }
+            },
+            500
+          );
         }
 
         return;
@@ -7340,54 +7556,77 @@ HTML = r"""
       false;
 
     recognition.maxAlternatives =
-      1;
+      5;
 
     recognition.onstart = () => {
       anzanListening = true;
+      anzanListeningStartedAt =
+        Date.now();
+      refreshBgmVolume();
       anzanVoiceStatus.textContent =
         "🎤 聞いています";
     };
 
     recognition.onresult =
       (event) => {
-        const transcript =
-          event.results?.[0]?.[0]
-            ?.transcript || "";
-
-        const parsed =
-          japaneseIntegerToNumber(
-            transcript
-          );
+        const result =
+          event.results?.[0];
 
         if (
-          Number.isFinite(
-            parsed
-          )
+          anzanListeningStartedAt > 0 &&
+          Date.now() -
+            anzanListeningStartedAt <
+            350
         ) {
+          anzanVoiceStatus.textContent =
+            "🎤 答えを言ってね";
+          return;
+        }
+
+        const selected =
+          selectBestNumericSpeech(
+            result
+          );
+
+        if (selected) {
           anzanAnswerBuffer =
-            String(parsed);
+            String(
+              selected.value
+            );
 
           updateAnzanAnswerDisplay();
           submitAnzanAnswer();
         } else {
           anzanVoiceStatus.textContent =
-            "数字として聞き取れませんでした。もう一度言ってね。";
+            "数字だけを、もう一度言ってね。";
         }
       };
 
     recognition.onerror = () => {
       anzanListening = false;
+      anzanListeningStartedAt = 0;
+      refreshBgmVolume();
       anzanVoiceStatus.textContent =
         "うまく聞き取れませんでした。数字でも答えられます。";
     };
 
     recognition.onend = () => {
       anzanListening = false;
+      anzanListeningStartedAt = 0;
+      refreshBgmVolume();
     };
+
+    // 暗算でも聞き取り開始直前はアプリBGMを0%へ。
+    bgmEngine.setVolume(
+      BGM_VOLUME_LISTENING,
+      0.04
+    );
 
     try {
       recognition.start();
     } catch (error) {
+      anzanListening = false;
+      refreshBgmVolume();
       anzanVoiceStatus.textContent =
         "音声回答を開始できませんでした。";
     }
