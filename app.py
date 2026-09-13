@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V51-MUSIC-DURING-THINKING-2026-09-13
+# VERSION: CLEAN-V48-BGM-VOLUME-2026-09-13
 
 import json
 
@@ -8,12 +8,12 @@ from supabase import create_client
 
 
 st.set_page_config(
-    page_title="そろばん",
+    page_title="そろばん計算トレーナー",
     page_icon="🧮",
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V51-MUSIC-DURING-THINKING"
+APP_VERSION = "CLEAN-V48-BGM-VOLUME"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -198,251 +198,6 @@ HTML = r"""
     font-size: 13px;
     line-height: 1.6;
     opacity: .86;
-  }
-
-  .home-mode-btn.anzan-home {
-    background: #fff8e8;
-    border-color: #e2d2a9;
-  }
-
-  .home-mode-btn.settings-home {
-    background: #f4f1ec;
-    border-color: #d8d1c6;
-  }
-
-  /* =====================================================
-     MENTAL ARITHMETIC MODE
-     ===================================================== */
-  .anzan-view,
-  .settings-view {
-    display: none;
-  }
-
-  .anzan-view.show,
-  .settings-view.show {
-    display: block;
-  }
-
-  .anzan-hero,
-  .settings-hero {
-    padding: 18px;
-    border: 1px solid #dcd5c8;
-    border-radius: 20px;
-    background: #fff;
-  }
-
-  .anzan-hero h2,
-  .settings-hero h2 {
-    margin: 0 0 7px;
-    font-size: clamp(24px, 4vw, 34px);
-  }
-
-  .anzan-hero p,
-  .settings-hero p {
-    margin: 0;
-    color: #6b655d;
-    font-size: 13px;
-    line-height: 1.7;
-  }
-
-  .anzan-level-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  .anzan-level-card {
-    display: flex;
-    flex-direction: column;
-    min-height: 190px;
-    padding: 16px;
-    border: 1px solid #ddd7ca;
-    border-radius: 18px;
-    background: #fff;
-  }
-
-  .anzan-level-no {
-    color: #8a8277;
-    font-size: 11px;
-    font-weight: 950;
-    letter-spacing: .08em;
-  }
-
-  .anzan-level-name {
-    margin: 7px 0;
-    font-size: 19px;
-    font-weight: 1000;
-  }
-
-  .anzan-level-desc {
-    flex: 1;
-    color: #6d675f;
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
-  .anzan-game-card {
-    margin-top: 14px;
-    padding: 18px;
-    border: 2px solid #ddd7ca;
-    border-radius: 22px;
-    background: #fff;
-    text-align: center;
-  }
-
-  .anzan-status {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    color: #6e685f;
-    font-size: 12px;
-    font-weight: 900;
-  }
-
-  .anzan-flash {
-    min-height: 160px;
-    display: grid;
-    place-items: center;
-    margin: 16px 0 10px;
-    border: 2px solid #e0d8ca;
-    border-radius: 20px;
-    background: #fffdf8;
-    font-size: clamp(54px, 12vw, 92px);
-    font-weight: 1000;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .anzan-flash.ready {
-    color: #786f65;
-    font-size: clamp(28px, 6vw, 42px);
-  }
-
-  .anzan-flash.answer {
-    border-color: #9db5c8;
-    background: #f4f9fc;
-  }
-
-  .anzan-hint {
-    min-height: 24px;
-    margin-bottom: 10px;
-    color: #716a61;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-  .anzan-answer-display {
-    width: min(320px, 100%);
-    min-height: 64px;
-    display: grid;
-    place-items: center;
-    margin: 10px auto;
-    border: 2px solid #cec6b8;
-    border-radius: 14px;
-    background: #fff;
-    font-size: 30px;
-    font-weight: 1000;
-  }
-
-  .anzan-keypad {
-    width: min(430px, 100%);
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 10px auto;
-  }
-
-  .anzan-keypad button {
-    min-height: 58px;
-    font-size: 21px;
-  }
-
-  .anzan-feedback {
-    min-height: 34px;
-    margin-top: 10px;
-    font-size: 18px;
-    font-weight: 950;
-  }
-
-  .anzan-feedback.good {
-    color: #2f6a43;
-  }
-
-  .anzan-feedback.bad {
-    color: #a14428;
-  }
-
-  .anzan-result {
-    margin-top: 14px;
-    padding: 24px 18px;
-    border: 2px solid #ddd7ca;
-    border-radius: 22px;
-    background: #fff;
-    text-align: center;
-  }
-
-  .anzan-result-score {
-    margin: 8px 0;
-    font-size: clamp(36px, 7vw, 58px);
-    font-weight: 1000;
-  }
-
-  .anzan-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    margin-top: 14px;
-  }
-
-  /* =====================================================
-     SETTINGS
-     ===================================================== */
-  .settings-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  .setting-card {
-    padding: 16px;
-    border: 1px solid #ddd7ca;
-    border-radius: 18px;
-    background: #fff;
-  }
-
-  .setting-title {
-    margin-bottom: 5px;
-    font-size: 16px;
-    font-weight: 1000;
-  }
-
-  .setting-desc {
-    min-height: 38px;
-    color: #706960;
-    font-size: 12px;
-    line-height: 1.55;
-  }
-
-  .setting-value {
-    margin: 10px 0 7px;
-    color: #315f86;
-    font-size: 20px;
-    font-weight: 1000;
-  }
-
-  .setting-card button {
-    width: 100%;
-  }
-
-  .settings-save-note {
-    margin-top: 14px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: #f1eee7;
-    color: #665f56;
-    font-size: 12px;
-    line-height: 1.65;
   }
 
   .subview-topbar {
@@ -924,9 +679,7 @@ HTML = r"""
 
     .learning-category-grid,
     .learning-stage-grid,
-    .learning-point-grid,
-    .anzan-level-grid,
-    .settings-grid {
+    .learning-point-grid {
       grid-template-columns: 1fr;
     }
 
@@ -1910,7 +1663,7 @@ HTML = r"""
       <span class="home-mode-kicker">CHALLENGE</span>
       <span class="home-mode-name">チャレンジモード</span>
       <span class="home-mode-desc">
-        12問の計算トレーニング。時間制限のON/OFFや音声回答も使えます。
+        これまでの計算トレーニング。12問に挑戦し、得点やランキングを記録します。
       </span>
     </button>
 
@@ -1918,176 +1671,9 @@ HTML = r"""
       <span class="home-mode-kicker">LEARNING</span>
       <span class="home-mode-name">学習モード</span>
       <span class="home-mode-desc">
-        足し算・引き算・掛け算・割り算の珠の動きを、ゆっくり学びます。
+        足し算・引き算・掛け算・割り算の珠の動きを動画のようなアニメーションで学びます。
       </span>
     </button>
-
-    <button type="button" id="homeAnzanBtn" class="home-mode-btn anzan-home">
-      <span class="home-mode-kicker">MENTAL</span>
-      <span class="home-mode-name">暗算モード</span>
-      <span class="home-mode-desc">
-        数字を順番に見て頭の中で計算。スタート後は答えることに集中できます。
-      </span>
-    </button>
-
-    <button type="button" id="homeSettingsBtn" class="home-mode-btn settings-home">
-      <span class="home-mode-kicker">SETTINGS</span>
-      <span class="home-mode-name">設定</span>
-      <span class="home-mode-desc">
-        BGM・音声・時間制限・暗算速度をまとめて設定します。
-      </span>
-    </button>
-  </div>
-</div>
-
-
-<div id="anzanView" class="anzan-view">
-  <div class="subview-topbar">
-    <button type="button" id="anzanTopBtn" class="top-back-btn">← TOPへ</button>
-    <div class="subview-topbar-title">暗算モード</div>
-  </div>
-
-  <div id="anzanMenuView">
-    <div class="anzan-hero">
-      <h2>見て、頭の中で計算</h2>
-      <p>
-        「はじめる」を押した後は数字が自動で進みます。
-        そろばんを頭に思い浮かべて、最後の答えだけ入力します。
-      </p>
-    </div>
-
-    <div class="anzan-level-grid">
-      <article class="anzan-level-card">
-        <div class="anzan-level-no">LEVEL 1</div>
-        <div class="anzan-level-name">1桁・3口</div>
-        <div class="anzan-level-desc">
-          1〜9の足し算を3回。暗算を始める最初のステップです。
-        </div>
-        <button type="button" class="primary start-anzan" data-anzan-level="1">はじめる</button>
-      </article>
-
-      <article class="anzan-level-card">
-        <div class="anzan-level-no">LEVEL 2</div>
-        <div class="anzan-level-name">1桁・5口</div>
-        <div class="anzan-level-desc">
-          1桁の足し算・引き算を5回。途中の答えは0未満になりません。
-        </div>
-        <button type="button" class="primary start-anzan" data-anzan-level="2">はじめる</button>
-      </article>
-
-      <article class="anzan-level-card">
-        <div class="anzan-level-no">LEVEL 3</div>
-        <div class="anzan-level-name">2桁・5口</div>
-        <div class="anzan-level-desc">
-          10〜49を使う足し算・引き算。位を頭の中で保つ練習です。
-        </div>
-        <button type="button" class="primary start-anzan" data-anzan-level="3">はじめる</button>
-      </article>
-    </div>
-  </div>
-
-  <div id="anzanGameView" class="hidden">
-    <div class="anzan-game-card">
-      <div class="anzan-status">
-        <span id="anzanQCount">1 / 10</span>
-        <span id="anzanCorrectCount">正解 0</span>
-        <span id="anzanSpeedLabel">ゆっくり</span>
-      </div>
-
-      <div id="anzanFlash" class="anzan-flash ready">よーい</div>
-      <div id="anzanHint" class="anzan-hint">数字を順番に見てね</div>
-
-      <div id="anzanAnswerArea" class="hidden">
-        <div id="anzanAnswerDisplay" class="anzan-answer-display">&nbsp;</div>
-        <div id="anzanVoiceStatus" class="anzan-hint"></div>
-
-        <div id="anzanKeypad" class="anzan-keypad">
-          <button type="button" data-anzan-key="7">7</button>
-          <button type="button" data-anzan-key="8">8</button>
-          <button type="button" data-anzan-key="9">9</button>
-          <button type="button" data-anzan-key="4">4</button>
-          <button type="button" data-anzan-key="5">5</button>
-          <button type="button" data-anzan-key="6">6</button>
-          <button type="button" data-anzan-key="1">1</button>
-          <button type="button" data-anzan-key="2">2</button>
-          <button type="button" data-anzan-key="3">3</button>
-          <button type="button" data-anzan-action="clear">クリア</button>
-          <button type="button" data-anzan-key="0">0</button>
-          <button type="button" data-anzan-action="backspace">← 1つ消す</button>
-        </div>
-
-        <button type="button" id="anzanSubmitBtn" class="primary">答える</button>
-      </div>
-
-      <div id="anzanFeedback" class="anzan-feedback"></div>
-    </div>
-  </div>
-
-  <div id="anzanResultView" class="hidden">
-    <div class="anzan-result">
-      <div>暗算10問終了</div>
-      <div id="anzanResultScore" class="anzan-result-score">0 / 10</div>
-      <div id="anzanResultText" class="anzan-hint"></div>
-      <div class="anzan-actions">
-        <button type="button" id="anzanRetryBtn" class="primary">同じレベルをもう10問</button>
-        <button type="button" id="anzanMenuBtn">レベル選択へ</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="settingsView" class="settings-view">
-  <div class="subview-topbar">
-    <button type="button" id="settingsTopBtn" class="top-back-btn">← TOPへ</button>
-    <div class="subview-topbar-title">設定</div>
-  </div>
-
-  <div class="settings-hero">
-    <h2>設定</h2>
-    <p>
-      子どもが毎回設定を触らなくてよいよう、ここでまとめて保存します。
-    </p>
-  </div>
-
-  <div class="settings-grid">
-    <article class="setting-card">
-      <div class="setting-title">チャレンジの時間制限</div>
-      <div class="setting-desc">5分で挑戦するか、時間制限なしにします。</div>
-      <div id="settingTimeValue" class="setting-value">5分</div>
-      <button type="button" id="settingTimeBtn">切り替える</button>
-    </article>
-
-    <article class="setting-card">
-      <div class="setting-title">チャレンジの音声回答</div>
-      <div class="setting-desc">チャレンジ開始時から音声回答を使う設定です。</div>
-      <div id="settingVoiceValue" class="setting-value">OFF</div>
-      <button type="button" id="settingVoiceBtn">切り替える</button>
-    </article>
-
-    <article class="setting-card">
-      <div class="setting-title">BGM</div>
-      <div class="setting-desc">チャレンジ中のBGMを最初からON/OFFにします。マイクON中も音楽は流れ、答えを話した瞬間だけ自動で下がります。</div>
-      <div id="settingBgmValue" class="setting-value">ON</div>
-      <button type="button" id="settingBgmBtn">切り替える</button>
-    </article>
-
-    <article class="setting-card">
-      <div class="setting-title">学習モードの音声解説</div>
-      <div class="setting-desc">学習STEPを開いたときの音声解説の初期状態です。</div>
-      <div id="settingLearningVoiceValue" class="setting-value">OFF</div>
-      <button type="button" id="settingLearningVoiceBtn">切り替える</button>
-    </article>
-
-    <article class="setting-card">
-      <div class="setting-title">暗算の数字表示速度</div>
-      <div class="setting-desc">数字1つを画面に表示する時間です。</div>
-      <div id="settingAnzanSpeedValue" class="setting-value">ゆっくり</div>
-      <button type="button" id="settingAnzanSpeedBtn">速度を変える</button>
-    </article>
-  </div>
-
-  <div class="settings-save-note">
-    設定はこの端末のブラウザに自動保存されます。暗算モードは、音声回答をONにしておくと答えるときの画面操作も減らせます。
   </div>
 </div>
 
@@ -2504,11 +2090,6 @@ HTML = r"""
   $("#versionLabel").textContent = `APP VERSION: ${APP_VERSION}`;
 
   const homeView = $("#homeView");
-  const anzanView = $("#anzanView");
-  const anzanMenuView = $("#anzanMenuView");
-  const anzanGameView = $("#anzanGameView");
-  const anzanResultView = $("#anzanResultView");
-  const settingsView = $("#settingsView");
   const menuView = $("#menuView");
   const learningView = $("#learningView");
   const learningCategoryView = $("#learningCategoryView");
@@ -2538,24 +2119,6 @@ HTML = r"""
   const learningVoiceBtn = $("#learningVoiceBtn");
   const learningVoiceNote = $("#learningVoiceNote");
   const learningNextBtn = $("#learningNextBtn");
-
-  const anzanFlash = $("#anzanFlash");
-  const anzanHint = $("#anzanHint");
-  const anzanAnswerArea = $("#anzanAnswerArea");
-  const anzanAnswerDisplay = $("#anzanAnswerDisplay");
-  const anzanFeedback = $("#anzanFeedback");
-  const anzanVoiceStatus = $("#anzanVoiceStatus");
-  const anzanQCount = $("#anzanQCount");
-  const anzanCorrectCount = $("#anzanCorrectCount");
-  const anzanSpeedLabel = $("#anzanSpeedLabel");
-  const anzanResultScore = $("#anzanResultScore");
-  const anzanResultText = $("#anzanResultText");
-
-  const settingTimeValue = $("#settingTimeValue");
-  const settingVoiceValue = $("#settingVoiceValue");
-  const settingBgmValue = $("#settingBgmValue");
-  const settingLearningVoiceValue = $("#settingLearningVoiceValue");
-  const settingAnzanSpeedValue = $("#settingAnzanSpeedValue");
 
   const workspace = $("#workspace");
   const questionCard = $("#questionCard");
@@ -3021,28 +2584,6 @@ HTML = r"""
   let learningVoiceEnabled = false;
   let learningNarrationToken = 0;
 
-  const BGM_SETTING_KEY = "soroban_bgm_enabled_v1";
-  const VOICE_DEFAULT_SETTING_KEY = "soroban_voice_answer_default_v1";
-  const LEARNING_VOICE_SETTING_KEY = "soroban_learning_voice_default_v1";
-  const ANZAN_SPEED_SETTING_KEY = "soroban_anzan_speed_v1";
-
-  let preferredVoiceAnswerEnabled = false;
-  let preferredLearningVoiceEnabled = false;
-  let anzanSpeed = "slow";
-
-  const ANZAN_TOTAL_QUESTIONS = 10;
-  let anzanLevel = 1;
-  let anzanQuestionIndex = 0;
-  let anzanCorrect = 0;
-  let anzanQuestion = null;
-  let anzanAnswerBuffer = "";
-  let anzanRunToken = 0;
-  let anzanRecognition = null;
-  let anzanListening = false;
-  let anzanListeningStartedAt = 0;
-  let anzanSpeechDetected = false;
-  let anzanLocked = false;
-
   const RULES = Object.freeze({
     addSubOperandMin: 1,
     subtractionMinAnswer: 0,
@@ -3119,17 +2660,14 @@ HTML = r"""
   let voicePauseForFeedback = false;
   let voiceCalloutRunning = false;
   let voiceRestartTimer = null;
-  let voiceListeningStartedAt = 0;
-  let voiceSpeechDetected = false;
 
-  // 「ゴワサン！」の直後だけ短く余韻を待つ。
-  // 問題を解いている間はBGMを止めない。
-  const MIC_PRE_SILENCE_MS = 450;
-  const MIC_RESULT_GUARD_MS = 350;
+  // 通常音量は従来の6%から9%へ上げる。
+  const BGM_VOLUME_VOICE_ON = 0.09;
+  const BGM_VOLUME_VOICE_OFF = 0.09;
 
-  const BGM_VOLUME_NORMAL = 0.14;
-  const BGM_VOLUME_APP_SPEECH = 0.03;
-  const BGM_VOLUME_LISTENING = 0.00;
+  // Android等では音声読み上げ中に端末側でBGMが自動的に
+  // 小さくなるため、「ゴワサン！」の間だけ低下を打ち消す。
+  const BGM_VOLUME_GOWASAN = 0.15;
 
   let bgmKeepAliveTimer = null;
 
@@ -3145,7 +2683,7 @@ HTML = r"""
       this.currentSourceGain = null;
 
       this.playGeneration = 0;
-      this.targetVolume = BGM_VOLUME_NORMAL;
+      this.targetVolume = BGM_VOLUME_VOICE_OFF;
     }
 
     ensureContext() {
@@ -4674,23 +4212,16 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // 問題を考えている間は、マイクがONでもBGMを通常音量で流す。
-    // 実際の発話をSpeechRecognitionが検知した瞬間だけ0%へ下げる。
-    if (
-      voiceSpeechDetected ||
-      anzanSpeechDetected
-    ) {
-      return BGM_VOLUME_LISTENING;
+    // 「ゴワサン！」中は端末側の自動音量低下を補正し、
+    // 聞こえるBGM音量を通常時に近づける。
+    if (voiceCalloutRunning) {
+      return BGM_VOLUME_GOWASAN;
     }
 
-    if (
-      voiceCalloutRunning ||
-      voicePauseForFeedback
-    ) {
-      return BGM_VOLUME_APP_SPEECH;
-    }
-
-    return BGM_VOLUME_NORMAL;
+    // 音声回答ON/OFFともに通常音量は9%固定。
+    return voiceAnswerEnabled
+      ? BGM_VOLUME_VOICE_ON
+      : BGM_VOLUME_VOICE_OFF;
   }
 
   function refreshBgmVolume() {
@@ -4856,12 +4387,7 @@ HTML = r"""
 
   function toggleBgm() {
     bgmOn = !bgmOn;
-    saveBooleanSetting(
-      BGM_SETTING_KEY,
-      bgmOn
-    );
     updateBgmButton();
-    updateSettingsUi();
 
     if (
       bgmOn &&
@@ -5037,167 +4563,6 @@ HTML = r"""
       : value;
   }
 
-  function normalizeNumericSpeechText(
-    input
-  ) {
-    return String(
-      input || ""
-    )
-      .toLowerCase()
-      .replace(
-        /[,\s、。,.！!？?]/g,
-        ""
-      )
-      .replace(
-        /答えは|答え|こたえは|こたえ|です|だよ|だね|だ|かな|えっと|えーと|ええと|えー|うーん|はい/g,
-        ""
-      )
-      .replace(
-        /マイナス|minus/g,
-        "-"
-      )
-      .replace(/いち/g, "一")
-      .replace(/に/g, "二")
-      .replace(/さん/g, "三")
-      .replace(/よん|し/g, "四")
-      .replace(/ご/g, "五")
-      .replace(/ろく/g, "六")
-      .replace(/なな|しち/g, "七")
-      .replace(/はち/g, "八")
-      .replace(/きゅう|く/g, "九")
-      .replace(/れい|ぜろ/g, "零")
-      .replace(/じゅう/g, "十")
-      .replace(/ひゃく/g, "百")
-      .replace(/せん/g, "千")
-      .replace(/まん/g, "万");
-  }
-
-  function isLikelyNumericSpeech(
-    input
-  ) {
-    const normalized =
-      normalizeNumericSpeechText(
-        input
-      );
-
-    if (!normalized) {
-      return false;
-    }
-
-    // 数字・漢数字以外の言葉が残っている候補は、
-    // BGMや周囲の会話の可能性が高いので採用しない。
-    return (
-      /^-?\d+$/.test(
-        normalized
-      ) ||
-      /^-?[一二三四五六七八九〇零十百千万]+$/.test(
-        normalized
-      )
-    );
-  }
-
-  function selectBestNumericSpeech(
-    result
-  ) {
-    if (!result) {
-      return null;
-    }
-
-    let best = null;
-
-    for (
-      let i = 0;
-      i < result.length;
-      i += 1
-    ) {
-      const alternative =
-        result[i];
-
-      const transcript =
-        String(
-          alternative?.transcript || ""
-        ).trim();
-
-      if (
-        !transcript ||
-        !isLikelyNumericSpeech(
-          transcript
-        )
-      ) {
-        continue;
-      }
-
-      const value =
-        japaneseIntegerToNumber(
-          transcript
-        );
-
-      if (
-        value === null ||
-        !Number.isInteger(value) ||
-        value < 0
-      ) {
-        continue;
-      }
-
-      const rawConfidence =
-        Number(
-          alternative?.confidence
-        );
-
-      const confidence =
-        Number.isFinite(
-          rawConfidence
-        )
-          ? rawConfidence
-          : 0;
-
-      // ブラウザがconfidenceを返している場合、
-      // 極端に低い数字候補はBGMや環境音の誤認識として捨てる。
-      if (
-        confidence > 0 &&
-        confidence < 0.22
-      ) {
-        continue;
-      }
-
-      const normalized =
-        normalizeNumericSpeechText(
-          transcript
-        );
-
-      const digitOnlyBonus =
-        /^-?\d+$/.test(
-          normalized
-        )
-          ? 0.15
-          : 0;
-
-      const score =
-        confidence +
-        digitOnlyBonus -
-        Math.min(
-          0.12,
-          transcript.length *
-            0.002
-        );
-
-      if (
-        !best ||
-        score > best.score
-      ) {
-        best = {
-          value,
-          transcript,
-          confidence,
-          score
-        };
-      }
-    }
-
-    return best;
-  }
-
   function updateVoiceUi(
     message = null
   ) {
@@ -5298,28 +4663,6 @@ HTML = r"""
       }, delay);
   }
 
-  function scheduleSilentVoiceRestart(
-    delay = 320
-  ) {
-    if (
-      !voiceAnswerEnabled ||
-      voicePauseForFeedback ||
-      voiceCalloutRunning ||
-      locked ||
-      !workspace.classList.contains("show") ||
-      results.classList.contains("show")
-    ) {
-      return;
-    }
-
-    clearVoiceRestartTimer();
-
-    voiceRestartTimer =
-      setTimeout(() => {
-        startMicrophoneRecognition();
-      }, delay);
-  }
-
   function handleRecognizedSpeech(
     event
   ) {
@@ -5339,51 +4682,54 @@ HTML = r"""
       return;
     }
 
-    // 問題はマイクonstart後に初めて表示されるため、
-    // 450ms未満で返る認識結果は子どもの回答とは考えにくい。
-    // 直前のBGM・ゴワサンの残響として捨てる。
-    if (
-      voiceListeningStartedAt > 0 &&
-      Date.now() -
-        voiceListeningStartedAt <
-        MIC_RESULT_GUARD_MS
+    const alternatives = [];
+
+    for (
+      let i = 0;
+      i < result.length;
+      i += 1
     ) {
-      updateVoiceUi(
-        "音声回答：数字を話してください"
+      alternatives.push(
+        result[i].transcript
       );
-      return;
     }
 
-    const selected =
-      selectBestNumericSpeech(
-        result
-      );
+    let parsed = null;
+    let recognizedText = "";
 
-    if (!selected) {
-      const firstText =
-        String(
-          result[0]?.transcript || ""
+    for (
+      const transcript
+      of alternatives
+    ) {
+      const value =
+        japaneseIntegerToNumber(
+          transcript
         );
 
+      if (
+        value !== null &&
+        Number.isInteger(value) &&
+        value >= 0
+      ) {
+        parsed = value;
+        recognizedText =
+          transcript;
+        break;
+      }
+    }
+
+    if (parsed === null) {
       updateVoiceUi(
-        firstText
-          ? "音声回答：数字だけを、もう一度話してください"
-          : "音声回答：もう一度話してください"
+        `音声回答：「${alternatives[0] || ""}」を数字として認識できませんでした`
       );
       return;
     }
 
     answerInput.value =
-      String(
-        selected.value
-      );
-
-    // この認識結果は回答として採用する。
-    // stop()後のonendが、回答確定前にマイクを再起動しないようにする。
-    voicePauseForFeedback = true;
+      String(parsed);
 
     updateVoiceUi(
-      `音声回答：「${selected.transcript}」→ ${selected.value}`
+      `音声回答：「${recognizedText}」→ ${parsed}`
     );
 
     stopVoiceRecognition();
@@ -5413,39 +4759,22 @@ HTML = r"""
 
     recognition.onstart = () => {
       voiceRecognitionRunning = true;
-      voiceListeningStartedAt =
-        Date.now();
-      voiceSpeechDetected = false;
 
-      // マイクがONでも、考えている間のBGMは通常音量。
       refreshBgmVolume();
       bgmEngine.ensureRunning();
       startBgmKeepAlive();
 
       updateVoiceUi(
-        "音声回答：数字を話してください"
+        "音声回答：聞き取り中"
       );
 
       // ① ゴワサン終了
       // ② マイクの onstart を確認
       // ③ ここで初めて問題を生成・表示する
       renderQuestion(true);
-    };
-
-    recognition.onspeechstart = () => {
-      // ブラウザが人の発話を検知した瞬間だけBGMを消す。
-      voiceSpeechDetected = true;
-      refreshBgmVolume();
 
       updateVoiceUi(
-        "音声回答：聞いています…"
-      );
-    };
-
-    recognition.onspeechend = () => {
-      // 結果確定まではBGMを戻さず、語尾をBGMで汚さない。
-      updateVoiceUi(
-        "音声回答：確認中…"
+        "音声回答：数字を話してください"
       );
     };
 
@@ -5454,8 +4783,6 @@ HTML = r"""
 
     recognition.onend = () => {
       voiceRecognitionRunning = false;
-      voiceListeningStartedAt = 0;
-      voiceSpeechDetected = false;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -5468,11 +4795,9 @@ HTML = r"""
         workspace.classList.contains("show") &&
         !results.classList.contains("show")
       ) {
-        // 無音タイムアウトでは「ゴワサン！」を言い直さない。
-        // 同じ問題を表示したまま、マイクだけ静かに再開する。
-        scheduleSilentVoiceRestart(
-          320
-        );
+        // 無音や認識失敗で終了した場合も、
+        // 次回は必ず「ゴワサン！」から再開する。
+        scheduleVoiceRestart(350);
       } else {
         updateVoiceUi();
       }
@@ -5482,8 +4807,6 @@ HTML = r"""
       event
     ) => {
       voiceRecognitionRunning = false;
-      voiceListeningStartedAt = 0;
-      voiceSpeechDetected = false;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -5512,7 +4835,7 @@ HTML = r"""
           !voiceCalloutRunning &&
           !locked
         ) {
-          scheduleSilentVoiceRestart(
+          scheduleVoiceRestart(
             380
           );
         }
@@ -5529,7 +4852,7 @@ HTML = r"""
         !voiceCalloutRunning &&
         !locked
       ) {
-        scheduleSilentVoiceRestart(500);
+        scheduleVoiceRestart(500);
       }
     };
 
@@ -5573,20 +4896,12 @@ HTML = r"""
       );
     }
 
-    // マイクを開いているだけではBGMを止めない。
-    // 発話検知(onspeechstart)が来た瞬間だけ0%へ下げる。
-    voiceSpeechDetected = false;
     refreshBgmVolume();
 
     try {
       voiceRecognition.start();
     } catch (error) {
-      voiceRecognitionRunning = false;
-      voiceSpeechDetected = false;
-      refreshBgmVolume();
-      scheduleSilentVoiceRestart(
-        500
-      );
+      scheduleVoiceRestart(500);
     }
   }
 
@@ -5630,6 +4945,8 @@ HTML = r"""
     );
 
     voicePauseForFeedback = true;
+
+    // 端末の読み上げによる自動的な音量低下より先に補正する。
     refreshBgmVolume();
     bgmEngine.ensureRunning();
 
@@ -5637,40 +4954,22 @@ HTML = r"""
       voiceCalloutRunning = false;
       voicePauseForFeedback = false;
 
+      // ゴワサン終了時点では、まだ問題は作らず表示もしない。
+      // 次にマイクを開始し、recognition.onstart が発火してから
+      // 初めて問題を生成・表示する。
+      refreshBgmVolume();
+
       if (
         !voiceAnswerEnabled ||
         locked ||
         results.classList.contains("show")
       ) {
-        refreshBgmVolume();
         return;
       }
 
-      // 「ゴワサン！」の余韻だけはマイクへ入れない。
-      // この短い待機中だけ無音にし、問題表示後はBGMを通常音量へ戻す。
-      bgmEngine.setVolume(
-        BGM_VOLUME_LISTENING,
-        0.06
-      );
-
-      updateVoiceUi(
-        "音声回答：まもなく問題スタート"
-      );
-
       setTimeout(() => {
-        if (
-          !voiceAnswerEnabled ||
-          locked ||
-          results.classList.contains("show")
-        ) {
-          refreshBgmVolume();
-          return;
-        }
-
-        voiceSpeechDetected = false;
-        refreshBgmVolume();
         startMicrophoneRecognition();
-      }, MIC_PRE_SILENCE_MS);
+      }, 220);
     };
 
     if (
@@ -5721,8 +5020,8 @@ HTML = r"""
   }
 
   function startVoiceRecognition() {
-    // 新しい問題の開始時だけ「ゴワサン！」。
-    // 無音タイムアウトによるマイク再接続では呼ばない。
+    // 音声入力を開始するたびに必ず
+    // 「ゴワサン！」→マイク開始の順序にする。
     speakGowasanThenListen();
   }
 
@@ -5772,13 +5071,9 @@ HTML = r"""
 
     refreshBgmVolume();
 
-    // チャレンジ画面を開いている時だけ問題表示を更新する。
-    if (
-      workspace.classList.contains("show") &&
-      currentMode
-    ) {
-      renderQuestion(true);
-    }
+    // 音声モードをOFFにした場合は、
+    // まだ作っていない現在の問題を通常モードとしてここで生成・表示。
+    renderQuestion(true);
 
     updateVoiceUi(
       "音声回答：OFF"
@@ -5805,7 +5100,7 @@ HTML = r"""
     streak
   ) {
     // 判定音声中はマイクだけ一時停止。
-    // BGM再生ノードは止めず、読み上げ用の3%へ下げる。
+    // BGM再生ノードは止めず、4%へGainを下げる。
     voicePauseForFeedback = true;
 
     stopVoiceRecognition();
@@ -6107,7 +5402,6 @@ HTML = r"""
     stopBgm();
     hideSorobanHint();
     stopLearningAnimation();
-    stopAnzanSession();
     setVoiceAnswerEnabled(false);
 
     workspace.classList.remove(
@@ -6120,12 +5414,6 @@ HTML = r"""
       "hidden"
     );
     learningView.classList.remove(
-      "show"
-    );
-    anzanView.classList.remove(
-      "show"
-    );
-    settingsView.classList.remove(
       "show"
     );
     homeView.classList.remove(
@@ -6142,12 +5430,6 @@ HTML = r"""
       "hidden"
     );
     learningView.classList.remove(
-      "show"
-    );
-    anzanView.classList.remove(
-      "show"
-    );
-    settingsView.classList.remove(
       "show"
     );
     workspace.classList.remove(
@@ -6172,12 +5454,6 @@ HTML = r"""
     );
     menuView.classList.add(
       "hidden"
-    );
-    anzanView.classList.remove(
-      "show"
-    );
-    settingsView.classList.remove(
-      "show"
     );
     workspace.classList.remove(
       "show"
@@ -6703,23 +5979,10 @@ HTML = r"""
   }
 
   function setLearningVoiceEnabled(
-    enabled,
-    savePreference = true
+    enabled
   ) {
     learningVoiceEnabled =
       Boolean(enabled);
-
-    if (savePreference) {
-      preferredLearningVoiceEnabled =
-        learningVoiceEnabled;
-
-      saveBooleanSetting(
-        LEARNING_VOICE_SETTING_KEY,
-        preferredLearningVoiceEnabled
-      );
-
-      updateSettingsUi();
-    }
 
     stopLearningNarration();
     updateLearningVoiceUi();
@@ -7108,9 +6371,6 @@ HTML = r"""
     learningLessonTitle.textContent =
       lesson.title;
 
-    learningVoiceEnabled =
-      preferredLearningVoiceEnabled;
-
     updateLearningVoiceUi();
 
     learningExampleProblem.textContent =
@@ -7212,703 +6472,6 @@ HTML = r"""
     showLearningStages(
       learningCurrentCategory
     );
-  }
-
-  function stopAnzanRecognition() {
-    if (!anzanRecognition) {
-      anzanListening = false;
-      anzanListeningStartedAt = 0;
-      anzanSpeechDetected = false;
-      refreshBgmVolume();
-      return;
-    }
-
-    try {
-      anzanRecognition.onend = null;
-      anzanRecognition.abort();
-    } catch (error) {}
-
-    anzanRecognition = null;
-    anzanListening = false;
-    anzanListeningStartedAt = 0;
-    anzanSpeechDetected = false;
-    refreshBgmVolume();
-  }
-
-  function stopAnzanSession() {
-    anzanRunToken += 1;
-    stopAnzanRecognition();
-    anzanLocked = true;
-  }
-
-  function showAnzanHome() {
-    stopTimer();
-    stopBgm();
-    hideSorobanHint();
-    stopLearningAnimation();
-    stopAnzanSession();
-
-    homeView.classList.add(
-      "hidden"
-    );
-    menuView.classList.add(
-      "hidden"
-    );
-    learningView.classList.remove(
-      "show"
-    );
-    settingsView.classList.remove(
-      "show"
-    );
-    workspace.classList.remove(
-      "show"
-    );
-    results.classList.remove(
-      "show"
-    );
-
-    anzanView.classList.add(
-      "show"
-    );
-    anzanMenuView.classList.remove(
-      "hidden"
-    );
-    anzanGameView.classList.add(
-      "hidden"
-    );
-    anzanResultView.classList.add(
-      "hidden"
-    );
-  }
-
-  function showSettings() {
-    stopTimer();
-    stopBgm();
-    hideSorobanHint();
-    stopLearningAnimation();
-    stopAnzanSession();
-
-    homeView.classList.add(
-      "hidden"
-    );
-    menuView.classList.add(
-      "hidden"
-    );
-    learningView.classList.remove(
-      "show"
-    );
-    anzanView.classList.remove(
-      "show"
-    );
-    workspace.classList.remove(
-      "show"
-    );
-    results.classList.remove(
-      "show"
-    );
-
-    settingsView.classList.add(
-      "show"
-    );
-
-    updateSettingsUi();
-  }
-
-  function makeAnzanQuestion(
-    level
-  ) {
-    let terms = [];
-    let total = 0;
-
-    if (level === 1) {
-      const count = 3;
-
-      for (
-        let i = 0;
-        i < count;
-        i += 1
-      ) {
-        const value =
-          randomInt(
-            1,
-            9
-          );
-
-        terms.push({
-          op: i === 0
-            ? ""
-            : "＋",
-          value
-        });
-
-        total += value;
-      }
-
-      return {
-        terms,
-        answer: total
-      };
-    }
-
-    const count = 5;
-    const minValue =
-      level === 2
-        ? 1
-        : 10;
-    const maxValue =
-      level === 2
-        ? 9
-        : 49;
-
-    const first =
-      randomInt(
-        level === 2
-          ? 4
-          : 25,
-        level === 2
-          ? 9
-          : 49
-      );
-
-    terms.push({
-      op: "",
-      value: first
-    });
-
-    total = first;
-
-    for (
-      let i = 1;
-      i < count;
-      i += 1
-    ) {
-      let op = "＋";
-      let value =
-        randomInt(
-          minValue,
-          maxValue
-        );
-
-      if (
-        Math.random() < 0.45 &&
-        total > minValue
-      ) {
-        const maxSubtract =
-          Math.min(
-            maxValue,
-            total
-          );
-
-        if (
-          maxSubtract >= minValue
-        ) {
-          op = "－";
-          value =
-            randomInt(
-              minValue,
-              maxSubtract
-            );
-        }
-      }
-
-      if (op === "＋") {
-        total += value;
-      } else {
-        total -= value;
-      }
-
-      terms.push({
-        op,
-        value
-      });
-    }
-
-    return {
-      terms,
-      answer: total
-    };
-  }
-
-  function updateAnzanAnswerDisplay() {
-    anzanAnswerDisplay.textContent =
-      anzanAnswerBuffer ||
-      "\u00a0";
-  }
-
-  function startAnzanMode(
-    level
-  ) {
-    stopAnzanSession();
-
-    anzanLevel =
-      Number(level) || 1;
-
-    anzanQuestionIndex = 0;
-    anzanCorrect = 0;
-    anzanLocked = false;
-
-    anzanMenuView.classList.add(
-      "hidden"
-    );
-    anzanResultView.classList.add(
-      "hidden"
-    );
-    anzanGameView.classList.remove(
-      "hidden"
-    );
-
-    anzanSpeedLabel.textContent =
-      anzanSpeedInfo().label;
-
-    runAnzanQuestion();
-  }
-
-  function runAnzanQuestion() {
-    stopAnzanRecognition();
-
-    const token =
-      ++anzanRunToken;
-
-    anzanLocked = true;
-    anzanAnswerBuffer = "";
-    updateAnzanAnswerDisplay();
-
-    anzanQuestion =
-      makeAnzanQuestion(
-        anzanLevel
-      );
-
-    anzanQCount.textContent =
-      `${anzanQuestionIndex + 1} / ${ANZAN_TOTAL_QUESTIONS}`;
-
-    anzanCorrectCount.textContent =
-      `正解 ${anzanCorrect}`;
-
-    anzanFeedback.textContent =
-      "";
-
-    anzanFeedback.className =
-      "anzan-feedback";
-
-    anzanAnswerArea.classList.add(
-      "hidden"
-    );
-
-    anzanFlash.className =
-      "anzan-flash ready";
-
-    anzanFlash.textContent =
-      "よーい";
-
-    anzanHint.textContent =
-      "数字を順番に見てね";
-
-    const info =
-      anzanSpeedInfo();
-
-    let termIndex = 0;
-
-    const showTerm = () => {
-      if (
-        token !== anzanRunToken
-      ) {
-        return;
-      }
-
-      if (
-        termIndex >=
-        anzanQuestion.terms.length
-      ) {
-        anzanFlash.className =
-          "anzan-flash answer";
-
-        anzanFlash.textContent =
-          "＝ ?";
-
-        anzanHint.textContent =
-          preferredVoiceAnswerEnabled
-            ? "答えを声で言ってね"
-            : "答えを入力してね";
-
-        anzanAnswerArea.classList.remove(
-          "hidden"
-        );
-
-        anzanLocked = false;
-
-        if (
-          preferredVoiceAnswerEnabled
-        ) {
-          // 答え画面になったらそのままマイクを開始。
-          // BGMは流したまま、実際の発話時だけ自動で下げる。
-          setTimeout(
-            () => {
-              if (
-                !anzanLocked
-              ) {
-                startAnzanVoiceRecognition();
-              }
-            },
-            180
-          );
-        }
-
-        return;
-      }
-
-      const term =
-        anzanQuestion.terms[
-          termIndex
-        ];
-
-      anzanFlash.className =
-        "anzan-flash";
-
-      anzanFlash.textContent =
-        `${term.op}${term.value}`;
-
-      termIndex += 1;
-
-      setTimeout(
-        showTerm,
-        info.delay
-      );
-    };
-
-    setTimeout(
-      showTerm,
-      900
-    );
-  }
-
-  function startAnzanVoiceRecognition() {
-    const Recognition =
-      getSpeechRecognitionClass();
-
-    if (!Recognition) {
-      anzanVoiceStatus.textContent =
-        "このブラウザでは音声回答を使えません。数字で答えてください。";
-      return;
-    }
-
-    stopAnzanRecognition();
-
-    const recognition =
-      new Recognition();
-
-    anzanRecognition =
-      recognition;
-
-    recognition.lang =
-      "ja-JP";
-
-    recognition.continuous =
-      false;
-
-    recognition.interimResults =
-      false;
-
-    recognition.maxAlternatives =
-      5;
-
-    recognition.onstart = () => {
-      anzanListening = true;
-      anzanListeningStartedAt =
-        Date.now();
-      anzanSpeechDetected = false;
-      refreshBgmVolume();
-
-      anzanVoiceStatus.textContent =
-        "🎤 答えを言ってね";
-    };
-
-    recognition.onspeechstart = () => {
-      anzanSpeechDetected = true;
-      refreshBgmVolume();
-
-      anzanVoiceStatus.textContent =
-        "🎤 聞いています…";
-    };
-
-    recognition.onspeechend = () => {
-      anzanVoiceStatus.textContent =
-        "🎤 確認中…";
-    };
-
-    recognition.onresult =
-      (event) => {
-        const result =
-          event.results?.[0];
-
-        if (
-          anzanListeningStartedAt > 0 &&
-          Date.now() -
-            anzanListeningStartedAt <
-            350
-        ) {
-          anzanVoiceStatus.textContent =
-            "🎤 答えを言ってね";
-          return;
-        }
-
-        const selected =
-          selectBestNumericSpeech(
-            result
-          );
-
-        if (selected) {
-          anzanAnswerBuffer =
-            String(
-              selected.value
-            );
-
-          updateAnzanAnswerDisplay();
-          submitAnzanAnswer();
-        } else {
-          anzanVoiceStatus.textContent =
-            "数字だけを、もう一度言ってね。";
-        }
-      };
-
-    recognition.onerror = () => {
-      anzanListening = false;
-      anzanListeningStartedAt = 0;
-      anzanSpeechDetected = false;
-      refreshBgmVolume();
-      anzanVoiceStatus.textContent =
-        "うまく聞き取れませんでした。数字でも答えられます。";
-    };
-
-    recognition.onend = () => {
-      anzanListening = false;
-      anzanListeningStartedAt = 0;
-      anzanSpeechDetected = false;
-      refreshBgmVolume();
-    };
-
-    // 暗算でも、マイクONだけではBGMを止めない。
-    // 実際の発話検知時だけ0%へ下げる。
-    anzanSpeechDetected = false;
-    refreshBgmVolume();
-
-    try {
-      recognition.start();
-    } catch (error) {
-      anzanListening = false;
-      refreshBgmVolume();
-      anzanVoiceStatus.textContent =
-        "音声回答を開始できませんでした。";
-    }
-  }
-
-  function submitAnzanAnswer() {
-    if (
-      anzanLocked ||
-      !anzanQuestion
-    ) {
-      return;
-    }
-
-    const raw =
-      String(
-        anzanAnswerBuffer || ""
-      ).trim();
-
-    if (!raw) {
-      anzanFeedback.textContent =
-        "答えを入力してください";
-      anzanFeedback.className =
-        "anzan-feedback bad";
-      return;
-    }
-
-    const user =
-      Number(raw);
-
-    if (!Number.isFinite(user)) {
-      return;
-    }
-
-    anzanLocked = true;
-    stopAnzanRecognition();
-
-    const ok =
-      user ===
-      anzanQuestion.answer;
-
-    if (ok) {
-      anzanCorrect += 1;
-      anzanFeedback.textContent =
-        "お見事！";
-      anzanFeedback.className =
-        "anzan-feedback good";
-    } else {
-      anzanFeedback.textContent =
-        `残念！ 答えは ${anzanQuestion.answer}`;
-      anzanFeedback.className =
-        "anzan-feedback bad";
-    }
-
-    anzanCorrectCount.textContent =
-      `正解 ${anzanCorrect}`;
-
-    setTimeout(
-      () => {
-        anzanQuestionIndex += 1;
-
-        if (
-          anzanQuestionIndex >=
-          ANZAN_TOTAL_QUESTIONS
-        ) {
-          finishAnzanMode();
-        } else {
-          runAnzanQuestion();
-        }
-      },
-      1100
-    );
-  }
-
-  function finishAnzanMode() {
-    stopAnzanSession();
-
-    anzanGameView.classList.add(
-      "hidden"
-    );
-    anzanResultView.classList.remove(
-      "hidden"
-    );
-
-    anzanResultScore.textContent =
-      `${anzanCorrect} / ${ANZAN_TOTAL_QUESTIONS}`;
-
-    anzanResultText.textContent =
-      anzanCorrect ===
-        ANZAN_TOTAL_QUESTIONS
-        ? "全問正解。次のレベルにも挑戦できます。"
-        : "同じレベルを繰り返すと、数字を頭に残しやすくなります。";
-  }
-
-  function loadBooleanSetting(
-    key,
-    fallback
-  ) {
-    try {
-      const raw =
-        localStorage.getItem(
-          key
-        );
-
-      if (raw === "true") {
-        return true;
-      }
-
-      if (raw === "false") {
-        return false;
-      }
-    } catch (error) {}
-
-    return fallback;
-  }
-
-  function saveBooleanSetting(
-    key,
-    value
-  ) {
-    try {
-      localStorage.setItem(
-        key,
-        String(
-          Boolean(value)
-        )
-      );
-    } catch (error) {}
-  }
-
-  function loadAnzanSpeed() {
-    try {
-      const value =
-        localStorage.getItem(
-          ANZAN_SPEED_SETTING_KEY
-        );
-
-      if (
-        value === "slow" ||
-        value === "normal" ||
-        value === "fast"
-      ) {
-        return value;
-      }
-    } catch (error) {}
-
-    return "slow";
-  }
-
-  function saveAnzanSpeed() {
-    try {
-      localStorage.setItem(
-        ANZAN_SPEED_SETTING_KEY,
-        anzanSpeed
-      );
-    } catch (error) {}
-  }
-
-  function anzanSpeedInfo() {
-    if (anzanSpeed === "fast") {
-      return {
-        label: "はやい",
-        delay: 850
-      };
-    }
-
-    if (anzanSpeed === "normal") {
-      return {
-        label: "ふつう",
-        delay: 1350
-      };
-    }
-
-    return {
-      label: "ゆっくり",
-      delay: 2000
-    };
-  }
-
-  function updateSettingsUi() {
-    settingTimeValue.textContent =
-      timeLimitEnabled
-        ? "5分"
-        : "時間制限なし";
-
-    settingVoiceValue.textContent =
-      preferredVoiceAnswerEnabled
-        ? "ON"
-        : "OFF";
-
-    settingBgmValue.textContent =
-      bgmOn
-        ? "ON"
-        : "OFF";
-
-    settingLearningVoiceValue.textContent =
-      preferredLearningVoiceEnabled
-        ? "ON"
-        : "OFF";
-
-    settingAnzanSpeedValue.textContent =
-      anzanSpeedInfo().label;
-  }
-
-  function cycleAnzanSpeed() {
-    anzanSpeed =
-      anzanSpeed === "slow"
-        ? "normal"
-        : anzanSpeed === "normal"
-          ? "fast"
-          : "slow";
-
-    saveAnzanSpeed();
-    updateSettingsUi();
   }
 
   const TIME_LIMIT_STORAGE_KEY =
@@ -8022,8 +6585,6 @@ HTML = r"""
 
     homeView.classList.add("hidden");
     learningView.classList.remove("show");
-    anzanView.classList.remove("show");
-    settingsView.classList.remove("show");
     menuView.classList.add("hidden");
     workspace.classList.add("show");
     questionCard.classList.remove(
@@ -8034,15 +6595,6 @@ HTML = r"""
 
     $("#statusTitle").textContent = modeInfo[mode].title;
     $("#streak").textContent = "連続正解 0";
-
-    voiceAnswerEnabled =
-      preferredVoiceAnswerEnabled;
-
-    updateVoiceUi(
-      voiceAnswerEnabled
-        ? "音声回答：開始します…"
-        : "音声回答：OFF"
-    );
 
     feedback.textContent = "";
     feedback.className = "feedback";
@@ -9036,25 +7588,6 @@ HTML = r"""
             // 学習モードの種類選択 → アプリTOP。
             showHome();
           } else if (
-            anzanView.classList.contains("show") &&
-            (
-              !anzanGameView.classList.contains("hidden") ||
-              !anzanResultView.classList.contains("hidden")
-            )
-          ) {
-            // 暗算プレイ中／結果 → 暗算レベル選択。
-            showAnzanHome();
-          } else if (
-            anzanView.classList.contains("show")
-          ) {
-            // 暗算レベル選択 → アプリTOP。
-            showHome();
-          } else if (
-            settingsView.classList.contains("show")
-          ) {
-            // 設定 → アプリTOP。
-            showHome();
-          } else if (
             !menuView.classList.contains("hidden")
           ) {
             // チャレンジのモード選択 → アプリTOP。
@@ -9089,8 +7622,6 @@ HTML = r"""
     workspace.classList.remove("show");
     homeView.classList.add("hidden");
     learningView.classList.remove("show");
-    anzanView.classList.remove("show");
-    settingsView.classList.remove("show");
     menuView.classList.remove("hidden");
     results.classList.remove("show");
     questionCard.classList.remove("hidden");
@@ -9108,26 +7639,6 @@ HTML = r"""
   $("#homeLearningBtn").addEventListener(
     "click",
     showLearningHome
-  );
-
-  $("#homeAnzanBtn").addEventListener(
-    "click",
-    showAnzanHome
-  );
-
-  $("#homeSettingsBtn").addEventListener(
-    "click",
-    showSettings
-  );
-
-  $("#anzanTopBtn").addEventListener(
-    "click",
-    showHome
-  );
-
-  $("#settingsTopBtn").addEventListener(
-    "click",
-    showHome
   );
 
   $("#challengeTopBtn").addEventListener(
@@ -9235,175 +7746,8 @@ HTML = r"""
     goNextLearningLesson
   );
 
-  root
-    .querySelectorAll(
-      ".start-anzan"
-    )
-    .forEach(
-      (button) => {
-        button.addEventListener(
-          "click",
-          () => {
-            startAnzanMode(
-              button.dataset.anzanLevel
-            );
-          }
-        );
-      }
-    );
-
-  $("#anzanKeypad").addEventListener(
-    "pointerup",
-    (event) => {
-      if (anzanLocked) {
-        return;
-      }
-
-      const button =
-        event.target.closest(
-          "button"
-        );
-
-      if (!button) {
-        return;
-      }
-
-      const key =
-        button.dataset.anzanKey;
-
-      const action =
-        button.dataset.anzanAction;
-
-      if (
-        key !== undefined
-      ) {
-        if (
-          anzanAnswerBuffer.length < 8
-        ) {
-          anzanAnswerBuffer =
-            anzanAnswerBuffer === "0"
-              ? key
-              : anzanAnswerBuffer + key;
-        }
-
-        updateAnzanAnswerDisplay();
-        return;
-      }
-
-      if (
-        action === "clear"
-      ) {
-        anzanAnswerBuffer = "";
-      } else if (
-        action === "backspace"
-      ) {
-        anzanAnswerBuffer =
-          anzanAnswerBuffer.slice(
-            0,
-            -1
-          );
-      }
-
-      updateAnzanAnswerDisplay();
-    }
-  );
-
-  $("#anzanSubmitBtn").addEventListener(
-    "click",
-    submitAnzanAnswer
-  );
-
-  $("#anzanRetryBtn").addEventListener(
-    "click",
-    () => {
-      startAnzanMode(
-        anzanLevel
-      );
-    }
-  );
-
-  $("#anzanMenuBtn").addEventListener(
-    "click",
-    showAnzanHome
-  );
-
-  $("#settingTimeBtn").addEventListener(
-    "click",
-    () => {
-      toggleTimeLimit();
-      updateSettingsUi();
-    }
-  );
-
-  $("#settingVoiceBtn").addEventListener(
-    "click",
-    () => {
-      preferredVoiceAnswerEnabled =
-        !preferredVoiceAnswerEnabled;
-
-      saveBooleanSetting(
-        VOICE_DEFAULT_SETTING_KEY,
-        preferredVoiceAnswerEnabled
-      );
-
-      updateSettingsUi();
-    }
-  );
-
-  $("#settingBgmBtn").addEventListener(
-    "click",
-    () => {
-      bgmOn =
-        !bgmOn;
-
-      saveBooleanSetting(
-        BGM_SETTING_KEY,
-        bgmOn
-      );
-
-      updateBgmButton();
-      updateSettingsUi();
-    }
-  );
-
-  $("#settingLearningVoiceBtn").addEventListener(
-    "click",
-    () => {
-      preferredLearningVoiceEnabled =
-        !preferredLearningVoiceEnabled;
-
-      learningVoiceEnabled =
-        preferredLearningVoiceEnabled;
-
-      saveBooleanSetting(
-        LEARNING_VOICE_SETTING_KEY,
-        preferredLearningVoiceEnabled
-      );
-
-      updateLearningVoiceUi();
-      updateSettingsUi();
-    }
-  );
-
-  $("#settingAnzanSpeedBtn").addEventListener(
-    "click",
-    cycleAnzanSpeed
-  );
-
   voiceBtn.addEventListener("click", () => {
-    preferredVoiceAnswerEnabled =
-      !voiceAnswerEnabled;
-
-    saveBooleanSetting(
-      VOICE_DEFAULT_SETTING_KEY,
-      preferredVoiceAnswerEnabled
-    );
-
-    setVoiceAnswerEnabled(
-      preferredVoiceAnswerEnabled
-    );
-
-    updateSettingsUi();
+    setVoiceAnswerEnabled(!voiceAnswerEnabled);
   });
 
   hintBtn.addEventListener("click", () => {
@@ -9497,41 +7841,13 @@ HTML = r"""
   timeLimitEnabled =
     loadTimeLimitSetting();
 
-  bgmOn =
-    loadBooleanSetting(
-      BGM_SETTING_KEY,
-      true
-    );
-
-  preferredVoiceAnswerEnabled =
-    loadBooleanSetting(
-      VOICE_DEFAULT_SETTING_KEY,
-      false
-    );
-
-  preferredLearningVoiceEnabled =
-    loadBooleanSetting(
-      LEARNING_VOICE_SETTING_KEY,
-      false
-    );
-
-  learningVoiceEnabled =
-    preferredLearningVoiceEnabled;
-
-  anzanSpeed =
-    loadAnzanSpeed();
-
   homeView.classList.remove("hidden");
   menuView.classList.add("hidden");
   learningView.classList.remove("show");
-  anzanView.classList.remove("show");
-  settingsView.classList.remove("show");
   workspace.classList.remove("show");
 
   updateTimeLimitUi();
   updateLearningVoiceUi();
-  updateBgmButton();
-  updateSettingsUi();
   renderLearningCategories();
   installInAppBackGuard();
   updateBgmButton();
