@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V48-BGM-VOLUME-2026-09-13
+# VERSION: CLEAN-V49-UNIFIED-AUDIO-2026-09-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V48-BGM-VOLUME"
+APP_VERSION = "CLEAN-V49-UNIFIED-AUDIO"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2083,6 +2083,8 @@ HTML = r"""
 (() => {
   const APP_VERSION = __APP_VERSION__;
   const BGM_URLS = __BGM_URLS__;
+  const GOWASAN_AUDIO_DATA_URI =
+    "data:audio/mpeg;base64,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";
 
   const root = document.getElementById("soroban-app");
   const $ = (selector) => root.querySelector(selector);
@@ -2665,10 +2667,6 @@ HTML = r"""
   const BGM_VOLUME_VOICE_ON = 0.09;
   const BGM_VOLUME_VOICE_OFF = 0.09;
 
-  // Android等では音声読み上げ中に端末側でBGMが自動的に
-  // 小さくなるため、「ゴワサン！」の間だけ低下を打ち消す。
-  const BGM_VOLUME_GOWASAN = 0.15;
-
   let bgmKeepAliveTimer = null;
 
   class BgmEngine {
@@ -2677,6 +2675,7 @@ HTML = r"""
       this.ctx = null;
       this.masterGain = null;
       this.buffers = new Map();
+      this.oneShotBuffers = new Map();
 
       this.currentName = null;
       this.currentSource = null;
@@ -2807,6 +2806,53 @@ HTML = r"""
 
       this.buffers.set(name, decoded);
       return decoded;
+    }
+
+    async loadOneShotBuffer(name, url) {
+      if (this.oneShotBuffers.has(name)) {
+        return this.oneShotBuffers.get(name);
+      }
+
+      const ready = await this.ensureRunning();
+      if (!ready) {
+        throw new Error("Web Audioを開始できません。");
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`音声取得失敗: ${response.status}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const decoded = await this.ctx.decodeAudioData(arrayBuffer.slice(0));
+      this.oneShotBuffers.set(name, decoded);
+      return decoded;
+    }
+
+    async playOneShot(name, url, volume = 0.92) {
+      const buffer = await this.loadOneShotBuffer(name, url);
+      const ready = await this.ensureRunning();
+      if (!ready) {
+        throw new Error("Web Audioを開始できません。");
+      }
+
+      return new Promise((resolve) => {
+        const source = this.ctx.createBufferSource();
+        const gain = this.ctx.createGain();
+
+        source.buffer = buffer;
+        gain.gain.value = volume;
+        source.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        source.onended = () => {
+          try { source.disconnect(); } catch (error) {}
+          try { gain.disconnect(); } catch (error) {}
+          resolve(true);
+        };
+
+        source.start(0);
+      });
     }
 
     async play(name, force = false) {
@@ -4212,12 +4258,6 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // 「ゴワサン！」中は端末側の自動音量低下を補正し、
-    // 聞こえるBGM音量を通常時に近づける。
-    if (voiceCalloutRunning) {
-      return BGM_VOLUME_GOWASAN;
-    }
-
     // 音声回答ON/OFFともに通常音量は9%固定。
     return voiceAnswerEnabled
       ? BGM_VOLUME_VOICE_ON
@@ -4946,7 +4986,7 @@ HTML = r"""
 
     voicePauseForFeedback = true;
 
-    // 端末の読み上げによる自動的な音量低下より先に補正する。
+    // BGMは「ゴワサン！」中も通常音量のまま維持する。
     refreshBgmVolume();
     bgmEngine.ensureRunning();
 
@@ -4969,38 +5009,11 @@ HTML = r"""
 
       setTimeout(() => {
         startMicrophoneRecognition();
-      }, 220);
+      }, 420);
     };
 
-    if (
-      !("speechSynthesis" in window) ||
-      typeof SpeechSynthesisUtterance ===
-        "undefined"
-    ) {
-      beginListening();
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const utterance =
-      new SpeechSynthesisUtterance(
-        "ゴワサン！"
-      );
-
-    utterance.lang = "ja-JP";
-    utterance.rate = 1.18;
-    utterance.pitch = 1.35;
-    utterance.volume = 0.95;
-
-    const voice =
-      getJapaneseVoice();
-
-    if (voice) {
-      utterance.voice = voice;
-    }
-
     let finished = false;
+    let safetyTimer = null;
 
     const done = () => {
       if (finished) {
@@ -5008,15 +5021,24 @@ HTML = r"""
       }
 
       finished = true;
+      if (safetyTimer) {
+        clearTimeout(safetyTimer);
+      }
       beginListening();
     };
 
-    utterance.onend = done;
-    utterance.onerror = done;
+    // 端末TTSを使わず、BGMと同じWeb Audio系統で固定音声を再生する。
+    // これによりAndroidの音声フォーカスによるBGMのduckを回避する。
+    safetyTimer = setTimeout(done, 2500);
 
-    window.speechSynthesis.speak(
-      utterance
-    );
+    bgmEngine
+      .playOneShot(
+        "gowasan",
+        GOWASAN_AUDIO_DATA_URI,
+        0.92
+      )
+      .then(done)
+      .catch(done);
   }
 
   function startVoiceRecognition() {
