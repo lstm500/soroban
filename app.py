@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V49-UNIFIED-AUDIO-2026-09-13
+# VERSION: CLEAN-V52-VOICE-STABLE-SLOW-HINT-2026-09-23
 
 import json
 
@@ -8,12 +8,12 @@ from supabase import create_client
 
 
 st.set_page_config(
-    page_title="そろばん計算トレーナー",
+    page_title="そろばん",
     page_icon="🧮",
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V49-UNIFIED-AUDIO"
+APP_VERSION = "CLEAN-V52-VOICE-STABLE-SLOW-HINT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -198,6 +198,251 @@ HTML = r"""
     font-size: 13px;
     line-height: 1.6;
     opacity: .86;
+  }
+
+  .home-mode-btn.anzan-home {
+    background: #fff8e8;
+    border-color: #e2d2a9;
+  }
+
+  .home-mode-btn.settings-home {
+    background: #f4f1ec;
+    border-color: #d8d1c6;
+  }
+
+  /* =====================================================
+     MENTAL ARITHMETIC MODE
+     ===================================================== */
+  .anzan-view,
+  .settings-view {
+    display: none;
+  }
+
+  .anzan-view.show,
+  .settings-view.show {
+    display: block;
+  }
+
+  .anzan-hero,
+  .settings-hero {
+    padding: 18px;
+    border: 1px solid #dcd5c8;
+    border-radius: 20px;
+    background: #fff;
+  }
+
+  .anzan-hero h2,
+  .settings-hero h2 {
+    margin: 0 0 7px;
+    font-size: clamp(24px, 4vw, 34px);
+  }
+
+  .anzan-hero p,
+  .settings-hero p {
+    margin: 0;
+    color: #6b655d;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .anzan-level-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .anzan-level-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 190px;
+    padding: 16px;
+    border: 1px solid #ddd7ca;
+    border-radius: 18px;
+    background: #fff;
+  }
+
+  .anzan-level-no {
+    color: #8a8277;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .08em;
+  }
+
+  .anzan-level-name {
+    margin: 7px 0;
+    font-size: 19px;
+    font-weight: 1000;
+  }
+
+  .anzan-level-desc {
+    flex: 1;
+    color: #6d675f;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .anzan-game-card {
+    margin-top: 14px;
+    padding: 18px;
+    border: 2px solid #ddd7ca;
+    border-radius: 22px;
+    background: #fff;
+    text-align: center;
+  }
+
+  .anzan-status {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #6e685f;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .anzan-flash {
+    min-height: 160px;
+    display: grid;
+    place-items: center;
+    margin: 16px 0 10px;
+    border: 2px solid #e0d8ca;
+    border-radius: 20px;
+    background: #fffdf8;
+    font-size: clamp(54px, 12vw, 92px);
+    font-weight: 1000;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .anzan-flash.ready {
+    color: #786f65;
+    font-size: clamp(28px, 6vw, 42px);
+  }
+
+  .anzan-flash.answer {
+    border-color: #9db5c8;
+    background: #f4f9fc;
+  }
+
+  .anzan-hint {
+    min-height: 24px;
+    margin-bottom: 10px;
+    color: #716a61;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .anzan-answer-display {
+    width: min(320px, 100%);
+    min-height: 64px;
+    display: grid;
+    place-items: center;
+    margin: 10px auto;
+    border: 2px solid #cec6b8;
+    border-radius: 14px;
+    background: #fff;
+    font-size: 30px;
+    font-weight: 1000;
+  }
+
+  .anzan-keypad {
+    width: min(430px, 100%);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 10px auto;
+  }
+
+  .anzan-keypad button {
+    min-height: 58px;
+    font-size: 21px;
+  }
+
+  .anzan-feedback {
+    min-height: 34px;
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: 950;
+  }
+
+  .anzan-feedback.good {
+    color: #2f6a43;
+  }
+
+  .anzan-feedback.bad {
+    color: #a14428;
+  }
+
+  .anzan-result {
+    margin-top: 14px;
+    padding: 24px 18px;
+    border: 2px solid #ddd7ca;
+    border-radius: 22px;
+    background: #fff;
+    text-align: center;
+  }
+
+  .anzan-result-score {
+    margin: 8px 0;
+    font-size: clamp(36px, 7vw, 58px);
+    font-weight: 1000;
+  }
+
+  .anzan-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+
+  /* =====================================================
+     SETTINGS
+     ===================================================== */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .setting-card {
+    padding: 16px;
+    border: 1px solid #ddd7ca;
+    border-radius: 18px;
+    background: #fff;
+  }
+
+  .setting-title {
+    margin-bottom: 5px;
+    font-size: 16px;
+    font-weight: 1000;
+  }
+
+  .setting-desc {
+    min-height: 38px;
+    color: #706960;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .setting-value {
+    margin: 10px 0 7px;
+    color: #315f86;
+    font-size: 20px;
+    font-weight: 1000;
+  }
+
+  .setting-card button {
+    width: 100%;
+  }
+
+  .settings-save-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #f1eee7;
+    color: #665f56;
+    font-size: 12px;
+    line-height: 1.65;
   }
 
   .subview-topbar {
@@ -679,7 +924,9 @@ HTML = r"""
 
     .learning-category-grid,
     .learning-stage-grid,
-    .learning-point-grid {
+    .learning-point-grid,
+    .anzan-level-grid,
+    .settings-grid {
       grid-template-columns: 1fr;
     }
 
@@ -1663,7 +1910,7 @@ HTML = r"""
       <span class="home-mode-kicker">CHALLENGE</span>
       <span class="home-mode-name">チャレンジモード</span>
       <span class="home-mode-desc">
-        これまでの計算トレーニング。12問に挑戦し、得点やランキングを記録します。
+        12問の計算トレーニング。時間制限のON/OFFや音声回答も使えます。
       </span>
     </button>
 
@@ -1671,9 +1918,176 @@ HTML = r"""
       <span class="home-mode-kicker">LEARNING</span>
       <span class="home-mode-name">学習モード</span>
       <span class="home-mode-desc">
-        足し算・引き算・掛け算・割り算の珠の動きを動画のようなアニメーションで学びます。
+        足し算・引き算・掛け算・割り算の珠の動きを、ゆっくり学びます。
       </span>
     </button>
+
+    <button type="button" id="homeAnzanBtn" class="home-mode-btn anzan-home">
+      <span class="home-mode-kicker">MENTAL</span>
+      <span class="home-mode-name">暗算モード</span>
+      <span class="home-mode-desc">
+        数字を順番に見て頭の中で計算。スタート後は答えることに集中できます。
+      </span>
+    </button>
+
+    <button type="button" id="homeSettingsBtn" class="home-mode-btn settings-home">
+      <span class="home-mode-kicker">SETTINGS</span>
+      <span class="home-mode-name">設定</span>
+      <span class="home-mode-desc">
+        BGM・音声・時間制限・暗算速度をまとめて設定します。
+      </span>
+    </button>
+  </div>
+</div>
+
+
+<div id="anzanView" class="anzan-view">
+  <div class="subview-topbar">
+    <button type="button" id="anzanTopBtn" class="top-back-btn">← TOPへ</button>
+    <div class="subview-topbar-title">暗算モード</div>
+  </div>
+
+  <div id="anzanMenuView">
+    <div class="anzan-hero">
+      <h2>見て、頭の中で計算</h2>
+      <p>
+        「はじめる」を押した後は数字が自動で進みます。
+        そろばんを頭に思い浮かべて、最後の答えだけ入力します。
+      </p>
+    </div>
+
+    <div class="anzan-level-grid">
+      <article class="anzan-level-card">
+        <div class="anzan-level-no">LEVEL 1</div>
+        <div class="anzan-level-name">1桁・3口</div>
+        <div class="anzan-level-desc">
+          1〜9の足し算を3回。暗算を始める最初のステップです。
+        </div>
+        <button type="button" class="primary start-anzan" data-anzan-level="1">はじめる</button>
+      </article>
+
+      <article class="anzan-level-card">
+        <div class="anzan-level-no">LEVEL 2</div>
+        <div class="anzan-level-name">1桁・5口</div>
+        <div class="anzan-level-desc">
+          1桁の足し算・引き算を5回。途中の答えは0未満になりません。
+        </div>
+        <button type="button" class="primary start-anzan" data-anzan-level="2">はじめる</button>
+      </article>
+
+      <article class="anzan-level-card">
+        <div class="anzan-level-no">LEVEL 3</div>
+        <div class="anzan-level-name">2桁・5口</div>
+        <div class="anzan-level-desc">
+          10〜49を使う足し算・引き算。位を頭の中で保つ練習です。
+        </div>
+        <button type="button" class="primary start-anzan" data-anzan-level="3">はじめる</button>
+      </article>
+    </div>
+  </div>
+
+  <div id="anzanGameView" class="hidden">
+    <div class="anzan-game-card">
+      <div class="anzan-status">
+        <span id="anzanQCount">1 / 10</span>
+        <span id="anzanCorrectCount">正解 0</span>
+        <span id="anzanSpeedLabel">ゆっくり</span>
+      </div>
+
+      <div id="anzanFlash" class="anzan-flash ready">よーい</div>
+      <div id="anzanHint" class="anzan-hint">数字を順番に見てね</div>
+
+      <div id="anzanAnswerArea" class="hidden">
+        <div id="anzanAnswerDisplay" class="anzan-answer-display">&nbsp;</div>
+        <div id="anzanVoiceStatus" class="anzan-hint"></div>
+
+        <div id="anzanKeypad" class="anzan-keypad">
+          <button type="button" data-anzan-key="7">7</button>
+          <button type="button" data-anzan-key="8">8</button>
+          <button type="button" data-anzan-key="9">9</button>
+          <button type="button" data-anzan-key="4">4</button>
+          <button type="button" data-anzan-key="5">5</button>
+          <button type="button" data-anzan-key="6">6</button>
+          <button type="button" data-anzan-key="1">1</button>
+          <button type="button" data-anzan-key="2">2</button>
+          <button type="button" data-anzan-key="3">3</button>
+          <button type="button" data-anzan-action="clear">クリア</button>
+          <button type="button" data-anzan-key="0">0</button>
+          <button type="button" data-anzan-action="backspace">← 1つ消す</button>
+        </div>
+
+        <button type="button" id="anzanSubmitBtn" class="primary">答える</button>
+      </div>
+
+      <div id="anzanFeedback" class="anzan-feedback"></div>
+    </div>
+  </div>
+
+  <div id="anzanResultView" class="hidden">
+    <div class="anzan-result">
+      <div>暗算10問終了</div>
+      <div id="anzanResultScore" class="anzan-result-score">0 / 10</div>
+      <div id="anzanResultText" class="anzan-hint"></div>
+      <div class="anzan-actions">
+        <button type="button" id="anzanRetryBtn" class="primary">同じレベルをもう10問</button>
+        <button type="button" id="anzanMenuBtn">レベル選択へ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="settingsView" class="settings-view">
+  <div class="subview-topbar">
+    <button type="button" id="settingsTopBtn" class="top-back-btn">← TOPへ</button>
+    <div class="subview-topbar-title">設定</div>
+  </div>
+
+  <div class="settings-hero">
+    <h2>設定</h2>
+    <p>
+      子どもが毎回設定を触らなくてよいよう、ここでまとめて保存します。
+    </p>
+  </div>
+
+  <div class="settings-grid">
+    <article class="setting-card">
+      <div class="setting-title">チャレンジの時間制限</div>
+      <div class="setting-desc">5分で挑戦するか、時間制限なしにします。</div>
+      <div id="settingTimeValue" class="setting-value">5分</div>
+      <button type="button" id="settingTimeBtn">切り替える</button>
+    </article>
+
+    <article class="setting-card">
+      <div class="setting-title">チャレンジの音声回答</div>
+      <div class="setting-desc">チャレンジ開始時から音声回答を使う設定です。</div>
+      <div id="settingVoiceValue" class="setting-value">OFF</div>
+      <button type="button" id="settingVoiceBtn">切り替える</button>
+    </article>
+
+    <article class="setting-card">
+      <div class="setting-title">BGM</div>
+      <div class="setting-desc">チャレンジ中のBGMを最初からON/OFFにします。マイクON中も音楽は流れ、答えを話した瞬間だけ自動で下がります。</div>
+      <div id="settingBgmValue" class="setting-value">ON</div>
+      <button type="button" id="settingBgmBtn">切り替える</button>
+    </article>
+
+    <article class="setting-card">
+      <div class="setting-title">学習モードの音声解説</div>
+      <div class="setting-desc">学習STEPを開いたときの音声解説の初期状態です。</div>
+      <div id="settingLearningVoiceValue" class="setting-value">OFF</div>
+      <button type="button" id="settingLearningVoiceBtn">切り替える</button>
+    </article>
+
+    <article class="setting-card">
+      <div class="setting-title">暗算の数字表示速度</div>
+      <div class="setting-desc">数字1つを画面に表示する時間です。</div>
+      <div id="settingAnzanSpeedValue" class="setting-value">ゆっくり</div>
+      <button type="button" id="settingAnzanSpeedBtn">速度を変える</button>
+    </article>
+  </div>
+
+  <div class="settings-save-note">
+    設定はこの端末のブラウザに自動保存されます。暗算モードは、音声回答をONにしておくと答えるときの画面操作も減らせます。
   </div>
 </div>
 
@@ -1989,13 +2403,13 @@ HTML = r"""
 
     <div class="hint-launch">
       <button type="button" id="hintBtn" class="hint-btn">
-        珠ヒントを見る
+        珠ヒントを見る（音声解説）
       </button>
     </div>
 
     <div id="abacusHint" class="abacus-hint">
       <div class="hint-head">
-        <div class="hint-title">そろばんの珠の動かし方</div>
+        <div class="hint-title">そろばんの珠の動かし方｜ゆっくり音声解説</div>
         <div class="hint-actions">
           <button type="button" id="hintReplayBtn">もう一度</button>
           <button type="button" id="hintCloseBtn">閉じる</button>
@@ -2083,8 +2497,6 @@ HTML = r"""
 (() => {
   const APP_VERSION = __APP_VERSION__;
   const BGM_URLS = __BGM_URLS__;
-  const GOWASAN_AUDIO_DATA_URI =
-    "data:audio/mpeg;base64,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";
 
   const root = document.getElementById("soroban-app");
   const $ = (selector) => root.querySelector(selector);
@@ -2092,6 +2504,11 @@ HTML = r"""
   $("#versionLabel").textContent = `APP VERSION: ${APP_VERSION}`;
 
   const homeView = $("#homeView");
+  const anzanView = $("#anzanView");
+  const anzanMenuView = $("#anzanMenuView");
+  const anzanGameView = $("#anzanGameView");
+  const anzanResultView = $("#anzanResultView");
+  const settingsView = $("#settingsView");
   const menuView = $("#menuView");
   const learningView = $("#learningView");
   const learningCategoryView = $("#learningCategoryView");
@@ -2121,6 +2538,24 @@ HTML = r"""
   const learningVoiceBtn = $("#learningVoiceBtn");
   const learningVoiceNote = $("#learningVoiceNote");
   const learningNextBtn = $("#learningNextBtn");
+
+  const anzanFlash = $("#anzanFlash");
+  const anzanHint = $("#anzanHint");
+  const anzanAnswerArea = $("#anzanAnswerArea");
+  const anzanAnswerDisplay = $("#anzanAnswerDisplay");
+  const anzanFeedback = $("#anzanFeedback");
+  const anzanVoiceStatus = $("#anzanVoiceStatus");
+  const anzanQCount = $("#anzanQCount");
+  const anzanCorrectCount = $("#anzanCorrectCount");
+  const anzanSpeedLabel = $("#anzanSpeedLabel");
+  const anzanResultScore = $("#anzanResultScore");
+  const anzanResultText = $("#anzanResultText");
+
+  const settingTimeValue = $("#settingTimeValue");
+  const settingVoiceValue = $("#settingVoiceValue");
+  const settingBgmValue = $("#settingBgmValue");
+  const settingLearningVoiceValue = $("#settingLearningVoiceValue");
+  const settingAnzanSpeedValue = $("#settingAnzanSpeedValue");
 
   const workspace = $("#workspace");
   const questionCard = $("#questionCard");
@@ -2586,6 +3021,28 @@ HTML = r"""
   let learningVoiceEnabled = false;
   let learningNarrationToken = 0;
 
+  const BGM_SETTING_KEY = "soroban_bgm_enabled_v1";
+  const VOICE_DEFAULT_SETTING_KEY = "soroban_voice_answer_default_v1";
+  const LEARNING_VOICE_SETTING_KEY = "soroban_learning_voice_default_v1";
+  const ANZAN_SPEED_SETTING_KEY = "soroban_anzan_speed_v1";
+
+  let preferredVoiceAnswerEnabled = false;
+  let preferredLearningVoiceEnabled = false;
+  let anzanSpeed = "slow";
+
+  const ANZAN_TOTAL_QUESTIONS = 10;
+  let anzanLevel = 1;
+  let anzanQuestionIndex = 0;
+  let anzanCorrect = 0;
+  let anzanQuestion = null;
+  let anzanAnswerBuffer = "";
+  let anzanRunToken = 0;
+  let anzanRecognition = null;
+  let anzanListening = false;
+  let anzanListeningStartedAt = 0;
+  let anzanSpeechDetected = false;
+  let anzanLocked = false;
+
   const RULES = Object.freeze({
     addSubOperandMin: 1,
     subtractionMinAnswer: 0,
@@ -2662,10 +3119,25 @@ HTML = r"""
   let voicePauseForFeedback = false;
   let voiceCalloutRunning = false;
   let voiceRestartTimer = null;
+  let voiceListeningStartedAt = 0;
+  let voiceSpeechDetected = false;
 
-  // 通常音量は従来の6%から9%へ上げる。
-  const BGM_VOLUME_VOICE_ON = 0.09;
-  const BGM_VOLUME_VOICE_OFF = 0.09;
+  // 「ごわさん」は1問につき1回だけ。
+  // 音声認識が無音で切れても、この番号が同じ間は言い直さない。
+  let gowasanSpokenForIndex = -1;
+
+  // 珠ヒントの音声解説中は、回答用マイクを止める。
+  let hintNarrationActive = false;
+  let hintNarrationToken = 0;
+
+  // 「ゴワサン！」の直後だけ短く余韻を待つ。
+  // 問題を解いている間はBGMを止めない。
+  const MIC_PRE_SILENCE_MS = 450;
+  const MIC_RESULT_GUARD_MS = 350;
+
+  const BGM_VOLUME_NORMAL = 0.14;
+  const BGM_VOLUME_APP_SPEECH = 0.03;
+  const BGM_VOLUME_LISTENING = 0.00;
 
   let bgmKeepAliveTimer = null;
 
@@ -2675,14 +3147,13 @@ HTML = r"""
       this.ctx = null;
       this.masterGain = null;
       this.buffers = new Map();
-      this.oneShotBuffers = new Map();
 
       this.currentName = null;
       this.currentSource = null;
       this.currentSourceGain = null;
 
       this.playGeneration = 0;
-      this.targetVolume = BGM_VOLUME_VOICE_OFF;
+      this.targetVolume = BGM_VOLUME_NORMAL;
     }
 
     ensureContext() {
@@ -2806,53 +3277,6 @@ HTML = r"""
 
       this.buffers.set(name, decoded);
       return decoded;
-    }
-
-    async loadOneShotBuffer(name, url) {
-      if (this.oneShotBuffers.has(name)) {
-        return this.oneShotBuffers.get(name);
-      }
-
-      const ready = await this.ensureRunning();
-      if (!ready) {
-        throw new Error("Web Audioを開始できません。");
-      }
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`音声取得失敗: ${response.status}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const decoded = await this.ctx.decodeAudioData(arrayBuffer.slice(0));
-      this.oneShotBuffers.set(name, decoded);
-      return decoded;
-    }
-
-    async playOneShot(name, url, volume = 0.92) {
-      const buffer = await this.loadOneShotBuffer(name, url);
-      const ready = await this.ensureRunning();
-      if (!ready) {
-        throw new Error("Web Audioを開始できません。");
-      }
-
-      return new Promise((resolve) => {
-        const source = this.ctx.createBufferSource();
-        const gain = this.ctx.createGain();
-
-        source.buffer = buffer;
-        gain.gain.value = volume;
-        source.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        source.onended = () => {
-          try { source.disconnect(); } catch (error) {}
-          try { gain.disconnect(); } catch (error) {}
-          resolve(true);
-        };
-
-        source.start(0);
-      });
     }
 
     async play(name, force = false) {
@@ -4089,46 +4513,405 @@ HTML = r"""
     return out;
   }
 
+  function hintDigitAt(
+    value,
+    place
+  ) {
+    return Math.floor(
+      Math.abs(value) /
+      place
+    ) % 10;
+  }
+
+  function pushHintMove(
+    steps,
+    state,
+    delta,
+    activePlace,
+    text
+  ) {
+    state.value += delta;
+
+    steps.push({
+      value: state.value,
+      activePlace,
+      text
+    });
+  }
+
+  function pushHintExplain(
+    steps,
+    state,
+    activePlace,
+    text
+  ) {
+    steps.push({
+      value: state.value,
+      activePlace,
+      text
+    });
+  }
+
+  function addWithinDigitHint(
+    steps,
+    state,
+    place,
+    amount,
+    context = ""
+  ) {
+    if (amount <= 0) {
+      return;
+    }
+
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
+
+    const prefix =
+      context
+        ? `${context} `
+        : "";
+
+    // 5以上を足す場合、五珠を使えるなら先に五珠。
+    if (
+      amount >= 5 &&
+      digit < 5
+    ) {
+      pushHintMove(
+        steps,
+        state,
+        5 * place,
+        place,
+        `${prefix}${placeName(place)}で、まず5の珠を入れます。`
+      );
+
+      const rest =
+        amount - 5;
+
+      if (rest > 0) {
+        pushHintMove(
+          steps,
+          state,
+          rest * place,
+          place,
+          `${placeName(place)}で、残りの${rest}を足します。`
+        );
+      }
+
+      return;
+    }
+
+    // 5をまたぐ足し算。
+    // 例: 2+4 → 先に-1、そのあと+5。
+    if (
+      digit < 5 &&
+      amount < 5 &&
+      digit + amount >= 5
+    ) {
+      const complement =
+        5 - amount;
+
+      pushHintExplain(
+        steps,
+        state,
+        place,
+        `${placeName(place)}で5をまたぎます。${amount}を足すには、5の補数は${complement}です。先に${complement}を引きます。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        -complement * place,
+        place,
+        `先に${complement}を引きます。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        5 * place,
+        place,
+        `次に5の珠を入れます。${complement}を引いて5を足すと、合わせて${amount}を足したことになります。`
+      );
+
+      return;
+    }
+
+    pushHintMove(
+      steps,
+      state,
+      amount * place,
+      place,
+      `${prefix}${placeName(place)}で${amount}をそのまま足します。`
+    );
+  }
+
+  function subtractWithinDigitHint(
+    steps,
+    state,
+    place,
+    amount,
+    context = ""
+  ) {
+    if (amount <= 0) {
+      return;
+    }
+
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
+
+    const prefix =
+      context
+        ? `${context} `
+        : "";
+
+    if (
+      digit >= 5 &&
+      amount >= 5
+    ) {
+      pushHintMove(
+        steps,
+        state,
+        -5 * place,
+        place,
+        `${prefix}${placeName(place)}で、まず5の珠を外します。`
+      );
+
+      const rest =
+        amount - 5;
+
+      if (rest > 0) {
+        pushHintMove(
+          steps,
+          state,
+          -rest * place,
+          place,
+          `${placeName(place)}で、残りの${rest}を引きます。`
+        );
+      }
+
+      return;
+    }
+
+    // 5をまたぐ引き算。
+    // 例: 7-4 → -5、そのあと+1。
+    if (
+      digit >= 5 &&
+      amount < 5 &&
+      digit - 5 < amount
+    ) {
+      const complement =
+        5 - amount;
+
+      pushHintExplain(
+        steps,
+        state,
+        place,
+        `${placeName(place)}で5をまたぎます。${amount}を引くには、5の補数は${complement}です。先に5の珠を外します。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        -5 * place,
+        place,
+        `先に5を引きます。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        complement * place,
+        place,
+        `次に${complement}を足します。5を引いて${complement}を戻すと、合わせて${amount}を引いたことになります。`
+      );
+
+      return;
+    }
+
+    pushHintMove(
+      steps,
+      state,
+      -amount * place,
+      place,
+      `${prefix}${placeName(place)}で${amount}をそのまま引きます。`
+    );
+  }
+
+  function addDigitWithCarryHint(
+    steps,
+    state,
+    place,
+    amount,
+    carryContext = false
+  ) {
+    if (amount <= 0) {
+      return;
+    }
+
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
+
+    if (
+      digit + amount <= 9
+    ) {
+      addWithinDigitHint(
+        steps,
+        state,
+        place,
+        amount,
+        carryContext
+          ? "くり上がりです。"
+          : ""
+      );
+      return;
+    }
+
+    const complement =
+      10 - amount;
+
+    pushHintExplain(
+      steps,
+      state,
+      place,
+      `${placeName(place)}で10をまたぎます。${amount}を足すときの10の補数は${complement}です。先に${complement}を引いてから、1つ上の位へ1を足します。`
+    );
+
+    // ユーザー指定どおり、先にマイナス側の珠を動かす。
+    subtractWithinDigitHint(
+      steps,
+      state,
+      place,
+      complement,
+      "10をまたぐので、"
+    );
+
+    addDigitWithCarryHint(
+      steps,
+      state,
+      place * 10,
+      1,
+      true
+    );
+  }
+
+  function subtractDigitWithBorrowHint(
+    steps,
+    state,
+    place,
+    amount,
+    borrowContext = false
+  ) {
+    if (amount <= 0) {
+      return;
+    }
+
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
+
+    if (
+      digit >= amount
+    ) {
+      subtractWithinDigitHint(
+        steps,
+        state,
+        place,
+        amount,
+        borrowContext
+          ? "くり下がりです。"
+          : ""
+      );
+      return;
+    }
+
+    const complement =
+      10 - amount;
+
+    pushHintExplain(
+      steps,
+      state,
+      place,
+      `${placeName(place)}だけでは${amount}を引けません。10の補数は${complement}です。先に1つ上の位から1を引き、そのあと${placeName(place)}へ${complement}を足します。`
+    );
+
+    // 先に上の位を1つ引く。これが繰り下がり。
+    subtractDigitWithBorrowHint(
+      steps,
+      state,
+      place * 10,
+      1,
+      true
+    );
+
+    addWithinDigitHint(
+      steps,
+      state,
+      place,
+      complement,
+      "10から借りた分を使って、"
+    );
+  }
+
   function buildAddSubHintSteps(q) {
     const steps = [
       {
         value: q.a,
         activePlace: null,
-        text: `まず ${q.a} をそろばんに置きます。`
+        text:
+          `まず、${q.a}をそろばんに置きます。黄色く光る位を見ながら、ゆっくり動かします。`
       }
     ];
 
-    const parts = decomposeByPlace(q.b);
-    let current = q.a;
+    const state = {
+      value: q.a
+    };
+
+    const parts =
+      decomposeByPlace(
+        q.b
+      );
 
     parts.forEach((part) => {
+      pushHintExplain(
+        steps,
+        state,
+        part.place,
+        `${placeName(part.place)}の${part.digit}を${q.op === "＋" ? "足します" : "引きます"}。`
+      );
+
       if (q.op === "＋") {
-        current += part.amount;
-
-        steps.push({
-          value: current,
-          activePlace: part.place,
-          text:
-            `${placeName(part.place)}で ${part.amount} を足します。` +
-            ` 光っている位の珠の動きを見てね。`
-        });
+        addDigitWithCarryHint(
+          steps,
+          state,
+          part.place,
+          part.digit
+        );
       } else {
-        current -= part.amount;
-
-        steps.push({
-          value: current,
-          activePlace: part.place,
-          text:
-            `${placeName(part.place)}で ${part.amount} をひきます。` +
-            ` 光っている位の珠の動きを見てね。`
-        });
+        subtractDigitWithBorrowHint(
+          steps,
+          state,
+          part.place,
+          part.digit
+        );
       }
     });
 
     steps.push({
       value: q.answer,
       activePlace: null,
-      text: `この珠の形で完成です。`
+      text:
+        `できました。答えは${q.answer}です。もう一度見るときは、先に動く珠と、あとから動く珠を見てみよう。`
     });
 
     return steps;
@@ -4181,48 +4964,167 @@ HTML = r"""
 
   function stopSorobanHintAnimation() {
     hintRunToken += 1;
+    hintNarrationToken += 1;
+
+    if (
+      hintNarrationActive &&
+      "speechSynthesis" in window
+    ) {
+      window.speechSynthesis.cancel();
+    }
   }
 
   function hideSorobanHint() {
     stopSorobanHintAnimation();
+
+    hintNarrationActive = false;
+    refreshBgmVolume();
+
     abacusHint.classList.remove("show");
     hintStep.textContent = "";
     sorobanBoard.innerHTML = "";
     hintRods = [];
+
+    // ヒント前から音声回答ONだった場合は、
+    // 「ごわさん」を言い直さず、同じ問題でマイクだけ戻す。
+    if (
+      voiceAnswerEnabled &&
+      !locked &&
+      workspace.classList.contains("show") &&
+      !results.classList.contains("show")
+    ) {
+      scheduleSilentVoiceRestart(
+        420
+      );
+    }
   }
 
-  function runSorobanHint() {
-    if (index >= TOTAL_QUESTIONS || !questions[index]) {
+  function speakHintNarration(
+    text,
+    token,
+    onDone
+  ) {
+    if (
+      token !== hintRunToken ||
+      !hintNarrationActive
+    ) {
       return;
     }
 
-    const q = questions[index];
-    const steps = buildHintSteps(q);
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance ===
+        "undefined"
+    ) {
+      setTimeout(
+        onDone,
+        5200
+      );
+      return;
+    }
 
-    const maxValue = Math.max(
-      q.a,
-      q.b,
-      Math.abs(q.answer),
-      ...steps.map((step) => Math.abs(step.value))
-    );
+    window.speechSynthesis.cancel();
 
-    const digitCount = Math.max(
-      1,
-      String(Math.floor(maxValue)).length
+    const narrationToken =
+      ++hintNarrationToken;
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        text
+      );
+
+    utterance.lang = "ja-JP";
+    utterance.rate = 0.72;
+    utterance.pitch = 1.04;
+    utterance.volume = 1.0;
+
+    const voice =
+      getJapaneseVoice();
+
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    let finished = false;
+
+    const done = () => {
+      if (
+        finished ||
+        token !== hintRunToken ||
+        narrationToken !==
+          hintNarrationToken
+      ) {
+        return;
+      }
+
+      finished = true;
+
+      // 説明を聞いたあとも、珠の形を少し見る時間を取る。
+      setTimeout(
+        onDone,
+        1700
+      );
+    };
+
+    utterance.onend = done;
+    utterance.onerror = done;
+
+    window.speechSynthesis.speak(
+      utterance
     );
+  }
+
+  function runSorobanHint() {
+    if (
+      index >= TOTAL_QUESTIONS ||
+      !questions[index]
+    ) {
+      return;
+    }
+
+    const q =
+      questions[index];
+
+    const steps =
+      buildHintSteps(q);
+
+    const maxValue =
+      Math.max(
+        q.a,
+        q.b,
+        Math.abs(q.answer),
+        ...steps.map(
+          (step) =>
+            Math.abs(step.value)
+        )
+      );
+
+    const digitCount =
+      Math.max(
+        1,
+        String(
+          Math.floor(maxValue)
+        ).length
+      );
 
     stopSorobanHintAnimation();
-    const token = hintRunToken;
 
-    buildSorobanBoard(digitCount);
-    abacusHint.classList.add("show");
+    // 回答用マイクとヒント解説が同時に動かないようにする。
+    hintNarrationActive = true;
+    clearVoiceRestartTimer();
+    stopVoiceRecognition();
 
-    // 1周を約5秒にする。
-    // ステップ数に応じて自動的に間隔を調整する。
-    const cycleMs = 5000;
-    const stepDelay = Math.max(
-      550,
-      Math.floor(cycleMs / Math.max(1, steps.length))
+    refreshBgmVolume();
+
+    const token =
+      hintRunToken;
+
+    buildSorobanBoard(
+      digitCount
+    );
+
+    abacusHint.classList.add(
+      "show"
     );
 
     let stepIndex = 0;
@@ -4230,38 +5132,98 @@ HTML = r"""
     const showStep = () => {
       if (
         token !== hintRunToken ||
-        !abacusHint.classList.contains("show")
+        !abacusHint.classList.contains(
+          "show"
+        )
       ) {
         return;
       }
 
-      const step = steps[stepIndex];
+      const step =
+        steps[stepIndex];
 
-      hintStep.textContent = step.text;
+      hintStep.textContent =
+        step.text;
 
-      showSorobanNumber(
-        step.value,
-        step.activePlace
+      // まず説明を始め、少し遅れて珠を動かす。
+      // 子どもが「何をするか」を聞いてから珠を追えるようにする。
+      const moveTimer =
+        setTimeout(() => {
+          if (
+            token !== hintRunToken ||
+            !abacusHint.classList.contains(
+              "show"
+            )
+          ) {
+            return;
+          }
+
+          showSorobanNumber(
+            step.value,
+            step.activePlace
+          );
+        }, 900);
+
+      speakHintNarration(
+        step.text,
+        token,
+        () => {
+          clearTimeout(
+            moveTimer
+          );
+
+          // 万一音声が極端に短くても、珠は必ず表示する。
+          showSorobanNumber(
+            step.value,
+            step.activePlace
+          );
+
+          stepIndex += 1;
+
+          if (
+            stepIndex >=
+            steps.length
+          ) {
+            // 1周終わったら完成形を長めに見せてから最初へ。
+            stepIndex = 0;
+
+            setTimeout(
+              showStep,
+              2800
+            );
+            return;
+          }
+
+          setTimeout(
+            showStep,
+            900
+          );
+        }
       );
-
-      stepIndex += 1;
-
-      if (stepIndex >= steps.length) {
-        stepIndex = 0;
-      }
-
-      // ヒントを閉じる／次の問題へ進むまで自動ループ。
-      setTimeout(showStep, stepDelay);
     };
 
     showStep();
   }
 
   function getTargetBgmVolume() {
-    // 音声回答ON/OFFともに通常音量は9%固定。
-    return voiceAnswerEnabled
-      ? BGM_VOLUME_VOICE_ON
-      : BGM_VOLUME_VOICE_OFF;
+    // 問題を考えている間は、マイクがONでもBGMを通常音量で流す。
+    // 実際の発話をSpeechRecognitionが検知した瞬間だけ0%へ下げる。
+    if (
+      voiceSpeechDetected ||
+      anzanSpeechDetected
+    ) {
+      return BGM_VOLUME_LISTENING;
+    }
+
+    if (
+      voiceCalloutRunning ||
+      voicePauseForFeedback ||
+      hintNarrationActive
+    ) {
+      return BGM_VOLUME_APP_SPEECH;
+    }
+
+    return BGM_VOLUME_NORMAL;
   }
 
   function refreshBgmVolume() {
@@ -4427,7 +5389,12 @@ HTML = r"""
 
   function toggleBgm() {
     bgmOn = !bgmOn;
+    saveBooleanSetting(
+      BGM_SETTING_KEY,
+      bgmOn
+    );
     updateBgmButton();
+    updateSettingsUi();
 
     if (
       bgmOn &&
@@ -4603,6 +5570,167 @@ HTML = r"""
       : value;
   }
 
+  function normalizeNumericSpeechText(
+    input
+  ) {
+    return String(
+      input || ""
+    )
+      .toLowerCase()
+      .replace(
+        /[,\s、。,.！!？?]/g,
+        ""
+      )
+      .replace(
+        /答えは|答え|こたえは|こたえ|です|だよ|だね|だ|かな|えっと|えーと|ええと|えー|うーん|はい/g,
+        ""
+      )
+      .replace(
+        /マイナス|minus/g,
+        "-"
+      )
+      .replace(/いち/g, "一")
+      .replace(/に/g, "二")
+      .replace(/さん/g, "三")
+      .replace(/よん|し/g, "四")
+      .replace(/ご/g, "五")
+      .replace(/ろく/g, "六")
+      .replace(/なな|しち/g, "七")
+      .replace(/はち/g, "八")
+      .replace(/きゅう|く/g, "九")
+      .replace(/れい|ぜろ/g, "零")
+      .replace(/じゅう/g, "十")
+      .replace(/ひゃく/g, "百")
+      .replace(/せん/g, "千")
+      .replace(/まん/g, "万");
+  }
+
+  function isLikelyNumericSpeech(
+    input
+  ) {
+    const normalized =
+      normalizeNumericSpeechText(
+        input
+      );
+
+    if (!normalized) {
+      return false;
+    }
+
+    // 数字・漢数字以外の言葉が残っている候補は、
+    // BGMや周囲の会話の可能性が高いので採用しない。
+    return (
+      /^-?\d+$/.test(
+        normalized
+      ) ||
+      /^-?[一二三四五六七八九〇零十百千万]+$/.test(
+        normalized
+      )
+    );
+  }
+
+  function selectBestNumericSpeech(
+    result
+  ) {
+    if (!result) {
+      return null;
+    }
+
+    let best = null;
+
+    for (
+      let i = 0;
+      i < result.length;
+      i += 1
+    ) {
+      const alternative =
+        result[i];
+
+      const transcript =
+        String(
+          alternative?.transcript || ""
+        ).trim();
+
+      if (
+        !transcript ||
+        !isLikelyNumericSpeech(
+          transcript
+        )
+      ) {
+        continue;
+      }
+
+      const value =
+        japaneseIntegerToNumber(
+          transcript
+        );
+
+      if (
+        value === null ||
+        !Number.isInteger(value) ||
+        value < 0
+      ) {
+        continue;
+      }
+
+      const rawConfidence =
+        Number(
+          alternative?.confidence
+        );
+
+      const confidence =
+        Number.isFinite(
+          rawConfidence
+        )
+          ? rawConfidence
+          : 0;
+
+      // ブラウザがconfidenceを返している場合、
+      // 極端に低い数字候補はBGMや環境音の誤認識として捨てる。
+      if (
+        confidence > 0 &&
+        confidence < 0.22
+      ) {
+        continue;
+      }
+
+      const normalized =
+        normalizeNumericSpeechText(
+          transcript
+        );
+
+      const digitOnlyBonus =
+        /^-?\d+$/.test(
+          normalized
+        )
+          ? 0.15
+          : 0;
+
+      const score =
+        confidence +
+        digitOnlyBonus -
+        Math.min(
+          0.12,
+          transcript.length *
+            0.002
+        );
+
+      if (
+        !best ||
+        score > best.score
+      ) {
+        best = {
+          value,
+          transcript,
+          confidence,
+          score
+        };
+      }
+    }
+
+    return best;
+  }
+
   function updateVoiceUi(
     message = null
   ) {
@@ -4688,6 +5816,7 @@ HTML = r"""
     if (
       !voiceAnswerEnabled ||
       voicePauseForFeedback ||
+      hintNarrationActive ||
       locked ||
       !workspace.classList.contains("show") ||
       results.classList.contains("show")
@@ -4699,7 +5828,38 @@ HTML = r"""
 
     voiceRestartTimer =
       setTimeout(() => {
+        if (
+          gowasanSpokenForIndex ===
+          index
+        ) {
+          startMicrophoneRecognition();
+          return;
+        }
+
         startVoiceRecognition();
+      }, delay);
+  }
+
+  function scheduleSilentVoiceRestart(
+    delay = 320
+  ) {
+    if (
+      !voiceAnswerEnabled ||
+      voicePauseForFeedback ||
+      voiceCalloutRunning ||
+      hintNarrationActive ||
+      locked ||
+      !workspace.classList.contains("show") ||
+      results.classList.contains("show")
+    ) {
+      return;
+    }
+
+    clearVoiceRestartTimer();
+
+    voiceRestartTimer =
+      setTimeout(() => {
+        startMicrophoneRecognition();
       }, delay);
   }
 
@@ -4722,54 +5882,51 @@ HTML = r"""
       return;
     }
 
-    const alternatives = [];
-
-    for (
-      let i = 0;
-      i < result.length;
-      i += 1
+    // 問題はマイクonstart後に初めて表示されるため、
+    // 450ms未満で返る認識結果は子どもの回答とは考えにくい。
+    // 直前のBGM・ゴワサンの残響として捨てる。
+    if (
+      voiceListeningStartedAt > 0 &&
+      Date.now() -
+        voiceListeningStartedAt <
+        MIC_RESULT_GUARD_MS
     ) {
-      alternatives.push(
-        result[i].transcript
+      updateVoiceUi(
+        "音声回答：数字を話してください"
       );
+      return;
     }
 
-    let parsed = null;
-    let recognizedText = "";
+    const selected =
+      selectBestNumericSpeech(
+        result
+      );
 
-    for (
-      const transcript
-      of alternatives
-    ) {
-      const value =
-        japaneseIntegerToNumber(
-          transcript
+    if (!selected) {
+      const firstText =
+        String(
+          result[0]?.transcript || ""
         );
 
-      if (
-        value !== null &&
-        Number.isInteger(value) &&
-        value >= 0
-      ) {
-        parsed = value;
-        recognizedText =
-          transcript;
-        break;
-      }
-    }
-
-    if (parsed === null) {
       updateVoiceUi(
-        `音声回答：「${alternatives[0] || ""}」を数字として認識できませんでした`
+        firstText
+          ? "音声回答：数字だけを、もう一度話してください"
+          : "音声回答：もう一度話してください"
       );
       return;
     }
 
     answerInput.value =
-      String(parsed);
+      String(
+        selected.value
+      );
+
+    // この認識結果は回答として採用する。
+    // stop()後のonendが、回答確定前にマイクを再起動しないようにする。
+    voicePauseForFeedback = true;
 
     updateVoiceUi(
-      `音声回答：「${recognizedText}」→ ${parsed}`
+      `音声回答：「${selected.transcript}」→ ${selected.value}`
     );
 
     stopVoiceRecognition();
@@ -4799,22 +5956,39 @@ HTML = r"""
 
     recognition.onstart = () => {
       voiceRecognitionRunning = true;
+      voiceListeningStartedAt =
+        Date.now();
+      voiceSpeechDetected = false;
 
+      // マイクがONでも、考えている間のBGMは通常音量。
       refreshBgmVolume();
       bgmEngine.ensureRunning();
       startBgmKeepAlive();
 
       updateVoiceUi(
-        "音声回答：聞き取り中"
+        "音声回答：数字を話してください"
       );
 
       // ① ゴワサン終了
       // ② マイクの onstart を確認
       // ③ ここで初めて問題を生成・表示する
       renderQuestion(true);
+    };
+
+    recognition.onspeechstart = () => {
+      // ブラウザが人の発話を検知した瞬間だけBGMを消す。
+      voiceSpeechDetected = true;
+      refreshBgmVolume();
 
       updateVoiceUi(
-        "音声回答：数字を話してください"
+        "音声回答：聞いています…"
+      );
+    };
+
+    recognition.onspeechend = () => {
+      // 結果確定まではBGMを戻さず、語尾をBGMで汚さない。
+      updateVoiceUi(
+        "音声回答：確認中…"
       );
     };
 
@@ -4823,6 +5997,8 @@ HTML = r"""
 
     recognition.onend = () => {
       voiceRecognitionRunning = false;
+      voiceListeningStartedAt = 0;
+      voiceSpeechDetected = false;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -4835,9 +6011,11 @@ HTML = r"""
         workspace.classList.contains("show") &&
         !results.classList.contains("show")
       ) {
-        // 無音や認識失敗で終了した場合も、
-        // 次回は必ず「ゴワサン！」から再開する。
-        scheduleVoiceRestart(350);
+        // 無音タイムアウトでは「ゴワサン！」を言い直さない。
+        // 同じ問題を表示したまま、マイクだけ静かに再開する。
+        scheduleSilentVoiceRestart(
+          320
+        );
       } else {
         updateVoiceUi();
       }
@@ -4847,6 +6025,8 @@ HTML = r"""
       event
     ) => {
       voiceRecognitionRunning = false;
+      voiceListeningStartedAt = 0;
+      voiceSpeechDetected = false;
 
       refreshBgmVolume();
       bgmEngine.ensureRunning();
@@ -4875,7 +6055,7 @@ HTML = r"""
           !voiceCalloutRunning &&
           !locked
         ) {
-          scheduleVoiceRestart(
+          scheduleSilentVoiceRestart(
             380
           );
         }
@@ -4892,7 +6072,7 @@ HTML = r"""
         !voiceCalloutRunning &&
         !locked
       ) {
-        scheduleVoiceRestart(500);
+        scheduleSilentVoiceRestart(500);
       }
     };
 
@@ -4936,12 +6116,20 @@ HTML = r"""
       );
     }
 
+    // マイクを開いているだけではBGMを止めない。
+    // 発話検知(onspeechstart)が来た瞬間だけ0%へ下げる。
+    voiceSpeechDetected = false;
     refreshBgmVolume();
 
     try {
       voiceRecognition.start();
     } catch (error) {
-      scheduleVoiceRestart(500);
+      voiceRecognitionRunning = false;
+      voiceSpeechDetected = false;
+      refreshBgmVolume();
+      scheduleSilentVoiceRestart(
+        500
+      );
     }
   }
 
@@ -4974,19 +6162,19 @@ HTML = r"""
     }
 
     voiceCalloutRunning = true;
+    gowasanSpokenForIndex =
+      index;
 
-    // 音声回答ON中は「ゴワサン！」が終わるまで問題を隠す。
+    // 音声回答ON中は「ごわさん」が終わるまで問題を隠す。
     hideQuestionForVoiceCallout();
 
     // ① まず「ゴワサン！」を読み上げる。
     // この間、音声認識はまだ開始しない。
     updateVoiceUi(
-      "音声回答：ゴワサン！"
+      "音声回答：ごわさん！"
     );
 
     voicePauseForFeedback = true;
-
-    // BGMは「ゴワサン！」中も通常音量のまま維持する。
     refreshBgmVolume();
     bgmEngine.ensureRunning();
 
@@ -4994,26 +6182,74 @@ HTML = r"""
       voiceCalloutRunning = false;
       voicePauseForFeedback = false;
 
-      // ゴワサン終了時点では、まだ問題は作らず表示もしない。
-      // 次にマイクを開始し、recognition.onstart が発火してから
-      // 初めて問題を生成・表示する。
-      refreshBgmVolume();
-
       if (
         !voiceAnswerEnabled ||
         locked ||
         results.classList.contains("show")
       ) {
+        refreshBgmVolume();
         return;
       }
 
+      // 「ゴワサン！」の余韻だけはマイクへ入れない。
+      // この短い待機中だけ無音にし、問題表示後はBGMを通常音量へ戻す。
+      bgmEngine.setVolume(
+        BGM_VOLUME_LISTENING,
+        0.06
+      );
+
+      updateVoiceUi(
+        "音声回答：まもなく問題スタート"
+      );
+
       setTimeout(() => {
+        if (
+          !voiceAnswerEnabled ||
+          locked ||
+          results.classList.contains("show")
+        ) {
+          refreshBgmVolume();
+          return;
+        }
+
+        voiceSpeechDetected = false;
+        refreshBgmVolume();
         startMicrophoneRecognition();
-      }, 420);
+      }, MIC_PRE_SILENCE_MS);
     };
 
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance ===
+        "undefined"
+    ) {
+      beginListening();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        "ごわさん"
+      );
+
+    utterance.lang = "ja-JP";
+
+    // 高すぎるピッチと速さをやめ、
+    // 日本語として自然に聞こえる速度へ。
+    utterance.rate = 0.94;
+    utterance.pitch = 1.02;
+    utterance.volume = 0.95;
+
+    const voice =
+      getJapaneseVoice();
+
+    if (voice) {
+      utterance.voice = voice;
+    }
+
     let finished = false;
-    let safetyTimer = null;
 
     const done = () => {
       if (finished) {
@@ -5021,29 +6257,30 @@ HTML = r"""
       }
 
       finished = true;
-      if (safetyTimer) {
-        clearTimeout(safetyTimer);
-      }
       beginListening();
     };
 
-    // 端末TTSを使わず、BGMと同じWeb Audio系統で固定音声を再生する。
-    // これによりAndroidの音声フォーカスによるBGMのduckを回避する。
-    safetyTimer = setTimeout(done, 2500);
+    utterance.onend = done;
+    utterance.onerror = done;
 
-    bgmEngine
-      .playOneShot(
-        "gowasan",
-        GOWASAN_AUDIO_DATA_URI,
-        0.92
-      )
-      .then(done)
-      .catch(done);
+    window.speechSynthesis.speak(
+      utterance
+    );
   }
 
   function startVoiceRecognition() {
-    // 音声入力を開始するたびに必ず
-    // 「ゴワサン！」→マイク開始の順序にする。
+    // 同じ問題ですでに「ごわさん」を言っていたら、
+    // どこから呼ばれても二度と言わず、マイクだけ再開する。
+    if (
+      gowasanSpokenForIndex ===
+      index
+    ) {
+      scheduleSilentVoiceRestart(
+        120
+      );
+      return;
+    }
+
     speakGowasanThenListen();
   }
 
@@ -5093,9 +6330,13 @@ HTML = r"""
 
     refreshBgmVolume();
 
-    // 音声モードをOFFにした場合は、
-    // まだ作っていない現在の問題を通常モードとしてここで生成・表示。
-    renderQuestion(true);
+    // チャレンジ画面を開いている時だけ問題表示を更新する。
+    if (
+      workspace.classList.contains("show") &&
+      currentMode
+    ) {
+      renderQuestion(true);
+    }
 
     updateVoiceUi(
       "音声回答：OFF"
@@ -5104,16 +6345,105 @@ HTML = r"""
 
 
   function getJapaneseVoice() {
-    if (!("speechSynthesis" in window)) return null;
+    if (!("speechSynthesis" in window)) {
+      return null;
+    }
 
-    const voices = window.speechSynthesis.getVoices();
+    const voices =
+      window.speechSynthesis.getVoices();
+
+    const japaneseVoices =
+      voices.filter((voice) =>
+        String(
+          voice.lang || ""
+        )
+          .toLowerCase()
+          .startsWith("ja")
+      );
+
+    if (
+      japaneseVoices.length === 0
+    ) {
+      return null;
+    }
+
+    // Android / iPhone / Windows で、
+    // 日本語ネイティブ向けの音声をなるべく優先する。
+    const preferredNames = [
+      "google 日本語",
+      "日本語",
+      "japanese",
+      "nanami",
+      "haruka",
+      "sayaka",
+      "kyoko",
+      "otoya",
+      "ichiro"
+    ];
+
+    const scored =
+      japaneseVoices.map(
+        (voice) => {
+          const name =
+            String(
+              voice.name || ""
+            ).toLowerCase();
+
+          const lang =
+            String(
+              voice.lang || ""
+            ).toLowerCase();
+
+          let score = 0;
+
+          if (
+            lang === "ja-jp"
+          ) {
+            score += 100;
+          }
+
+          if (
+            voice.localService
+          ) {
+            score += 15;
+          }
+
+          preferredNames.forEach(
+            (preferred, idx) => {
+              if (
+                name.includes(
+                  preferred.toLowerCase()
+                )
+              ) {
+                score +=
+                  60 - idx;
+              }
+            }
+          );
+
+          if (
+            /english|en-us|en-gb/.test(
+              name
+            )
+          ) {
+            score -= 100;
+          }
+
+          return {
+            voice,
+            score
+          };
+        }
+      );
+
+    scored.sort(
+      (a, b) =>
+        b.score - a.score
+    );
 
     return (
-      voices.find((voice) => voice.lang === "ja-JP") ||
-      voices.find((voice) =>
-        String(voice.lang || "").toLowerCase().startsWith("ja")
-      ) ||
-      null
+      scored[0]?.voice ||
+      japaneseVoices[0]
     );
   }
 
@@ -5122,7 +6452,7 @@ HTML = r"""
     streak
   ) {
     // 判定音声中はマイクだけ一時停止。
-    // BGM再生ノードは止めず、4%へGainを下げる。
+    // BGM再生ノードは止めず、読み上げ用の3%へ下げる。
     voicePauseForFeedback = true;
 
     stopVoiceRecognition();
@@ -5424,6 +6754,7 @@ HTML = r"""
     stopBgm();
     hideSorobanHint();
     stopLearningAnimation();
+    stopAnzanSession();
     setVoiceAnswerEnabled(false);
 
     workspace.classList.remove(
@@ -5436,6 +6767,12 @@ HTML = r"""
       "hidden"
     );
     learningView.classList.remove(
+      "show"
+    );
+    anzanView.classList.remove(
+      "show"
+    );
+    settingsView.classList.remove(
       "show"
     );
     homeView.classList.remove(
@@ -5452,6 +6789,12 @@ HTML = r"""
       "hidden"
     );
     learningView.classList.remove(
+      "show"
+    );
+    anzanView.classList.remove(
+      "show"
+    );
+    settingsView.classList.remove(
       "show"
     );
     workspace.classList.remove(
@@ -5476,6 +6819,12 @@ HTML = r"""
     );
     menuView.classList.add(
       "hidden"
+    );
+    anzanView.classList.remove(
+      "show"
+    );
+    settingsView.classList.remove(
+      "show"
     );
     workspace.classList.remove(
       "show"
@@ -6001,10 +7350,23 @@ HTML = r"""
   }
 
   function setLearningVoiceEnabled(
-    enabled
+    enabled,
+    savePreference = true
   ) {
     learningVoiceEnabled =
       Boolean(enabled);
+
+    if (savePreference) {
+      preferredLearningVoiceEnabled =
+        learningVoiceEnabled;
+
+      saveBooleanSetting(
+        LEARNING_VOICE_SETTING_KEY,
+        preferredLearningVoiceEnabled
+      );
+
+      updateSettingsUi();
+    }
 
     stopLearningNarration();
     updateLearningVoiceUi();
@@ -6393,6 +7755,9 @@ HTML = r"""
     learningLessonTitle.textContent =
       lesson.title;
 
+    learningVoiceEnabled =
+      preferredLearningVoiceEnabled;
+
     updateLearningVoiceUi();
 
     learningExampleProblem.textContent =
@@ -6496,6 +7861,703 @@ HTML = r"""
     );
   }
 
+  function stopAnzanRecognition() {
+    if (!anzanRecognition) {
+      anzanListening = false;
+      anzanListeningStartedAt = 0;
+      anzanSpeechDetected = false;
+      refreshBgmVolume();
+      return;
+    }
+
+    try {
+      anzanRecognition.onend = null;
+      anzanRecognition.abort();
+    } catch (error) {}
+
+    anzanRecognition = null;
+    anzanListening = false;
+    anzanListeningStartedAt = 0;
+    anzanSpeechDetected = false;
+    refreshBgmVolume();
+  }
+
+  function stopAnzanSession() {
+    anzanRunToken += 1;
+    stopAnzanRecognition();
+    anzanLocked = true;
+  }
+
+  function showAnzanHome() {
+    stopTimer();
+    stopBgm();
+    hideSorobanHint();
+    stopLearningAnimation();
+    stopAnzanSession();
+
+    homeView.classList.add(
+      "hidden"
+    );
+    menuView.classList.add(
+      "hidden"
+    );
+    learningView.classList.remove(
+      "show"
+    );
+    settingsView.classList.remove(
+      "show"
+    );
+    workspace.classList.remove(
+      "show"
+    );
+    results.classList.remove(
+      "show"
+    );
+
+    anzanView.classList.add(
+      "show"
+    );
+    anzanMenuView.classList.remove(
+      "hidden"
+    );
+    anzanGameView.classList.add(
+      "hidden"
+    );
+    anzanResultView.classList.add(
+      "hidden"
+    );
+  }
+
+  function showSettings() {
+    stopTimer();
+    stopBgm();
+    hideSorobanHint();
+    stopLearningAnimation();
+    stopAnzanSession();
+
+    homeView.classList.add(
+      "hidden"
+    );
+    menuView.classList.add(
+      "hidden"
+    );
+    learningView.classList.remove(
+      "show"
+    );
+    anzanView.classList.remove(
+      "show"
+    );
+    workspace.classList.remove(
+      "show"
+    );
+    results.classList.remove(
+      "show"
+    );
+
+    settingsView.classList.add(
+      "show"
+    );
+
+    updateSettingsUi();
+  }
+
+  function makeAnzanQuestion(
+    level
+  ) {
+    let terms = [];
+    let total = 0;
+
+    if (level === 1) {
+      const count = 3;
+
+      for (
+        let i = 0;
+        i < count;
+        i += 1
+      ) {
+        const value =
+          randomInt(
+            1,
+            9
+          );
+
+        terms.push({
+          op: i === 0
+            ? ""
+            : "＋",
+          value
+        });
+
+        total += value;
+      }
+
+      return {
+        terms,
+        answer: total
+      };
+    }
+
+    const count = 5;
+    const minValue =
+      level === 2
+        ? 1
+        : 10;
+    const maxValue =
+      level === 2
+        ? 9
+        : 49;
+
+    const first =
+      randomInt(
+        level === 2
+          ? 4
+          : 25,
+        level === 2
+          ? 9
+          : 49
+      );
+
+    terms.push({
+      op: "",
+      value: first
+    });
+
+    total = first;
+
+    for (
+      let i = 1;
+      i < count;
+      i += 1
+    ) {
+      let op = "＋";
+      let value =
+        randomInt(
+          minValue,
+          maxValue
+        );
+
+      if (
+        Math.random() < 0.45 &&
+        total > minValue
+      ) {
+        const maxSubtract =
+          Math.min(
+            maxValue,
+            total
+          );
+
+        if (
+          maxSubtract >= minValue
+        ) {
+          op = "－";
+          value =
+            randomInt(
+              minValue,
+              maxSubtract
+            );
+        }
+      }
+
+      if (op === "＋") {
+        total += value;
+      } else {
+        total -= value;
+      }
+
+      terms.push({
+        op,
+        value
+      });
+    }
+
+    return {
+      terms,
+      answer: total
+    };
+  }
+
+  function updateAnzanAnswerDisplay() {
+    anzanAnswerDisplay.textContent =
+      anzanAnswerBuffer ||
+      "\u00a0";
+  }
+
+  function startAnzanMode(
+    level
+  ) {
+    stopAnzanSession();
+
+    anzanLevel =
+      Number(level) || 1;
+
+    anzanQuestionIndex = 0;
+    anzanCorrect = 0;
+    anzanLocked = false;
+
+    anzanMenuView.classList.add(
+      "hidden"
+    );
+    anzanResultView.classList.add(
+      "hidden"
+    );
+    anzanGameView.classList.remove(
+      "hidden"
+    );
+
+    anzanSpeedLabel.textContent =
+      anzanSpeedInfo().label;
+
+    runAnzanQuestion();
+  }
+
+  function runAnzanQuestion() {
+    stopAnzanRecognition();
+
+    const token =
+      ++anzanRunToken;
+
+    anzanLocked = true;
+    anzanAnswerBuffer = "";
+    updateAnzanAnswerDisplay();
+
+    anzanQuestion =
+      makeAnzanQuestion(
+        anzanLevel
+      );
+
+    anzanQCount.textContent =
+      `${anzanQuestionIndex + 1} / ${ANZAN_TOTAL_QUESTIONS}`;
+
+    anzanCorrectCount.textContent =
+      `正解 ${anzanCorrect}`;
+
+    anzanFeedback.textContent =
+      "";
+
+    anzanFeedback.className =
+      "anzan-feedback";
+
+    anzanAnswerArea.classList.add(
+      "hidden"
+    );
+
+    anzanFlash.className =
+      "anzan-flash ready";
+
+    anzanFlash.textContent =
+      "よーい";
+
+    anzanHint.textContent =
+      "数字を順番に見てね";
+
+    const info =
+      anzanSpeedInfo();
+
+    let termIndex = 0;
+
+    const showTerm = () => {
+      if (
+        token !== anzanRunToken
+      ) {
+        return;
+      }
+
+      if (
+        termIndex >=
+        anzanQuestion.terms.length
+      ) {
+        anzanFlash.className =
+          "anzan-flash answer";
+
+        anzanFlash.textContent =
+          "＝ ?";
+
+        anzanHint.textContent =
+          preferredVoiceAnswerEnabled
+            ? "答えを声で言ってね"
+            : "答えを入力してね";
+
+        anzanAnswerArea.classList.remove(
+          "hidden"
+        );
+
+        anzanLocked = false;
+
+        if (
+          preferredVoiceAnswerEnabled
+        ) {
+          // 答え画面になったらそのままマイクを開始。
+          // BGMは流したまま、実際の発話時だけ自動で下げる。
+          setTimeout(
+            () => {
+              if (
+                !anzanLocked
+              ) {
+                startAnzanVoiceRecognition();
+              }
+            },
+            180
+          );
+        }
+
+        return;
+      }
+
+      const term =
+        anzanQuestion.terms[
+          termIndex
+        ];
+
+      anzanFlash.className =
+        "anzan-flash";
+
+      anzanFlash.textContent =
+        `${term.op}${term.value}`;
+
+      termIndex += 1;
+
+      setTimeout(
+        showTerm,
+        info.delay
+      );
+    };
+
+    setTimeout(
+      showTerm,
+      900
+    );
+  }
+
+  function startAnzanVoiceRecognition() {
+    const Recognition =
+      getSpeechRecognitionClass();
+
+    if (!Recognition) {
+      anzanVoiceStatus.textContent =
+        "このブラウザでは音声回答を使えません。数字で答えてください。";
+      return;
+    }
+
+    stopAnzanRecognition();
+
+    const recognition =
+      new Recognition();
+
+    anzanRecognition =
+      recognition;
+
+    recognition.lang =
+      "ja-JP";
+
+    recognition.continuous =
+      false;
+
+    recognition.interimResults =
+      false;
+
+    recognition.maxAlternatives =
+      5;
+
+    recognition.onstart = () => {
+      anzanListening = true;
+      anzanListeningStartedAt =
+        Date.now();
+      anzanSpeechDetected = false;
+      refreshBgmVolume();
+
+      anzanVoiceStatus.textContent =
+        "🎤 答えを言ってね";
+    };
+
+    recognition.onspeechstart = () => {
+      anzanSpeechDetected = true;
+      refreshBgmVolume();
+
+      anzanVoiceStatus.textContent =
+        "🎤 聞いています…";
+    };
+
+    recognition.onspeechend = () => {
+      anzanVoiceStatus.textContent =
+        "🎤 確認中…";
+    };
+
+    recognition.onresult =
+      (event) => {
+        const result =
+          event.results?.[0];
+
+        if (
+          anzanListeningStartedAt > 0 &&
+          Date.now() -
+            anzanListeningStartedAt <
+            350
+        ) {
+          anzanVoiceStatus.textContent =
+            "🎤 答えを言ってね";
+          return;
+        }
+
+        const selected =
+          selectBestNumericSpeech(
+            result
+          );
+
+        if (selected) {
+          anzanAnswerBuffer =
+            String(
+              selected.value
+            );
+
+          updateAnzanAnswerDisplay();
+          submitAnzanAnswer();
+        } else {
+          anzanVoiceStatus.textContent =
+            "数字だけを、もう一度言ってね。";
+        }
+      };
+
+    recognition.onerror = () => {
+      anzanListening = false;
+      anzanListeningStartedAt = 0;
+      anzanSpeechDetected = false;
+      refreshBgmVolume();
+      anzanVoiceStatus.textContent =
+        "うまく聞き取れませんでした。数字でも答えられます。";
+    };
+
+    recognition.onend = () => {
+      anzanListening = false;
+      anzanListeningStartedAt = 0;
+      anzanSpeechDetected = false;
+      refreshBgmVolume();
+    };
+
+    // 暗算でも、マイクONだけではBGMを止めない。
+    // 実際の発話検知時だけ0%へ下げる。
+    anzanSpeechDetected = false;
+    refreshBgmVolume();
+
+    try {
+      recognition.start();
+    } catch (error) {
+      anzanListening = false;
+      refreshBgmVolume();
+      anzanVoiceStatus.textContent =
+        "音声回答を開始できませんでした。";
+    }
+  }
+
+  function submitAnzanAnswer() {
+    if (
+      anzanLocked ||
+      !anzanQuestion
+    ) {
+      return;
+    }
+
+    const raw =
+      String(
+        anzanAnswerBuffer || ""
+      ).trim();
+
+    if (!raw) {
+      anzanFeedback.textContent =
+        "答えを入力してください";
+      anzanFeedback.className =
+        "anzan-feedback bad";
+      return;
+    }
+
+    const user =
+      Number(raw);
+
+    if (!Number.isFinite(user)) {
+      return;
+    }
+
+    anzanLocked = true;
+    stopAnzanRecognition();
+
+    const ok =
+      user ===
+      anzanQuestion.answer;
+
+    if (ok) {
+      anzanCorrect += 1;
+      anzanFeedback.textContent =
+        "お見事！";
+      anzanFeedback.className =
+        "anzan-feedback good";
+    } else {
+      anzanFeedback.textContent =
+        `残念！ 答えは ${anzanQuestion.answer}`;
+      anzanFeedback.className =
+        "anzan-feedback bad";
+    }
+
+    anzanCorrectCount.textContent =
+      `正解 ${anzanCorrect}`;
+
+    setTimeout(
+      () => {
+        anzanQuestionIndex += 1;
+
+        if (
+          anzanQuestionIndex >=
+          ANZAN_TOTAL_QUESTIONS
+        ) {
+          finishAnzanMode();
+        } else {
+          runAnzanQuestion();
+        }
+      },
+      1100
+    );
+  }
+
+  function finishAnzanMode() {
+    stopAnzanSession();
+
+    anzanGameView.classList.add(
+      "hidden"
+    );
+    anzanResultView.classList.remove(
+      "hidden"
+    );
+
+    anzanResultScore.textContent =
+      `${anzanCorrect} / ${ANZAN_TOTAL_QUESTIONS}`;
+
+    anzanResultText.textContent =
+      anzanCorrect ===
+        ANZAN_TOTAL_QUESTIONS
+        ? "全問正解。次のレベルにも挑戦できます。"
+        : "同じレベルを繰り返すと、数字を頭に残しやすくなります。";
+  }
+
+  function loadBooleanSetting(
+    key,
+    fallback
+  ) {
+    try {
+      const raw =
+        localStorage.getItem(
+          key
+        );
+
+      if (raw === "true") {
+        return true;
+      }
+
+      if (raw === "false") {
+        return false;
+      }
+    } catch (error) {}
+
+    return fallback;
+  }
+
+  function saveBooleanSetting(
+    key,
+    value
+  ) {
+    try {
+      localStorage.setItem(
+        key,
+        String(
+          Boolean(value)
+        )
+      );
+    } catch (error) {}
+  }
+
+  function loadAnzanSpeed() {
+    try {
+      const value =
+        localStorage.getItem(
+          ANZAN_SPEED_SETTING_KEY
+        );
+
+      if (
+        value === "slow" ||
+        value === "normal" ||
+        value === "fast"
+      ) {
+        return value;
+      }
+    } catch (error) {}
+
+    return "slow";
+  }
+
+  function saveAnzanSpeed() {
+    try {
+      localStorage.setItem(
+        ANZAN_SPEED_SETTING_KEY,
+        anzanSpeed
+      );
+    } catch (error) {}
+  }
+
+  function anzanSpeedInfo() {
+    if (anzanSpeed === "fast") {
+      return {
+        label: "はやい",
+        delay: 850
+      };
+    }
+
+    if (anzanSpeed === "normal") {
+      return {
+        label: "ふつう",
+        delay: 1350
+      };
+    }
+
+    return {
+      label: "ゆっくり",
+      delay: 2000
+    };
+  }
+
+  function updateSettingsUi() {
+    settingTimeValue.textContent =
+      timeLimitEnabled
+        ? "5分"
+        : "時間制限なし";
+
+    settingVoiceValue.textContent =
+      preferredVoiceAnswerEnabled
+        ? "ON"
+        : "OFF";
+
+    settingBgmValue.textContent =
+      bgmOn
+        ? "ON"
+        : "OFF";
+
+    settingLearningVoiceValue.textContent =
+      preferredLearningVoiceEnabled
+        ? "ON"
+        : "OFF";
+
+    settingAnzanSpeedValue.textContent =
+      anzanSpeedInfo().label;
+  }
+
+  function cycleAnzanSpeed() {
+    anzanSpeed =
+      anzanSpeed === "slow"
+        ? "normal"
+        : anzanSpeed === "normal"
+          ? "fast"
+          : "slow";
+
+    saveAnzanSpeed();
+    updateSettingsUi();
+  }
+
   const TIME_LIMIT_STORAGE_KEY =
     "soroban_time_limit_enabled_v1";
 
@@ -6587,6 +8649,7 @@ HTML = r"""
     questions = [];
 
     index = 0;
+    gowasanSpokenForIndex = -1;
     score = 0;
     answers = [];
     seconds = 300;
@@ -6607,6 +8670,8 @@ HTML = r"""
 
     homeView.classList.add("hidden");
     learningView.classList.remove("show");
+    anzanView.classList.remove("show");
+    settingsView.classList.remove("show");
     menuView.classList.add("hidden");
     workspace.classList.add("show");
     questionCard.classList.remove(
@@ -6617,6 +8682,15 @@ HTML = r"""
 
     $("#statusTitle").textContent = modeInfo[mode].title;
     $("#streak").textContent = "連続正解 0";
+
+    voiceAnswerEnabled =
+      preferredVoiceAnswerEnabled;
+
+    updateVoiceUi(
+      voiceAnswerEnabled
+        ? "音声回答：開始します…"
+        : "音声回答：OFF"
+    );
 
     feedback.textContent = "";
     feedback.className = "feedback";
@@ -7610,6 +9684,25 @@ HTML = r"""
             // 学習モードの種類選択 → アプリTOP。
             showHome();
           } else if (
+            anzanView.classList.contains("show") &&
+            (
+              !anzanGameView.classList.contains("hidden") ||
+              !anzanResultView.classList.contains("hidden")
+            )
+          ) {
+            // 暗算プレイ中／結果 → 暗算レベル選択。
+            showAnzanHome();
+          } else if (
+            anzanView.classList.contains("show")
+          ) {
+            // 暗算レベル選択 → アプリTOP。
+            showHome();
+          } else if (
+            settingsView.classList.contains("show")
+          ) {
+            // 設定 → アプリTOP。
+            showHome();
+          } else if (
             !menuView.classList.contains("hidden")
           ) {
             // チャレンジのモード選択 → アプリTOP。
@@ -7644,6 +9737,8 @@ HTML = r"""
     workspace.classList.remove("show");
     homeView.classList.add("hidden");
     learningView.classList.remove("show");
+    anzanView.classList.remove("show");
+    settingsView.classList.remove("show");
     menuView.classList.remove("hidden");
     results.classList.remove("show");
     questionCard.classList.remove("hidden");
@@ -7661,6 +9756,26 @@ HTML = r"""
   $("#homeLearningBtn").addEventListener(
     "click",
     showLearningHome
+  );
+
+  $("#homeAnzanBtn").addEventListener(
+    "click",
+    showAnzanHome
+  );
+
+  $("#homeSettingsBtn").addEventListener(
+    "click",
+    showSettings
+  );
+
+  $("#anzanTopBtn").addEventListener(
+    "click",
+    showHome
+  );
+
+  $("#settingsTopBtn").addEventListener(
+    "click",
+    showHome
   );
 
   $("#challengeTopBtn").addEventListener(
@@ -7768,8 +9883,175 @@ HTML = r"""
     goNextLearningLesson
   );
 
+  root
+    .querySelectorAll(
+      ".start-anzan"
+    )
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            startAnzanMode(
+              button.dataset.anzanLevel
+            );
+          }
+        );
+      }
+    );
+
+  $("#anzanKeypad").addEventListener(
+    "pointerup",
+    (event) => {
+      if (anzanLocked) {
+        return;
+      }
+
+      const button =
+        event.target.closest(
+          "button"
+        );
+
+      if (!button) {
+        return;
+      }
+
+      const key =
+        button.dataset.anzanKey;
+
+      const action =
+        button.dataset.anzanAction;
+
+      if (
+        key !== undefined
+      ) {
+        if (
+          anzanAnswerBuffer.length < 8
+        ) {
+          anzanAnswerBuffer =
+            anzanAnswerBuffer === "0"
+              ? key
+              : anzanAnswerBuffer + key;
+        }
+
+        updateAnzanAnswerDisplay();
+        return;
+      }
+
+      if (
+        action === "clear"
+      ) {
+        anzanAnswerBuffer = "";
+      } else if (
+        action === "backspace"
+      ) {
+        anzanAnswerBuffer =
+          anzanAnswerBuffer.slice(
+            0,
+            -1
+          );
+      }
+
+      updateAnzanAnswerDisplay();
+    }
+  );
+
+  $("#anzanSubmitBtn").addEventListener(
+    "click",
+    submitAnzanAnswer
+  );
+
+  $("#anzanRetryBtn").addEventListener(
+    "click",
+    () => {
+      startAnzanMode(
+        anzanLevel
+      );
+    }
+  );
+
+  $("#anzanMenuBtn").addEventListener(
+    "click",
+    showAnzanHome
+  );
+
+  $("#settingTimeBtn").addEventListener(
+    "click",
+    () => {
+      toggleTimeLimit();
+      updateSettingsUi();
+    }
+  );
+
+  $("#settingVoiceBtn").addEventListener(
+    "click",
+    () => {
+      preferredVoiceAnswerEnabled =
+        !preferredVoiceAnswerEnabled;
+
+      saveBooleanSetting(
+        VOICE_DEFAULT_SETTING_KEY,
+        preferredVoiceAnswerEnabled
+      );
+
+      updateSettingsUi();
+    }
+  );
+
+  $("#settingBgmBtn").addEventListener(
+    "click",
+    () => {
+      bgmOn =
+        !bgmOn;
+
+      saveBooleanSetting(
+        BGM_SETTING_KEY,
+        bgmOn
+      );
+
+      updateBgmButton();
+      updateSettingsUi();
+    }
+  );
+
+  $("#settingLearningVoiceBtn").addEventListener(
+    "click",
+    () => {
+      preferredLearningVoiceEnabled =
+        !preferredLearningVoiceEnabled;
+
+      learningVoiceEnabled =
+        preferredLearningVoiceEnabled;
+
+      saveBooleanSetting(
+        LEARNING_VOICE_SETTING_KEY,
+        preferredLearningVoiceEnabled
+      );
+
+      updateLearningVoiceUi();
+      updateSettingsUi();
+    }
+  );
+
+  $("#settingAnzanSpeedBtn").addEventListener(
+    "click",
+    cycleAnzanSpeed
+  );
+
   voiceBtn.addEventListener("click", () => {
-    setVoiceAnswerEnabled(!voiceAnswerEnabled);
+    preferredVoiceAnswerEnabled =
+      !voiceAnswerEnabled;
+
+    saveBooleanSetting(
+      VOICE_DEFAULT_SETTING_KEY,
+      preferredVoiceAnswerEnabled
+    );
+
+    setVoiceAnswerEnabled(
+      preferredVoiceAnswerEnabled
+    );
+
+    updateSettingsUi();
   });
 
   hintBtn.addEventListener("click", () => {
@@ -7863,13 +10145,41 @@ HTML = r"""
   timeLimitEnabled =
     loadTimeLimitSetting();
 
+  bgmOn =
+    loadBooleanSetting(
+      BGM_SETTING_KEY,
+      true
+    );
+
+  preferredVoiceAnswerEnabled =
+    loadBooleanSetting(
+      VOICE_DEFAULT_SETTING_KEY,
+      false
+    );
+
+  preferredLearningVoiceEnabled =
+    loadBooleanSetting(
+      LEARNING_VOICE_SETTING_KEY,
+      false
+    );
+
+  learningVoiceEnabled =
+    preferredLearningVoiceEnabled;
+
+  anzanSpeed =
+    loadAnzanSpeed();
+
   homeView.classList.remove("hidden");
   menuView.classList.add("hidden");
   learningView.classList.remove("show");
+  anzanView.classList.remove("show");
+  settingsView.classList.remove("show");
   workspace.classList.remove("show");
 
   updateTimeLimitUi();
   updateLearningVoiceUi();
+  updateBgmButton();
+  updateSettingsUi();
   renderLearningCategories();
   installInAppBackGuard();
   updateBgmButton();
