@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V53-MANUAL-SOROBAN-HINT-2026-09-24
+# VERSION: CLEAN-V54-VIDEO-REVIEW-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V53-MANUAL-SOROBAN-HINT"
+APP_VERSION = "CLEAN-V54-VIDEO-REVIEW"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1057,7 +1057,7 @@ HTML = r"""
 
   .statusbar {
     display: grid;
-    grid-template-columns: minmax(200px, 1fr) auto auto auto auto auto;
+    grid-template-columns: minmax(200px, 1fr) auto auto auto auto auto auto;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
@@ -1822,6 +1822,282 @@ HTML = r"""
     border: 1px solid #ddd5c8;
   }
 
+  .analysis-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 10px 0 18px;
+    padding: 14px 16px;
+    border: 1px solid #d9d1c4;
+    border-radius: 16px;
+    background: #fffdf8;
+  }
+
+  .analysis-control-title {
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  .analysis-control-note {
+    margin-top: 3px;
+    color: #706960;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .analysis-toggle.on {
+    background: #dff1e3;
+    color: #285a36;
+    border-color: #a9cfb3;
+  }
+
+  .recording-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #f7dfda;
+    color: #9b3524;
+    font-size: 11px;
+    font-weight: 1000;
+    white-space: nowrap;
+  }
+
+  .recording-badge.show {
+    display: inline-flex;
+  }
+
+  .camera-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    padding: 14px;
+    background: rgba(28, 26, 23, .64);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .camera-modal.show {
+    display: flex;
+  }
+
+  .camera-dialog {
+    width: min(720px, 98vw);
+    max-height: 94vh;
+    overflow: auto;
+    padding: 18px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 20px 70px rgba(0,0,0,.28);
+  }
+
+  .camera-dialog h3 {
+    margin: 0 0 6px;
+    font-size: 20px;
+  }
+
+  .camera-dialog p {
+    margin: 0 0 12px;
+    color: #675f56;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .camera-preview-wrap {
+    position: relative;
+    width: 100%;
+    min-height: 260px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #171717;
+  }
+
+  .camera-preview {
+    display: block;
+    width: 100%;
+    height: min(56vh, 500px);
+    object-fit: contain;
+    background: #171717;
+    transform: scaleX(-1);
+  }
+
+  .camera-guide {
+    position: absolute;
+    left: 7%;
+    right: 7%;
+    bottom: 6%;
+    height: 38%;
+    border: 2px dashed rgba(255,255,255,.85);
+    border-radius: 16px;
+    pointer-events: none;
+  }
+
+  .camera-guide-label {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    transform: translateX(-50%);
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.58);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .camera-status {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f2eee6;
+    color: #5f594f;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .camera-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .video-review-panel {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #d9d1c4;
+    border-radius: 18px;
+    background: #fffdf8;
+  }
+
+  .video-review-title {
+    font-size: 18px;
+    font-weight: 1000;
+  }
+
+  .video-review-note {
+    margin-top: 4px;
+    color: #6f685f;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .video-review-player {
+    display: block;
+    width: 100%;
+    max-height: 52vh;
+    margin-top: 12px;
+    border-radius: 14px;
+    background: #111;
+  }
+
+  .video-review-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .video-summary-card {
+    padding: 10px;
+    border-radius: 12px;
+    background: #f1ede4;
+    text-align: center;
+  }
+
+  .video-summary-value {
+    font-size: 18px;
+    font-weight: 1000;
+  }
+
+  .video-summary-label {
+    margin-top: 2px;
+    color: #726a60;
+    font-size: 10px;
+    font-weight: 850;
+  }
+
+  .video-priority {
+    margin-top: 12px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    background: #f6f0df;
+    color: #655629;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .video-question-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .video-question-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f3efe7;
+  }
+
+  .video-question-item.wrong {
+    border-left: 4px solid #a44b32;
+  }
+
+  .video-question-item.correct {
+    border-left: 4px solid #437454;
+  }
+
+  .video-question-main {
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .video-question-meta {
+    color: #756e65;
+    font-size: 10px;
+  }
+
+  .video-review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  @media (max-width: 760px) {
+    .analysis-control {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .video-review-summary {
+      grid-template-columns: 1fr;
+    }
+
+    .video-question-item {
+      grid-template-columns: 1fr;
+    }
+
+    .camera-dialog {
+      padding: 12px;
+    }
+
+    .camera-preview {
+      height: 48vh;
+    }
+  }
+
   .ranking-modal {
     display: none;
     position: fixed;
@@ -2139,6 +2415,19 @@ HTML = r"""
     </button>
   </div>
 
+  <div class="analysis-control">
+    <div>
+      <div class="analysis-control-title">🎥 動画で振り返り</div>
+      <div class="analysis-control-note">
+        インカメラで手元とそろばんを撮影し、問題ごとの時刻と自動で同期します。
+        録画は映像のみで、音声認識用マイクとは分けます。
+      </div>
+    </div>
+    <button type="button" id="analysisVideoToggle" class="time-limit-toggle">
+      OFF
+    </button>
+  </div>
+
   <div class="level-title">初級モード｜足し算のみ</div>
   <div class="mode-grid">
     <article class="mode-card">
@@ -2402,6 +2691,41 @@ HTML = r"""
   </div>
 </div>
 
+<div id="cameraSetupModal" class="camera-modal">
+  <div class="camera-dialog">
+    <h3>撮影する画角を確認</h3>
+    <p>
+      スマホを少し高めに置き、顔・両手・そろばんが全部入る位置に調整してください。
+      インカメラ自体の向きは変えられないため、このプレビューで手元が切れていないことを確認します。
+    </p>
+
+    <div class="camera-preview-wrap">
+      <video
+        id="analysisCameraPreview"
+        class="camera-preview"
+        autoplay
+        muted
+        playsinline
+      ></video>
+      <div class="camera-guide">
+        <div class="camera-guide-label">両手＋そろばんをこの枠内へ</div>
+      </div>
+    </div>
+
+    <div id="cameraSetupStatus" class="camera-status">
+      カメラを準備しています…
+    </div>
+
+    <div class="camera-actions">
+      <button type="button" id="cameraCancelBtn">キャンセル</button>
+      <button type="button" id="cameraNoVideoBtn">撮影なしで開始</button>
+      <button type="button" id="cameraBeginBtn" class="primary" disabled>
+        この画角で開始
+      </button>
+    </div>
+  </div>
+</div>
+
 <section id="workspace" class="workspace">
   <div class="statusbar">
     <div>
@@ -2412,6 +2736,7 @@ HTML = r"""
     <div id="streak" class="streak">連続正解 0</div>
     <button type="button" id="voiceBtn" class="voice-btn">🎤 音声回答 OFF</button>
     <button type="button" id="bgmBtn">♪ BGM ON</button>
+    <div id="recordingBadge" class="recording-badge">● REC</div>
     <button type="button" id="quitBtn">モード選択へ</button>
     <div id="voiceStatus" class="voice-status">音声回答：OFF</div>
     <div id="bgmName" class="bgm-name">BGM：準備中</div>
@@ -2517,6 +2842,34 @@ HTML = r"""
       <div id="resultRankingList" class="ranking-list"></div>
     </div>
 
+    <div id="videoReviewPanel" class="video-review-panel hidden">
+      <div class="video-review-title">🎥 動画で振り返り</div>
+      <div class="video-review-note">
+        問題表示・回答・正誤・珠ヒント使用を、同じスマホ内の録画時刻と同期しています。
+        現段階では手の動きそのものをAI判定せず、確認すべき問題をログから絞り込みます。
+      </div>
+
+      <div id="videoReviewStatus" class="camera-status">
+        動画を準備しています…
+      </div>
+
+      <video
+        id="sessionReviewVideo"
+        class="video-review-player hidden"
+        controls
+        playsinline
+      ></video>
+
+      <div id="videoReviewSummary" class="video-review-summary"></div>
+      <div id="videoReviewPriority" class="video-priority"></div>
+      <div id="videoQuestionList" class="video-question-list"></div>
+
+      <div class="video-review-actions">
+        <button type="button" id="downloadSessionVideoBtn">動画を保存</button>
+        <button type="button" id="downloadSessionLogBtn">分析ログを保存</button>
+      </div>
+    </div>
+
     <div id="review" class="review"></div>
     <div class="actions">
       <button type="button" id="retryBtn" class="primary">同じモードをもう一度</button>
@@ -2599,12 +2952,24 @@ HTML = r"""
   const statusSub = $("#statusSub");
   const timeLimitBtn = $("#timeLimitBtn");
   const modeTimeBadge = $("#modeTimeBadge");
+  const analysisVideoToggle = $("#analysisVideoToggle");
+  const cameraSetupModal = $("#cameraSetupModal");
+  const analysisCameraPreview = $("#analysisCameraPreview");
+  const cameraSetupStatus = $("#cameraSetupStatus");
+  const cameraBeginBtn = $("#cameraBeginBtn");
+  const recordingBadge = $("#recordingBadge");
   const bar = $("#bar");
   const scoreStage = $("#scoreStage");
   const resultScore = $("#resultScore");
   const scoreFormula = $("#scoreFormula");
   const resultRankingList = $("#resultRankingList");
   const resultRankingPanel = $("#resultRankingPanel");
+  const videoReviewPanel = $("#videoReviewPanel");
+  const videoReviewStatus = $("#videoReviewStatus");
+  const sessionReviewVideo = $("#sessionReviewVideo");
+  const videoReviewSummary = $("#videoReviewSummary");
+  const videoReviewPriority = $("#videoReviewPriority");
+  const videoQuestionList = $("#videoQuestionList");
   const rankingModal = $("#rankingModal");
   const rankingModalTitle = $("#rankingModalTitle");
   const rankingModalList = $("#rankingModalList");
@@ -3060,10 +3425,28 @@ HTML = r"""
   const VOICE_DEFAULT_SETTING_KEY = "soroban_voice_answer_default_v1";
   const LEARNING_VOICE_SETTING_KEY = "soroban_learning_voice_default_v1";
   const ANZAN_SPEED_SETTING_KEY = "soroban_anzan_speed_v1";
+  const ANALYSIS_VIDEO_SETTING_KEY = "soroban_analysis_video_v1";
 
   let preferredVoiceAnswerEnabled = false;
   let preferredLearningVoiceEnabled = false;
   let anzanSpeed = "slow";
+  let analysisVideoEnabled = false;
+
+  let pendingVideoMode = null;
+  let analysisCameraStream = null;
+  let sessionMediaRecorder = null;
+  let sessionVideoChunks = [];
+  let sessionVideoBlob = null;
+  let sessionVideoUrl = null;
+  let sessionVideoMimeType = "";
+  let sessionVideoStartedAtPerf = null;
+  let sessionVideoStartedAtIso = null;
+  let sessionVideoDurationMs = 0;
+  let sessionVideoActive = false;
+  let sessionVideoDiscardOnStop = false;
+  let sessionVideoMode = null;
+  let sessionQuestionMarks = [];
+  let reviewClipEndSec = null;
 
   const ANZAN_TOTAL_QUESTIONS = 10;
   let anzanLevel = 1;
@@ -5196,6 +5579,10 @@ HTML = r"""
     const q =
       questions[index];
 
+    recordVideoHintUse(
+      index
+    );
+
     const steps =
       buildHintSteps(q);
 
@@ -6792,6 +7179,7 @@ HTML = r"""
   }
 
   function showHome() {
+    discardChallengeVideoSession();
     stopTimer();
     stopBgm();
     hideSorobanHint();
@@ -8671,6 +9059,1193 @@ HTML = r"""
     updateTimer();
   }
 
+  function updateAnalysisVideoUi() {
+    if (!analysisVideoToggle) {
+      return;
+    }
+
+    analysisVideoToggle.textContent =
+      analysisVideoEnabled
+        ? "ON"
+        : "OFF";
+
+    analysisVideoToggle.classList.toggle(
+      "on",
+      analysisVideoEnabled
+    );
+  }
+
+  function toggleAnalysisVideo() {
+    analysisVideoEnabled =
+      !analysisVideoEnabled;
+
+    saveBooleanSetting(
+      ANALYSIS_VIDEO_SETTING_KEY,
+      analysisVideoEnabled
+    );
+
+    updateAnalysisVideoUi();
+  }
+
+  function releaseAnalysisCameraStream() {
+    if (!analysisCameraStream) {
+      if (analysisCameraPreview) {
+        analysisCameraPreview.srcObject =
+          null;
+      }
+      return;
+    }
+
+    analysisCameraStream
+      .getTracks()
+      .forEach((track) => {
+        try {
+          track.stop();
+        } catch (error) {}
+      });
+
+    analysisCameraStream = null;
+
+    if (analysisCameraPreview) {
+      analysisCameraPreview.srcObject =
+        null;
+    }
+  }
+
+  function closeCameraSetup(
+    stopStream = true
+  ) {
+    cameraSetupModal.classList.remove(
+      "show"
+    );
+
+    if (stopStream) {
+      releaseAnalysisCameraStream();
+    }
+
+    cameraBeginBtn.disabled = true;
+  }
+
+  function revokeSessionVideoUrl() {
+    if (sessionVideoUrl) {
+      try {
+        URL.revokeObjectURL(
+          sessionVideoUrl
+        );
+      } catch (error) {}
+    }
+
+    sessionVideoUrl = null;
+    sessionVideoBlob = null;
+
+    if (sessionReviewVideo) {
+      sessionReviewVideo.pause();
+      sessionReviewVideo.removeAttribute(
+        "src"
+      );
+      try {
+        sessionReviewVideo.load();
+      } catch (error) {}
+    }
+  }
+
+  function resetSessionVideoData() {
+    revokeSessionVideoUrl();
+
+    sessionVideoChunks = [];
+    sessionVideoMimeType = "";
+    sessionVideoStartedAtPerf = null;
+    sessionVideoStartedAtIso = null;
+    sessionVideoDurationMs = 0;
+    sessionVideoActive = false;
+    sessionVideoDiscardOnStop = false;
+    sessionVideoMode = null;
+    sessionQuestionMarks = [];
+    reviewClipEndSec = null;
+
+    recordingBadge.classList.remove(
+      "show"
+    );
+
+    videoReviewPanel.classList.add(
+      "hidden"
+    );
+  }
+
+  function chooseSessionVideoMimeType() {
+    if (
+      typeof MediaRecorder ===
+      "undefined"
+    ) {
+      return "";
+    }
+
+    const candidates = [
+      "video/mp4;codecs=h264",
+      "video/mp4",
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm"
+    ];
+
+    for (
+      const candidate
+      of candidates
+    ) {
+      try {
+        if (
+          MediaRecorder.isTypeSupported(
+            candidate
+          )
+        ) {
+          return candidate;
+        }
+      } catch (error) {}
+    }
+
+    return "";
+  }
+
+  async function openCameraSetup(
+    mode
+  ) {
+    pendingVideoMode =
+      mode;
+
+    closeCameraSetup(true);
+
+    cameraSetupModal.classList.add(
+      "show"
+    );
+
+    cameraBeginBtn.disabled = true;
+    cameraSetupStatus.textContent =
+      "インカメラを準備しています。ブラウザのカメラ許可をONにしてください。";
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia ||
+      typeof MediaRecorder ===
+        "undefined"
+    ) {
+      cameraSetupStatus.textContent =
+        "このブラウザでは動画撮影を開始できません。『撮影なしで開始』は利用できます。";
+      return;
+    }
+
+    try {
+      const stream =
+        await navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              facingMode: {
+                ideal: "user"
+              },
+              width: {
+                ideal: 1280
+              },
+              height: {
+                ideal: 720
+              },
+              frameRate: {
+                ideal: 20,
+                max: 24
+              }
+            },
+            // 音声は録画へ入れない。
+            // Web Speech APIの回答用マイクと競合させないため。
+            audio: false
+          });
+
+      if (
+        !cameraSetupModal.classList
+          .contains("show")
+      ) {
+        stream
+          .getTracks()
+          .forEach((track) => {
+            track.stop();
+          });
+        return;
+      }
+
+      analysisCameraStream =
+        stream;
+
+      analysisCameraPreview.srcObject =
+        stream;
+
+      try {
+        await analysisCameraPreview.play();
+      } catch (error) {}
+
+      const track =
+        stream.getVideoTracks()[0];
+
+      const settings =
+        track &&
+        typeof track.getSettings ===
+          "function"
+          ? track.getSettings()
+          : {};
+
+      const sizeText =
+        settings.width &&
+        settings.height
+          ? ` ${settings.width}×${settings.height}`
+          : "";
+
+      cameraSetupStatus.textContent =
+        `カメラ準備完了。${sizeText} 顔・両手・そろばんが入っていることを確認してください。`;
+
+      cameraBeginBtn.disabled =
+        false;
+    } catch (error) {
+      cameraSetupStatus.textContent =
+        `カメラを開始できませんでした。${error?.name || ""} 『撮影なしで開始』は利用できます。`;
+    }
+  }
+
+  function videoElapsedMs() {
+    if (
+      sessionVideoStartedAtPerf ===
+      null
+    ) {
+      return null;
+    }
+
+    return Math.max(
+      0,
+      performance.now() -
+        sessionVideoStartedAtPerf
+    );
+  }
+
+  function startChallengeVideoRecording(
+    mode
+  ) {
+    if (
+      !analysisCameraStream ||
+      typeof MediaRecorder ===
+        "undefined"
+    ) {
+      return false;
+    }
+
+    resetSessionVideoData();
+
+    sessionVideoMode =
+      mode;
+
+    sessionVideoStartedAtIso =
+      new Date().toISOString();
+
+    sessionVideoStartedAtPerf =
+      performance.now();
+
+    sessionVideoActive = true;
+    sessionVideoDiscardOnStop =
+      false;
+
+    const mimeType =
+      chooseSessionVideoMimeType();
+
+    const options = {
+      videoBitsPerSecond:
+        1200000
+    };
+
+    if (mimeType) {
+      options.mimeType =
+        mimeType;
+    }
+
+    try {
+      sessionMediaRecorder =
+        new MediaRecorder(
+          analysisCameraStream,
+          options
+        );
+    } catch (error) {
+      sessionMediaRecorder =
+        new MediaRecorder(
+          analysisCameraStream
+        );
+    }
+
+    sessionVideoMimeType =
+      sessionMediaRecorder.mimeType ||
+      mimeType ||
+      "video/webm";
+
+    sessionVideoChunks = [];
+
+    sessionMediaRecorder.ondataavailable =
+      (event) => {
+        if (
+          event.data &&
+          event.data.size > 0
+        ) {
+          sessionVideoChunks.push(
+            event.data
+          );
+        }
+      };
+
+    sessionMediaRecorder.onerror =
+      () => {
+        sessionVideoActive =
+          false;
+
+        recordingBadge.classList.remove(
+          "show"
+        );
+      };
+
+    sessionMediaRecorder.onstop =
+      () => {
+        sessionVideoActive =
+          false;
+
+        recordingBadge.classList.remove(
+          "show"
+        );
+
+        const discard =
+          sessionVideoDiscardOnStop;
+
+        const chunks =
+          sessionVideoChunks.slice();
+
+        sessionVideoChunks = [];
+
+        releaseAnalysisCameraStream();
+
+        if (
+          discard ||
+          chunks.length === 0
+        ) {
+          if (discard) {
+            revokeSessionVideoUrl();
+          }
+
+          sessionVideoDiscardOnStop =
+            false;
+          return;
+        }
+
+        const blob =
+          new Blob(
+            chunks,
+            {
+              type:
+                sessionVideoMimeType ||
+                chunks[0]?.type ||
+                "video/webm"
+            }
+          );
+
+        if (!blob.size) {
+          return;
+        }
+
+        revokeSessionVideoUrl();
+
+        sessionVideoBlob =
+          blob;
+
+        sessionVideoUrl =
+          URL.createObjectURL(
+            blob
+          );
+
+        sessionReviewVideo.src =
+          sessionVideoUrl;
+
+        sessionReviewVideo.classList.remove(
+          "hidden"
+        );
+
+        videoReviewStatus.textContent =
+          "録画と問題ログの同期が完了しました。問題を選ぶと、その場面へ移動します。";
+
+        renderVideoReviewPanel();
+      };
+
+    try {
+      sessionMediaRecorder.start(
+        1000
+      );
+    } catch (error) {
+      sessionVideoActive =
+        false;
+      releaseAnalysisCameraStream();
+      return false;
+    }
+
+    recordingBadge.classList.add(
+      "show"
+    );
+
+    return true;
+  }
+
+  function stopChallengeVideoRecording(
+    discard = false
+  ) {
+    sessionVideoDiscardOnStop =
+      Boolean(discard);
+
+    if (
+      sessionVideoStartedAtPerf !==
+      null
+    ) {
+      sessionVideoDurationMs =
+        videoElapsedMs() || 0;
+    }
+
+    sessionVideoActive = false;
+
+    recordingBadge.classList.remove(
+      "show"
+    );
+
+    if (!sessionMediaRecorder) {
+      releaseAnalysisCameraStream();
+      return;
+    }
+
+    try {
+      if (
+        sessionMediaRecorder.state ===
+        "recording"
+      ) {
+        try {
+          sessionMediaRecorder.requestData();
+        } catch (error) {}
+
+        sessionMediaRecorder.stop();
+      } else {
+        releaseAnalysisCameraStream();
+      }
+    } catch (error) {
+      releaseAnalysisCameraStream();
+    }
+  }
+
+  function discardChallengeVideoSession() {
+    closeCameraSetup(true);
+    pendingVideoMode = null;
+
+    if (
+      sessionMediaRecorder &&
+      sessionMediaRecorder.state ===
+        "recording"
+    ) {
+      stopChallengeVideoRecording(
+        true
+      );
+    } else {
+      releaseAnalysisCameraStream();
+    }
+
+    revokeSessionVideoUrl();
+
+    sessionQuestionMarks = [];
+    sessionVideoMode = null;
+    sessionVideoStartedAtPerf = null;
+    sessionVideoStartedAtIso = null;
+    sessionVideoDurationMs = 0;
+
+    videoReviewPanel.classList.add(
+      "hidden"
+    );
+  }
+
+  function requestStartMode(
+    mode
+  ) {
+    if (
+      !analysisVideoEnabled
+    ) {
+      resetSessionVideoData();
+      startMode(mode);
+      return;
+    }
+
+    openCameraSetup(
+      mode
+    );
+  }
+
+  function beginRecordedChallenge() {
+    const mode =
+      pendingVideoMode;
+
+    if (
+      !mode ||
+      !analysisCameraStream
+    ) {
+      return;
+    }
+
+    const started =
+      startChallengeVideoRecording(
+        mode
+      );
+
+    if (!started) {
+      cameraSetupStatus.textContent =
+        "録画を開始できませんでした。『撮影なしで開始』を選んでください。";
+      return;
+    }
+
+    pendingVideoMode = null;
+
+    closeCameraSetup(
+      false
+    );
+
+    startMode(
+      mode
+    );
+  }
+
+  function beginChallengeWithoutVideo() {
+    const mode =
+      pendingVideoMode;
+
+    if (!mode) {
+      closeCameraSetup(true);
+      return;
+    }
+
+    pendingVideoMode = null;
+
+    closeCameraSetup(
+      true
+    );
+
+    resetSessionVideoData();
+
+    startMode(
+      mode
+    );
+  }
+
+  function getVideoQuestionMark(
+    questionIndex
+  ) {
+    return (
+      sessionQuestionMarks[
+        questionIndex
+      ] ||
+      null
+    );
+  }
+
+  function recordVideoQuestionStart(
+    questionIndex,
+    q
+  ) {
+    if (
+      !sessionVideoActive ||
+      !q
+    ) {
+      return;
+    }
+
+    let mark =
+      getVideoQuestionMark(
+        questionIndex
+      );
+
+    if (!mark) {
+      mark = {
+        index:
+          questionIndex,
+        mode:
+          currentMode,
+        formula:
+          `${q.a} ${q.op} ${q.b}`,
+        expected:
+          q.answer,
+        isWeakness:
+          Boolean(
+            q.isWeakness
+          ),
+        startMs: null,
+        answerMs: null,
+        endMs: null,
+        user: null,
+        ok: null,
+        hintUsed: false,
+        hintCount: 0
+      };
+
+      sessionQuestionMarks[
+        questionIndex
+      ] = mark;
+    }
+
+    if (
+      mark.startMs === null
+    ) {
+      mark.startMs =
+        videoElapsedMs();
+    }
+  }
+
+  function recordVideoQuestionAnswer(
+    questionIndex,
+    user,
+    ok
+  ) {
+    if (
+      sessionVideoStartedAtPerf ===
+      null
+    ) {
+      return;
+    }
+
+    const q =
+      questions[
+        questionIndex
+      ];
+
+    if (!q) {
+      return;
+    }
+
+    recordVideoQuestionStart(
+      questionIndex,
+      q
+    );
+
+    const mark =
+      getVideoQuestionMark(
+        questionIndex
+      );
+
+    if (!mark) {
+      return;
+    }
+
+    const now =
+      videoElapsedMs();
+
+    mark.answerMs =
+      now;
+
+    mark.endMs =
+      now;
+
+    mark.user =
+      user;
+
+    mark.ok =
+      Boolean(ok);
+  }
+
+  function recordVideoHintUse(
+    questionIndex
+  ) {
+    if (
+      sessionVideoStartedAtPerf ===
+      null
+    ) {
+      return;
+    }
+
+    const q =
+      questions[
+        questionIndex
+      ];
+
+    if (!q) {
+      return;
+    }
+
+    recordVideoQuestionStart(
+      questionIndex,
+      q
+    );
+
+    const mark =
+      getVideoQuestionMark(
+        questionIndex
+      );
+
+    if (!mark) {
+      return;
+    }
+
+    mark.hintUsed = true;
+    mark.hintCount += 1;
+  }
+
+  function finalizeVideoQuestionMarks() {
+    if (
+      sessionVideoStartedAtPerf ===
+      null
+    ) {
+      return;
+    }
+
+    const now =
+      videoElapsedMs();
+
+    sessionVideoDurationMs =
+      now || 0;
+
+    sessionQuestionMarks.forEach(
+      (mark) => {
+        if (
+          mark &&
+          mark.endMs === null
+        ) {
+          mark.endMs =
+            now;
+        }
+      }
+    );
+  }
+
+  function formatVideoSeconds(
+    ms
+  ) {
+    if (
+      ms === null ||
+      ms === undefined ||
+      !Number.isFinite(
+        Number(ms)
+      )
+    ) {
+      return "-";
+    }
+
+    return (
+      Number(ms) / 1000
+    ).toFixed(1) + "秒";
+  }
+
+  function medianNumber(
+    values
+  ) {
+    if (!values.length) {
+      return 0;
+    }
+
+    const sorted =
+      values
+        .slice()
+        .sort(
+          (a, b) =>
+            a - b
+        );
+
+    const mid =
+      Math.floor(
+        sorted.length / 2
+      );
+
+    if (
+      sorted.length % 2
+    ) {
+      return sorted[mid];
+    }
+
+    return (
+      sorted[mid - 1] +
+      sorted[mid]
+    ) / 2;
+  }
+
+  function renderVideoReviewPanel() {
+    if (
+      sessionVideoStartedAtPerf ===
+      null &&
+      !sessionVideoUrl
+    ) {
+      videoReviewPanel.classList.add(
+        "hidden"
+      );
+      return;
+    }
+
+    videoReviewPanel.classList.remove(
+      "hidden"
+    );
+
+    if (!sessionVideoUrl) {
+      sessionReviewVideo.classList.add(
+        "hidden"
+      );
+
+      videoReviewStatus.textContent =
+        "録画を停止して動画を準備しています…";
+    } else {
+      sessionReviewVideo.classList.remove(
+        "hidden"
+      );
+    }
+
+    const marks =
+      sessionQuestionMarks
+        .filter(Boolean);
+
+    const answered =
+      marks.filter(
+        (mark) =>
+          mark.answerMs !== null &&
+          mark.startMs !== null
+      );
+
+    const responseTimes =
+      answered.map(
+        (mark) =>
+          Math.max(
+            0,
+            mark.answerMs -
+              mark.startMs
+          )
+      );
+
+    const averageMs =
+      responseTimes.length
+        ? responseTimes.reduce(
+            (sum, value) =>
+              sum + value,
+            0
+          ) /
+          responseTimes.length
+        : 0;
+
+    const medianMs =
+      medianNumber(
+        responseTimes
+      );
+
+    const slowThresholdMs =
+      Math.max(
+        8000,
+        medianMs * 1.6
+      );
+
+    const wrongCount =
+      marks.filter(
+        (mark) =>
+          mark.ok === false
+      ).length;
+
+    const hintCount =
+      marks.filter(
+        (mark) =>
+          mark.hintUsed
+      ).length;
+
+    videoReviewSummary.innerHTML = `
+      <div class="video-summary-card">
+        <div class="video-summary-value">${responseTimes.length ? (averageMs / 1000).toFixed(1) : "-"}</div>
+        <div class="video-summary-label">平均回答時間（秒）</div>
+      </div>
+      <div class="video-summary-card">
+        <div class="video-summary-value">${wrongCount}</div>
+        <div class="video-summary-label">間違い</div>
+      </div>
+      <div class="video-summary-card">
+        <div class="video-summary-value">${hintCount}</div>
+        <div class="video-summary-label">珠ヒント使用問題</div>
+      </div>
+    `;
+
+    const priority =
+      marks
+        .filter((mark) => {
+          const responseMs =
+            (
+              mark.startMs !== null &&
+              mark.answerMs !== null
+            )
+              ? mark.answerMs -
+                mark.startMs
+              : 0;
+
+          return (
+            mark.ok === false ||
+            mark.hintUsed ||
+            responseMs >
+              slowThresholdMs
+          );
+        })
+        .slice(0, 4);
+
+    if (priority.length) {
+      const labels =
+        priority.map(
+          (mark) =>
+            `Q${mark.index + 1}「${mark.formula}」`
+        );
+
+      videoReviewPriority.textContent =
+        `先に確認する候補：${labels.join("、")}。間違い・珠ヒント使用・回答時間が長い問題を優先しています。`;
+    } else {
+      videoReviewPriority.textContent =
+        "操作ログ上は大きなつまずき候補はありません。動画では、正解した問題でも珠を動かす順番や迷いがないか確認できます。";
+    }
+
+    videoQuestionList.innerHTML =
+      "";
+
+    marks.forEach(
+      (mark) => {
+        const item =
+          document.createElement(
+            "div"
+          );
+
+        item.className =
+          `video-question-item ${
+            mark.ok === false
+              ? "wrong"
+              : "correct"
+          }`;
+
+        const main =
+          document.createElement(
+            "div"
+          );
+
+        main.className =
+          "video-question-main";
+
+        const responseMs =
+          (
+            mark.startMs !== null &&
+            mark.answerMs !== null
+          )
+            ? Math.max(
+                0,
+                mark.answerMs -
+                  mark.startMs
+              )
+            : null;
+
+        const statusText =
+          mark.ok === null
+            ? "未回答"
+            : mark.ok
+              ? "正解"
+              : "不正解";
+
+        const hintText =
+          mark.hintUsed
+            ? `・珠ヒント ${mark.hintCount}回`
+            : "";
+
+        main.innerHTML = `
+          <strong>Q${mark.index + 1}　${mark.formula} ＝ ${mark.expected}</strong><br>
+          <span class="video-question-meta">
+            ${statusText}・回答 ${mark.user ?? "-"}・回答時間 ${formatVideoSeconds(responseMs)}${hintText}
+          </span>
+        `;
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+
+        button.textContent =
+          "▶ この問題を見る";
+
+        button.disabled =
+          !sessionVideoUrl ||
+          mark.startMs === null;
+
+        button.addEventListener(
+          "click",
+          () => {
+            playVideoQuestionClip(
+              mark.index
+            );
+          }
+        );
+
+        item.appendChild(
+          main
+        );
+
+        item.appendChild(
+          button
+        );
+
+        videoQuestionList.appendChild(
+          item
+        );
+      }
+    );
+
+    $("#downloadSessionVideoBtn").disabled =
+      !sessionVideoUrl;
+
+    $("#downloadSessionLogBtn").disabled =
+      marks.length === 0;
+  }
+
+  function playVideoQuestionClip(
+    questionIndex
+  ) {
+    if (
+      !sessionVideoUrl
+    ) {
+      return;
+    }
+
+    const mark =
+      getVideoQuestionMark(
+        questionIndex
+      );
+
+    if (
+      !mark ||
+      mark.startMs === null
+    ) {
+      return;
+    }
+
+    const startSec =
+      Math.max(
+        0,
+        mark.startMs / 1000 -
+          0.7
+      );
+
+    const rawEndMs =
+      mark.answerMs ??
+      mark.endMs ??
+      (
+        mark.startMs +
+        8000
+      );
+
+    reviewClipEndSec =
+      rawEndMs / 1000 +
+      1.0;
+
+    sessionReviewVideo.currentTime =
+      startSec;
+
+    sessionReviewVideo.play()
+      .catch(() => {});
+  }
+
+  function downloadSessionVideo() {
+    if (
+      !sessionVideoUrl ||
+      !sessionVideoBlob
+    ) {
+      return;
+    }
+
+    const extension =
+      sessionVideoMimeType
+        .includes("mp4")
+        ? "mp4"
+        : "webm";
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+    link.href =
+      sessionVideoUrl;
+
+    link.download =
+      `soroban_${sessionVideoMode || "challenge"}_${Date.now()}.${extension}`;
+
+    document.body.appendChild(
+      link
+    );
+
+    link.click();
+    link.remove();
+  }
+
+  function downloadSessionLog() {
+    const payload = {
+      appVersion:
+        APP_VERSION,
+      mode:
+        sessionVideoMode,
+      modeTitle:
+        sessionVideoMode
+          ? modeInfo[
+              sessionVideoMode
+            ]?.title
+          : null,
+      startedAt:
+        sessionVideoStartedAtIso,
+      durationMs:
+        sessionVideoDurationMs,
+      videoMimeType:
+        sessionVideoMimeType,
+      questions:
+        sessionQuestionMarks
+          .filter(Boolean)
+    };
+
+    const blob =
+      new Blob(
+        [
+          JSON.stringify(
+            payload,
+            null,
+            2
+          )
+        ],
+        {
+          type:
+            "application/json"
+        }
+      );
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+    link.href =
+      url;
+
+    link.download =
+      `soroban_analysis_${sessionVideoMode || "challenge"}_${Date.now()}.json`;
+
+    document.body.appendChild(
+      link
+    );
+
+    link.click();
+    link.remove();
+
+    setTimeout(
+      () => {
+        URL.revokeObjectURL(
+          url
+        );
+      },
+      1000
+    );
+  }
+
   function toggleTimeLimit() {
     timeLimitEnabled =
       !timeLimitEnabled;
@@ -8689,6 +10264,20 @@ HTML = r"""
 
     currentMode = mode;
     questions = [];
+
+    if (
+      !sessionVideoActive
+    ) {
+      sessionQuestionMarks = [];
+      sessionVideoMode = null;
+      sessionVideoStartedAtPerf = null;
+      sessionVideoStartedAtIso = null;
+      sessionVideoDurationMs = 0;
+    }
+
+    videoReviewPanel.classList.add(
+      "hidden"
+    );
 
     index = 0;
     gowasanSpokenForIndex = -1;
@@ -8833,6 +10422,11 @@ HTML = r"""
     equation.textContent =
       `${q.a} ${q.op} ${q.b} ＝ ?`;
 
+    recordVideoQuestionStart(
+      index,
+      q
+    );
+
     answerInput.value = "";
     feedback.textContent = "";
     feedback.className = "feedback";
@@ -8866,6 +10460,12 @@ HTML = r"""
 
     const q = questions[index];
     const ok = user === q.answer;
+
+    recordVideoQuestionAnswer(
+      index,
+      user,
+      ok
+    );
 
     recordAnswer(currentMode, q, ok);
 
@@ -9447,6 +11047,18 @@ HTML = r"""
   }
 
   function finish(timeup) {
+    finalizeVideoQuestionMarks();
+
+    if (
+      sessionVideoStartedAtPerf !==
+      null
+    ) {
+      renderVideoReviewPanel();
+      stopChallengeVideoRecording(
+        false
+      );
+    }
+
     stopTimer();
     stopBgm();
     hideSorobanHint();
@@ -9698,6 +11310,13 @@ HTML = r"""
 
         try {
           if (
+            cameraSetupModal.classList.contains(
+              "show"
+            )
+          ) {
+            pendingVideoMode = null;
+            closeCameraSetup(true);
+          } else if (
             rankingModal.classList.contains("show")
           ) {
             closeRankingModal();
@@ -9765,6 +11384,14 @@ HTML = r"""
   }
 
   function goMenu() {
+    if (
+      sessionVideoActive ||
+      cameraSetupModal.classList
+        .contains("show")
+    ) {
+      discardChallengeVideoSession();
+    }
+
     scoreAnimationToken += 1;
     closeRankingModal();
     stopTimer();
@@ -10145,7 +11772,9 @@ HTML = r"""
 
   root.querySelectorAll(".start-mode").forEach((button) => {
     button.addEventListener("click", () => {
-      startMode(button.dataset.mode);
+      requestStartMode(
+        button.dataset.mode
+      );
     });
   });
 
@@ -10161,6 +11790,53 @@ HTML = r"""
         closeRankingModal();
       }
     }
+  );
+
+  analysisVideoToggle.addEventListener(
+    "click",
+    toggleAnalysisVideo
+  );
+
+  cameraBeginBtn.addEventListener(
+    "click",
+    beginRecordedChallenge
+  );
+
+  $("#cameraNoVideoBtn").addEventListener(
+    "click",
+    beginChallengeWithoutVideo
+  );
+
+  $("#cameraCancelBtn").addEventListener(
+    "click",
+    () => {
+      pendingVideoMode = null;
+      closeCameraSetup(true);
+    }
+  );
+
+  sessionReviewVideo.addEventListener(
+    "timeupdate",
+    () => {
+      if (
+        reviewClipEndSec !== null &&
+        sessionReviewVideo.currentTime >=
+          reviewClipEndSec
+      ) {
+        sessionReviewVideo.pause();
+        reviewClipEndSec = null;
+      }
+    }
+  );
+
+  $("#downloadSessionVideoBtn").addEventListener(
+    "click",
+    downloadSessionVideo
+  );
+
+  $("#downloadSessionLogBtn").addEventListener(
+    "click",
+    downloadSessionLog
   );
 
   $("#answerForm").addEventListener("submit", (event) => {
@@ -10179,12 +11855,16 @@ HTML = r"""
 
   $("#retryBtn").addEventListener("click", () => {
     if (promotedMode) {
-      startMode(promotedMode);
+      requestStartMode(
+        promotedMode
+      );
       return;
     }
 
     if (currentMode) {
-      startMode(currentMode);
+      requestStartMode(
+        currentMode
+      );
     }
   });
 
@@ -10215,6 +11895,12 @@ HTML = r"""
   anzanSpeed =
     loadAnzanSpeed();
 
+  analysisVideoEnabled =
+    loadBooleanSetting(
+      ANALYSIS_VIDEO_SETTING_KEY,
+      false
+    );
+
   homeView.classList.remove("hidden");
   menuView.classList.add("hidden");
   learningView.classList.remove("show");
@@ -10223,6 +11909,7 @@ HTML = r"""
   workspace.classList.remove("show");
 
   updateTimeLimitUi();
+  updateAnalysisVideoUi();
   updateLearningVoiceUi();
   updateBgmButton();
   updateSettingsUi();
