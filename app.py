@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V62-NAV-REBUILD-MATTE-MEDALS-2026-09-24
+# VERSION: CLEAN-V63-HARD-NAV-FLAT-MEDALS-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V62-NAV-REBUILD-MATTE-MEDALS"
+APP_VERSION = "CLEAN-V63-HARD-NAV-FLAT-MEDALS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -212,9 +212,7 @@ HTML = r"""
     border-radius: 50%;
     background: var(--medal-face);
     color: var(--medal-text);
-    box-shadow:
-      0 3px 0 rgba(55, 45, 34, .16),
-      inset 0 0 0 3px rgba(255,255,255,.18);
+    box-shadow: 0 3px 0 rgba(55, 45, 34, .14);
     text-align: center;
     font-weight: 1000;
     line-height: 1;
@@ -251,6 +249,16 @@ HTML = r"""
     max-width: 52px;
     font-size: 12px;
     text-shadow: none;
+  }
+
+  .rank-medal-text::before {
+    content: "";
+    position: absolute;
+    inset: -13px -11px;
+    z-index: -1;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    opacity: .28;
   }
 
   .rank-medal.no-rank {
@@ -597,7 +605,7 @@ HTML = r"""
   .subview-topbar {
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -615,10 +623,16 @@ HTML = r"""
   }
 
   .top-back-btn {
-    min-height: 38px;
-    padding: 7px 11px;
-    font-size: 12px;
-    background: #eee9df;
+    position: relative;
+    z-index: 1001;
+    min-width: 96px;
+    min-height: 44px;
+    padding: 9px 13px;
+    font-size: 13px;
+    background: #e8e1d5;
+    border: 1px solid #cfc5b7;
+    pointer-events: auto !important;
+    touch-action: manipulation;
   }
 
   /* =====================================================
@@ -2883,7 +2897,7 @@ HTML = r"""
 
 <div id="anzanView" class="anzan-view">
   <div class="subview-topbar">
-    <button type="button" id="anzanTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="anzanTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">暗算モード</div>
   </div>
 
@@ -2978,7 +2992,7 @@ HTML = r"""
 
 <div id="settingsView" class="settings-view">
   <div class="subview-topbar">
-    <button type="button" id="settingsTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="settingsTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">設定</div>
   </div>
 
@@ -3072,7 +3086,7 @@ HTML = r"""
 
 <div id="menuView" class="hidden">
   <div class="subview-topbar">
-    <button type="button" id="challengeTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="challengeTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">チャレンジモード</div>
   </div>
   <div class="intro">
@@ -3260,7 +3274,7 @@ HTML = r"""
 
 <div id="learningView" class="learning-view">
   <div class="subview-topbar">
-    <button type="button" id="learningTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="learningTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">学習モード</div>
   </div>
 
@@ -3417,8 +3431,8 @@ HTML = r"""
     <button type="button" id="bgmBtn">♪ BGM ON</button>
     <div id="recordingBadge" class="recording-badge">● REC</div>
     <div class="challenge-quick-nav">
-      <button type="button" id="challengePlayTopBtn" data-app-nav="home">← TOPへ</button>
-      <button type="button" id="quitBtn" data-app-nav="challenge-menu">モード選択へ</button>
+      <button type="button" id="challengePlayTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;">← TOPへ</button>
+      <button type="button" id="quitBtn" data-app-nav="challenge-menu" onclick="window.__sorobanHardNav && window.__sorobanHardNav('challenge-menu'); return false;">モード選択へ</button>
     </div>
     <div id="voiceStatus" class="voice-status">音声回答：OFF</div>
     <div id="bgmName" class="bgm-name">BGM：準備中</div>
@@ -3554,8 +3568,8 @@ HTML = r"""
     <div id="review" class="review"></div>
     <div class="actions">
       <button type="button" id="retryBtn" class="primary">同じモードをもう一度</button>
-      <button type="button" id="menuBtn" data-app-nav="challenge-menu">モード選択へ</button>
-      <button type="button" id="resultTopBtn" data-app-nav="home">← TOPへ</button>
+      <button type="button" id="menuBtn" data-app-nav="challenge-menu" onclick="window.__sorobanHardNav && window.__sorobanHardNav('challenge-menu'); return false;">モード選択へ</button>
+      <button type="button" id="resultTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;">← TOPへ</button>
     </div>
   </div>
 </section>
@@ -3568,25 +3582,105 @@ HTML = r"""
   const root = document.getElementById("soroban-app");
   const $ = (selector) => root.querySelector(selector);
 
-  // UI navigation is registered first and delegated from the app root.
-  // Auxiliary failures (camera, medal, audio) must never trap the user in a view.
-  root.addEventListener("click", (event) => {
+  // Navigation is deliberately dependency-free and installed before all other app logic.
+  // It changes only view classes using raw DOM queries, so even a later JS error cannot trap the user.
+  function hardSetView(target) {
+    const byId = (id) => root.querySelector(`#${id}`);
+    const home = byId("homeView");
+    const menu = byId("menuView");
+    const learning = byId("learningView");
+    const anzan = byId("anzanView");
+    const settings = byId("settingsView");
+    const workspaceEl = byId("workspace");
+    const resultsEl = byId("results");
+
+    if (!home || !menu || !learning || !anzan || !settings || !workspaceEl || !resultsEl) {
+      return false;
+    }
+
+    const hideEverything = () => {
+      home.classList.add("hidden");
+      menu.classList.add("hidden");
+      learning.classList.remove("show");
+      anzan.classList.remove("show");
+      settings.classList.remove("show");
+      workspaceEl.classList.remove("show");
+      resultsEl.classList.remove("show");
+    };
+
+    hideEverything();
+
+    if (target === "home") {
+      home.classList.remove("hidden");
+    } else if (target === "challenge" || target === "challenge-menu") {
+      menu.classList.remove("hidden");
+    } else if (target === "learning") {
+      learning.classList.add("show");
+      const category = byId("learningCategoryView");
+      const stage = byId("learningStageView");
+      const lesson = byId("learningLessonView");
+      if (category) category.classList.remove("hidden");
+      if (stage) stage.classList.add("hidden");
+      if (lesson) lesson.classList.add("hidden");
+    } else if (target === "anzan") {
+      anzan.classList.add("show");
+      const menuViewEl = byId("anzanMenuView");
+      const gameViewEl = byId("anzanGameView");
+      const resultViewEl = byId("anzanResultView");
+      if (menuViewEl) menuViewEl.classList.remove("hidden");
+      if (gameViewEl) gameViewEl.classList.add("hidden");
+      if (resultViewEl) resultViewEl.classList.add("hidden");
+    } else if (target === "settings") {
+      settings.classList.add("show");
+    } else {
+      return false;
+    }
+
+    return true;
+  }
+
+  let lastHardNavAt = 0;
+  let lastHardNavTarget = "";
+
+  function hardNavigate(target) {
+    const now = Date.now();
+    if (target === lastHardNavTarget && now - lastHardNavAt < 450) {
+      return;
+    }
+
+    lastHardNavAt = now;
+    lastHardNavTarget = target;
+
+    hardSetView(target);
+
+    // Cleanup is secondary. The view has already changed even if cleanup fails.
+    setTimeout(() => {
+      try {
+        if (target === "home") showHome();
+        else if (target === "challenge-menu") goMenu();
+        else if (target === "challenge") showChallengeMenu();
+        else if (target === "learning") showLearningHome();
+        else if (target === "anzan") showAnzanHome();
+        else if (target === "settings") showSettings();
+      } catch (error) {}
+    }, 0);
+  }
+
+  window.__sorobanHardNav = hardNavigate;
+
+  function handleHardNavEvent(event) {
     const button = event.target.closest("[data-app-nav]");
     if (!button || !root.contains(button)) return;
 
-    const target = button.dataset.appNav;
-    try {
-      if (target === "home") showHome();
-      else if (target === "challenge") showChallengeMenu();
-      else if (target === "learning") showLearningHome();
-      else if (target === "anzan") showAnzanHome();
-      else if (target === "settings") showSettings();
-      else if (target === "challenge-menu") goMenu();
-    } catch (error) {
-      if (target === "home") forceHomeView();
-      else if (target === "challenge-menu") forceChallengeMenuView();
-    }
-  });
+    event.preventDefault();
+    event.stopPropagation();
+
+    hardNavigate(button.dataset.appNav);
+  }
+
+  // pointerup is primary on phones; click is a fallback for keyboard/mouse/browser quirks.
+  root.addEventListener("pointerup", handleHardNavEvent, true);
+  root.addEventListener("click", handleHardNavEvent, true);
 
   $("#versionLabel").textContent = `APP VERSION: ${APP_VERSION}`;
 
