@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V55-CAMERA-SETUP-MOBILE-2026-09-24
+# VERSION: CLEAN-V56-INLINE-CAMERA-SETUP-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V55-CAMERA-SETUP-MOBILE"
+APP_VERSION = "CLEAN-V56-INLINE-CAMERA-SETUP"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1872,27 +1872,26 @@ HTML = r"""
 
   .camera-modal {
     display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1200;
-    padding: 14px;
-    background: rgba(28, 26, 23, .64);
-    align-items: center;
-    justify-content: center;
+    position: static;
+    width: 100%;
+    margin-top: 12px;
+    padding: 0;
+    background: transparent;
   }
 
   .camera-modal.show {
-    display: flex;
+    display: block;
   }
 
   .camera-dialog {
-    width: min(720px, 96vw);
-    max-height: 92vh;
-    overflow: auto;
-    padding: 16px;
-    border-radius: 20px;
-    background: #fff;
-    box-shadow: 0 20px 70px rgba(0,0,0,.28);
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 14px;
+    border: 2px solid #d8d0c3;
+    border-radius: 18px;
+    background: #fffdf8;
+    box-shadow: 0 8px 22px rgba(0,0,0,.10);
   }
 
   .camera-dialog h3 {
@@ -1909,12 +1908,11 @@ HTML = r"""
 
   .camera-preview-wrap {
     position: relative;
-    width: 100%;
+    width: min(100%, 420px);
     aspect-ratio: 4 / 3;
-    min-height: 0;
-    max-height: 46vh;
+    margin: 0 auto;
     overflow: hidden;
-    border-radius: 16px;
+    border-radius: 14px;
     background: #171717;
   }
 
@@ -1991,31 +1989,22 @@ HTML = r"""
   }
 
   .camera-actions {
-    position: sticky;
-    bottom: -1px;
-    z-index: 3;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    margin: 12px -4px -4px;
-    padding: 10px 4px 4px;
-    background: linear-gradient(
-      to bottom,
-      rgba(255,255,255,.82),
-      #fff 28%
-    );
+    margin-top: 10px;
   }
 
   .camera-actions button {
-    min-height: 46px;
-    font-size: 13px;
+    min-height: 42px;
+    font-size: 12px;
     font-weight: 950;
   }
 
   .camera-actions #cameraBeginBtn {
     grid-column: 1 / -1;
-    min-height: 52px;
-    font-size: 15px;
+    min-height: 48px;
+    font-size: 14px;
   }
 
   .video-review-panel {
@@ -2140,41 +2129,57 @@ HTML = r"""
     }
 
     .camera-dialog {
-      width: 96vw;
-      max-height: 90vh;
-      padding: 12px;
-      border-radius: 18px;
+      width: 100%;
+      max-height: none;
+      padding: 10px;
+      border-radius: 16px;
     }
 
     .camera-dialog h3 {
-      font-size: 18px;
+      margin-bottom: 4px;
+      font-size: 17px;
     }
 
     .camera-dialog p {
-      margin-bottom: 8px;
-      font-size: 11px;
-      line-height: 1.5;
+      margin-bottom: 7px;
+      font-size: 10px;
+      line-height: 1.45;
     }
 
     .camera-preview-wrap {
+      width: min(100%, 320px);
       aspect-ratio: 4 / 3;
-      max-height: 38vh;
+      margin: 0 auto;
     }
 
     .camera-preview {
+      width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: center 64%;
     }
 
     .camera-status {
-      margin-top: 8px;
-      padding: 8px 10px;
-      font-size: 11px;
+      margin-top: 6px;
+      padding: 7px 9px;
+      font-size: 10px;
+      line-height: 1.45;
     }
 
     .camera-actions {
-      margin-top: 8px;
+      gap: 6px;
+      margin-top: 7px;
+    }
+
+    .camera-actions button {
+      min-height: 38px;
+      padding: 7px 6px;
+      font-size: 11px;
+    }
+
+    .camera-actions #cameraBeginBtn {
+      min-height: 44px;
+      font-size: 13px;
     }
   }
 
@@ -2775,9 +2780,8 @@ HTML = r"""
   <div class="camera-dialog">
     <h3>撮影する画角を確認</h3>
     <p>
-      顔を大きく映す必要はありません。スマホを少し離して高めに置き、
-      <strong>両手とそろばん全体が白い枠に入ること</strong>を最優先にしてください。
-      顔は上の小さい枠に一部入る程度で十分です。
+      <strong>両手とそろばん全体を下の白い枠へ。</strong>
+      顔は上の小さい枠に一部入れば十分です。
     </p>
 
     <div class="camera-preview-wrap">
@@ -9291,12 +9295,46 @@ HTML = r"""
   }
 
   async function openCameraSetup(
-    mode
+    mode,
+    sourceButton = null
   ) {
     pendingVideoMode =
       mode;
 
     closeCameraSetup(true);
+
+    // Streamlit components.html は高さの大きい iframe 内で動くため、
+    // fixed/vh の全画面モーダルはスマホ実画面と一致しない。
+    // 押したモードカードの直下へ設定パネル自体を移動する。
+    const sourceCard =
+      sourceButton
+        ? sourceButton.closest(
+            ".mode-card"
+          )
+        : null;
+
+    let targetCard =
+      sourceCard;
+
+    if (!targetCard) {
+      const retryButton =
+        root.querySelector(
+          `.start-mode[data-mode="${mode}"]`
+        );
+
+      targetCard =
+        retryButton
+          ? retryButton.closest(
+              ".mode-card"
+            )
+          : null;
+    }
+
+    if (targetCard) {
+      targetCard.appendChild(
+        cameraSetupModal
+      );
+    }
 
     cameraSetupModal.classList.add(
       "show"
@@ -9305,6 +9343,17 @@ HTML = r"""
     cameraBeginBtn.disabled = true;
     cameraSetupStatus.textContent =
       "インカメラを準備しています。ブラウザのカメラ許可をONにしてください。";
+
+    requestAnimationFrame(
+      () => {
+        try {
+          cameraSetupModal.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest"
+          });
+        } catch (error) {}
+      }
+    );
 
     if (
       !navigator.mediaDevices ||
@@ -9383,7 +9432,7 @@ HTML = r"""
           : "";
 
       cameraSetupStatus.textContent =
-        `カメラ準備完了。${sizeText} 顔よりも、両手とそろばん全体が下の白い枠に入っているか確認してください。`;
+        `準備完了${sizeText}。両手とそろばん全体が白い枠に入ればOKです。`;
 
       cameraBeginBtn.disabled =
         false;
@@ -9650,7 +9699,8 @@ HTML = r"""
   }
 
   function requestStartMode(
-    mode
+    mode,
+    sourceButton = null
   ) {
     if (
       !analysisVideoEnabled
@@ -9661,7 +9711,8 @@ HTML = r"""
     }
 
     openCameraSetup(
-      mode
+      mode,
+      sourceButton
     );
   }
 
@@ -11860,7 +11911,8 @@ HTML = r"""
   root.querySelectorAll(".start-mode").forEach((button) => {
     button.addEventListener("click", () => {
       requestStartMode(
-        button.dataset.mode
+        button.dataset.mode,
+        button
       );
     });
   });
