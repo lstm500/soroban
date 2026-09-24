@@ -159,6 +159,7 @@ HTML = r"""
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
+    margin-top: 6px;
   }
 
 
@@ -168,7 +169,7 @@ HTML = r"""
     align-items: center;
     justify-content: center;
     gap: 14px;
-    margin: 0 auto 18px;
+    margin: 0 auto 34px;
     padding: 12px 16px;
     border: 1px solid #d9cfb8;
     border-radius: 18px;
@@ -2538,6 +2539,7 @@ HTML = r"""
 
     .home-rank-card {
       justify-content: flex-start;
+      margin-bottom: 40px;
     }
 
     .home-rank-name {
