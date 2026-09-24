@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V54-VIDEO-REVIEW-2026-09-24
+# VERSION: CLEAN-V55-CAMERA-SETUP-MOBILE-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V54-VIDEO-REVIEW"
+APP_VERSION = "CLEAN-V55-CAMERA-SETUP-MOBILE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1886,10 +1886,10 @@ HTML = r"""
   }
 
   .camera-dialog {
-    width: min(720px, 98vw);
-    max-height: 94vh;
+    width: min(720px, 96vw);
+    max-height: 92vh;
     overflow: auto;
-    padding: 18px;
+    padding: 16px;
     border-radius: 20px;
     background: #fff;
     box-shadow: 0 20px 70px rgba(0,0,0,.28);
@@ -1910,7 +1910,9 @@ HTML = r"""
   .camera-preview-wrap {
     position: relative;
     width: 100%;
-    min-height: 260px;
+    aspect-ratio: 4 / 3;
+    min-height: 0;
+    max-height: 46vh;
     overflow: hidden;
     border-radius: 16px;
     background: #171717;
@@ -1919,20 +1921,22 @@ HTML = r"""
   .camera-preview {
     display: block;
     width: 100%;
-    height: min(56vh, 500px);
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 62%;
     background: #171717;
     transform: scaleX(-1);
   }
 
   .camera-guide {
     position: absolute;
-    left: 7%;
-    right: 7%;
-    bottom: 6%;
-    height: 38%;
-    border: 2px dashed rgba(255,255,255,.85);
+    left: 5%;
+    right: 5%;
+    bottom: 5%;
+    height: 50%;
+    border: 3px dashed rgba(255,255,255,.92);
     border-radius: 16px;
+    background: rgba(255,255,255,.04);
     pointer-events: none;
   }
 
@@ -1943,10 +1947,36 @@ HTML = r"""
     transform: translateX(-50%);
     padding: 5px 8px;
     border-radius: 999px;
-    background: rgba(0,0,0,.58);
+    background: rgba(0,0,0,.66);
     color: #fff;
     font-size: 10px;
     font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .camera-face-guide {
+    position: absolute;
+    left: 50%;
+    top: 7%;
+    transform: translateX(-50%);
+    width: 28%;
+    height: 28%;
+    border: 2px dashed rgba(255,255,255,.52);
+    border-radius: 48%;
+    pointer-events: none;
+  }
+
+  .camera-face-label {
+    position: absolute;
+    left: 50%;
+    top: 7px;
+    transform: translateX(-50%);
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.52);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 850;
     white-space: nowrap;
   }
 
@@ -1961,11 +1991,31 @@ HTML = r"""
   }
 
   .camera-actions {
-    display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    position: sticky;
+    bottom: -1px;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
-    margin-top: 12px;
+    margin: 12px -4px -4px;
+    padding: 10px 4px 4px;
+    background: linear-gradient(
+      to bottom,
+      rgba(255,255,255,.82),
+      #fff 28%
+    );
+  }
+
+  .camera-actions button {
+    min-height: 46px;
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  .camera-actions #cameraBeginBtn {
+    grid-column: 1 / -1;
+    min-height: 52px;
+    font-size: 15px;
   }
 
   .video-review-panel {
@@ -2090,11 +2140,41 @@ HTML = r"""
     }
 
     .camera-dialog {
+      width: 96vw;
+      max-height: 90vh;
       padding: 12px;
+      border-radius: 18px;
+    }
+
+    .camera-dialog h3 {
+      font-size: 18px;
+    }
+
+    .camera-dialog p {
+      margin-bottom: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .camera-preview-wrap {
+      aspect-ratio: 4 / 3;
+      max-height: 38vh;
     }
 
     .camera-preview {
-      height: 48vh;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 64%;
+    }
+
+    .camera-status {
+      margin-top: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+    }
+
+    .camera-actions {
+      margin-top: 8px;
     }
   }
 
@@ -2695,8 +2775,9 @@ HTML = r"""
   <div class="camera-dialog">
     <h3>撮影する画角を確認</h3>
     <p>
-      スマホを少し高めに置き、顔・両手・そろばんが全部入る位置に調整してください。
-      インカメラ自体の向きは変えられないため、このプレビューで手元が切れていないことを確認します。
+      顔を大きく映す必要はありません。スマホを少し離して高めに置き、
+      <strong>両手とそろばん全体が白い枠に入ること</strong>を最優先にしてください。
+      顔は上の小さい枠に一部入る程度で十分です。
     </p>
 
     <div class="camera-preview-wrap">
@@ -2707,8 +2788,11 @@ HTML = r"""
         muted
         playsinline
       ></video>
+      <div class="camera-face-guide">
+        <div class="camera-face-label">顔はこの辺り</div>
+      </div>
       <div class="camera-guide">
-        <div class="camera-guide-label">両手＋そろばんをこの枠内へ</div>
+        <div class="camera-guide-label">両手＋そろばん全体をここへ</div>
       </div>
     </div>
 
@@ -9245,7 +9329,10 @@ HTML = r"""
                 ideal: 1280
               },
               height: {
-                ideal: 720
+                ideal: 960
+              },
+              aspectRatio: {
+                ideal: 1.333333
               },
               frameRate: {
                 ideal: 20,
@@ -9296,7 +9383,7 @@ HTML = r"""
           : "";
 
       cameraSetupStatus.textContent =
-        `カメラ準備完了。${sizeText} 顔・両手・そろばんが入っていることを確認してください。`;
+        `カメラ準備完了。${sizeText} 顔よりも、両手とそろばん全体が下の白い枠に入っているか確認してください。`;
 
       cameraBeginBtn.disabled =
         false;
