@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V61-NAV-FIX-RIBBON-MEDALS-2026-09-24
+# VERSION: CLEAN-V62-NAV-REBUILD-MATTE-MEDALS-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V61-NAV-FIX-RIBBON-MEDALS"
+APP_VERSION = "CLEAN-V62-NAV-REBUILD-MATTE-MEDALS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -194,57 +194,54 @@ HTML = r"""
   }
 
   .rank-medal {
-    --medal-a: #8e7d68;
-    --medal-b: #c7b8a4;
-    --medal-c: #6f6253;
+    --medal-face: #b77a4e;
+    --medal-edge: #795036;
+    --medal-text: #34251b;
+    --ribbon-left: #365f87;
+    --ribbon-right: #9b4c4d;
+
     position: relative;
+    isolation: isolate;
+    overflow: visible;
     width: 62px;
     height: 62px;
     flex: 0 0 62px;
     display: grid;
     place-items: center;
-    border: 4px solid rgba(255,255,255,.72);
+    border: 3px solid var(--medal-edge);
     border-radius: 50%;
-    background:
-      radial-gradient(circle at 35% 28%, #fff 0 6%, transparent 7%),
-      linear-gradient(145deg, var(--medal-b), var(--medal-a) 52%, var(--medal-c));
-    color: #fff;
+    background: var(--medal-face);
+    color: var(--medal-text);
     box-shadow:
-      0 5px 12px rgba(0,0,0,.16),
-      inset 0 0 0 3px rgba(255,255,255,.28);
+      0 3px 0 rgba(55, 45, 34, .16),
+      inset 0 0 0 3px rgba(255,255,255,.18);
     text-align: center;
     font-weight: 1000;
     line-height: 1;
-  }
-
-  .rank-medal {
-    isolation: isolate;
-    overflow: visible;
   }
 
   .rank-medal::before,
   .rank-medal::after {
     content: "";
     position: absolute;
-    z-index: 0;
-    top: 43px;
-    width: 24px;
-    height: 43px;
-    clip-path: polygon(0 0, 100% 0, 84% 100%, 50% 78%, 16% 100%);
-    box-shadow: 0 4px 7px rgba(0,0,0,.14);
+    z-index: -1;
+    top: 45px;
+    width: 23px;
+    height: 42px;
+    clip-path: polygon(0 0, 100% 0, 100% 76%, 74% 100%, 50% 83%, 26% 100%, 0 76%);
   }
 
   .rank-medal::before {
-    left: 5px;
-    background: linear-gradient(180deg, #436d9f, #24486f);
-    transform: rotate(8deg);
+    left: 6px;
+    background: var(--ribbon-left);
+    transform: rotate(7deg);
     transform-origin: top center;
   }
 
   .rank-medal::after {
-    right: 5px;
-    background: linear-gradient(180deg, #c65a58, #8d3437);
-    transform: rotate(-8deg);
+    right: 6px;
+    background: var(--ribbon-right);
+    transform: rotate(-7deg);
     transform-origin: top center;
   }
 
@@ -253,64 +250,65 @@ HTML = r"""
     z-index: 2;
     max-width: 52px;
     font-size: 12px;
-    text-shadow: 0 1px 2px rgba(0,0,0,.32);
+    text-shadow: none;
+  }
+
+  .rank-medal.no-rank {
+    --medal-face: #d8d3ca;
+    --medal-edge: #aaa297;
+    --medal-text: #6f685f;
+    box-shadow: 0 2px 0 rgba(55, 45, 34, .10);
+  }
+
+  .rank-medal.no-rank::before,
+  .rank-medal.no-rank::after {
+    display: none;
   }
 
   .rank-medal.rank-kyu-low {
-    --medal-a: #9a6943;
-    --medal-b: #d6a36f;
-    --medal-c: #70472d;
+    --medal-face: #b77a4e;
+    --medal-edge: #795036;
+    --medal-text: #34251b;
   }
 
   .rank-medal.rank-kyu-mid {
-    --medal-a: #7b8490;
-    --medal-b: #d4d9df;
-    --medal-c: #5e6670;
+    --medal-face: #bdc3c8;
+    --medal-edge: #78818a;
+    --medal-text: #2f353a;
   }
 
   .rank-medal.rank-kyu-high {
-    --medal-a: #ba8a29;
-    --medal-b: #f3d977;
-    --medal-c: #8b651d;
+    --medal-face: #d2aa3c;
+    --medal-edge: #8d6d1d;
+    --medal-text: #3b3014;
   }
 
   .rank-medal.rank-dan-1 {
-    --medal-a: #b35c33;
-    --medal-b: #e9a46d;
-    --medal-c: #7d3e25;
+    --medal-face: #b96b43;
+    --medal-edge: #7c462d;
+    --medal-text: #342116;
   }
 
   .rank-medal.rank-dan-2 {
-    --medal-a: #8793a0;
-    --medal-b: #edf2f6;
-    --medal-c: #626e7a;
+    --medal-face: #d4d8db;
+    --medal-edge: #7e8790;
+    --medal-text: #30363b;
   }
 
   .rank-medal.rank-dan-3 {
-    --medal-a: #c4901f;
-    --medal-b: #ffe792;
-    --medal-c: #8d6415;
+    --medal-face: #d4a92f;
+    --medal-edge: #876817;
+    --medal-text: #392e11;
   }
 
   .rank-medal.rank-master {
-    --medal-a: #7566d8;
-    --medal-b: #f6d66f;
-    --medal-c: #2e7ea5;
-    background:
-      radial-gradient(circle at 35% 28%, #fff 0 7%, transparent 8%),
-      conic-gradient(
-        from 0deg,
-        #f1c85b,
-        #8dd8ce,
-        #8da6ef,
-        #d397e9,
-        #f1c85b
-      );
-    box-shadow:
-      0 7px 20px rgba(70, 73, 167, .30),
-      inset 0 0 0 4px rgba(255,255,255,.42);
+    --medal-face: #315d80;
+    --medal-edge: #c8a044;
+    --medal-text: #ffffff;
+    --ribbon-left: #243e63;
+    --ribbon-right: #8f3d46;
+    box-shadow: 0 3px 0 rgba(38, 51, 67, .18);
   }
-
 
   .home-mode-btn {
     min-height: 168px;
@@ -597,11 +595,17 @@ HTML = r"""
   }
 
   .subview-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     margin: 0 0 14px;
+    padding: 8px 0;
+    background: rgba(247,245,239,.96);
+    backdrop-filter: blur(6px);
   }
 
   .subview-topbar-title {
@@ -1207,6 +1211,9 @@ HTML = r"""
   .workspace.show { display: block; }
 
   .statusbar {
+    position: sticky;
+    top: 0;
+    z-index: 35;
     display: grid;
     grid-template-columns: minmax(200px, 1fr) auto auto auto auto auto auto;
     align-items: center;
@@ -1248,6 +1255,18 @@ HTML = r"""
     background: #dff1e3;
     color: #285a36;
     border: 1px solid #a9cfb3;
+  }
+
+  .challenge-quick-nav {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .challenge-quick-nav button {
+    min-height: 40px;
+    font-size: 12px;
   }
 
   .voice-status {
@@ -2384,11 +2403,10 @@ HTML = r"""
     padding: 28px 18px 22px;
     border: 2px solid rgba(255,255,255,.7);
     border-radius: 28px;
-    background:
-      radial-gradient(circle at 50% 0%, #fff9cf, #fffdf7 45%, #eee3c4);
+    background: #fffaf0;
     box-shadow:
-      0 24px 80px rgba(0,0,0,.34),
-      0 0 42px rgba(255,218,103,.36);
+      0 24px 80px rgba(0,0,0,.30),
+      0 0 0 6px rgba(224,190,93,.18);
     text-align: center;
     animation: rankCardPop .75s cubic-bezier(.18,.89,.32,1.28) both;
   }
@@ -2406,8 +2424,7 @@ HTML = r"""
     margin: 18px auto 22px;
     border-width: 7px;
     animation:
-      medalReveal 1s cubic-bezier(.17,.86,.24,1.35) both,
-      medalShine 2.4s ease-in-out 1s infinite;
+      medalReveal 1s cubic-bezier(.17,.86,.24,1.35) both;
   }
 
   .rank-celebration-medal::before,
@@ -2490,10 +2507,6 @@ HTML = r"""
     100% { transform: scale(1) rotate(0); opacity: 1; }
   }
 
-  @keyframes medalShine {
-    0%, 100% { filter: brightness(1); transform: scale(1); }
-    50% { filter: brightness(1.22); transform: scale(1.035); }
-  }
 
   @keyframes rankBurstSpin {
     to { transform: rotate(360deg); }
@@ -2801,7 +2814,7 @@ HTML = r"""
     .mode-grid { grid-template-columns: 1fr; }
     .mode-card { min-height: 0; }
     .statusbar { grid-template-columns: 1fr auto; }
-    #quitBtn { grid-column: 1 / -1; }
+    .challenge-quick-nav { grid-template-columns: 1fr 1fr; }
     .review { grid-template-columns: 1fr; }
 
     .question-card {
@@ -2833,7 +2846,7 @@ HTML = r"""
   </div>
 
   <div class="home-mode-grid">
-    <button type="button" id="homeChallengeBtn" class="home-mode-btn primary-home">
+    <button type="button" id="homeChallengeBtn" data-app-nav="challenge" class="home-mode-btn primary-home">
       <span class="home-mode-kicker">CHALLENGE</span>
       <span class="home-mode-name">チャレンジモード</span>
       <span class="home-mode-desc">
@@ -2841,7 +2854,7 @@ HTML = r"""
       </span>
     </button>
 
-    <button type="button" id="homeLearningBtn" class="home-mode-btn">
+    <button type="button" id="homeLearningBtn" data-app-nav="learning" class="home-mode-btn">
       <span class="home-mode-kicker">LEARNING</span>
       <span class="home-mode-name">学習モード</span>
       <span class="home-mode-desc">
@@ -2849,7 +2862,7 @@ HTML = r"""
       </span>
     </button>
 
-    <button type="button" id="homeAnzanBtn" class="home-mode-btn anzan-home">
+    <button type="button" id="homeAnzanBtn" data-app-nav="anzan" class="home-mode-btn anzan-home">
       <span class="home-mode-kicker">MENTAL</span>
       <span class="home-mode-name">暗算モード</span>
       <span class="home-mode-desc">
@@ -2857,7 +2870,7 @@ HTML = r"""
       </span>
     </button>
 
-    <button type="button" id="homeSettingsBtn" class="home-mode-btn settings-home">
+    <button type="button" id="homeSettingsBtn" data-app-nav="settings" class="home-mode-btn settings-home">
       <span class="home-mode-kicker">SETTINGS</span>
       <span class="home-mode-name">設定</span>
       <span class="home-mode-desc">
@@ -2870,7 +2883,7 @@ HTML = r"""
 
 <div id="anzanView" class="anzan-view">
   <div class="subview-topbar">
-    <button type="button" id="anzanTopBtn" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="anzanTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">暗算モード</div>
   </div>
 
@@ -2965,7 +2978,7 @@ HTML = r"""
 
 <div id="settingsView" class="settings-view">
   <div class="subview-topbar">
-    <button type="button" id="settingsTopBtn" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="settingsTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">設定</div>
   </div>
 
@@ -3059,7 +3072,7 @@ HTML = r"""
 
 <div id="menuView" class="hidden">
   <div class="subview-topbar">
-    <button type="button" id="challengeTopBtn" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="challengeTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">チャレンジモード</div>
   </div>
   <div class="intro">
@@ -3247,7 +3260,7 @@ HTML = r"""
 
 <div id="learningView" class="learning-view">
   <div class="subview-topbar">
-    <button type="button" id="learningTopBtn" class="top-back-btn">← TOPへ</button>
+    <button type="button" id="learningTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">学習モード</div>
   </div>
 
@@ -3403,7 +3416,10 @@ HTML = r"""
     <button type="button" id="voiceBtn" class="voice-btn">🎤 音声回答 OFF</button>
     <button type="button" id="bgmBtn">♪ BGM ON</button>
     <div id="recordingBadge" class="recording-badge">● REC</div>
-    <button type="button" id="quitBtn">モード選択へ</button>
+    <div class="challenge-quick-nav">
+      <button type="button" id="challengePlayTopBtn" data-app-nav="home">← TOPへ</button>
+      <button type="button" id="quitBtn" data-app-nav="challenge-menu">モード選択へ</button>
+    </div>
     <div id="voiceStatus" class="voice-status">音声回答：OFF</div>
     <div id="bgmName" class="bgm-name">BGM：準備中</div>
   </div>
@@ -3538,7 +3554,8 @@ HTML = r"""
     <div id="review" class="review"></div>
     <div class="actions">
       <button type="button" id="retryBtn" class="primary">同じモードをもう一度</button>
-      <button type="button" id="menuBtn">モード選択へ</button>
+      <button type="button" id="menuBtn" data-app-nav="challenge-menu">モード選択へ</button>
+      <button type="button" id="resultTopBtn" data-app-nav="home">← TOPへ</button>
     </div>
   </div>
 </section>
@@ -3550,6 +3567,26 @@ HTML = r"""
 
   const root = document.getElementById("soroban-app");
   const $ = (selector) => root.querySelector(selector);
+
+  // UI navigation is registered first and delegated from the app root.
+  // Auxiliary failures (camera, medal, audio) must never trap the user in a view.
+  root.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-app-nav]");
+    if (!button || !root.contains(button)) return;
+
+    const target = button.dataset.appNav;
+    try {
+      if (target === "home") showHome();
+      else if (target === "challenge") showChallengeMenu();
+      else if (target === "learning") showLearningHome();
+      else if (target === "anzan") showAnzanHome();
+      else if (target === "settings") showSettings();
+      else if (target === "challenge-menu") goMenu();
+    } catch (error) {
+      if (target === "home") forceHomeView();
+      else if (target === "challenge-menu") forceChallengeMenuView();
+    }
+  });
 
   $("#versionLabel").textContent = `APP VERSION: ${APP_VERSION}`;
 
@@ -3666,25 +3703,7 @@ HTML = r"""
 
   // TOPの4ボタンは、メダル・ログ・カメラなどの初期化より先に独立して登録する。
   // 追加機能側で例外が起きても、TOPから各モードへ移動できるようにする。
-  function bindCoreHomeNavigation() {
-    const bindings = [
-      [$("#homeChallengeBtn"), showChallengeMenu],
-      [$("#homeLearningBtn"), showLearningHome],
-      [$("#homeAnzanBtn"), showAnzanHome],
-      [$("#homeSettingsBtn"), showSettings]
-    ];
-
-    bindings.forEach(([button, handler]) => {
-      if (!button || button.dataset.coreNavBound === "1") {
-        return;
-      }
-
-      button.dataset.coreNavBound = "1";
-      button.addEventListener("click", handler);
-    });
-  }
-
-  bindCoreHomeNavigation();
+  // Primary navigation is handled by the delegated data-app-nav listener.
 
   const modeInfo = {
     ba1: { title: "初級・足し算1｜1桁の足し算" },
@@ -5832,8 +5851,13 @@ HTML = r"""
       "rank-dan-1",
       "rank-dan-2",
       "rank-dan-3",
-      "rank-master"
+      "rank-master",
+      "no-rank"
     );
+
+    if (rankName === "見習い") {
+      element.classList.add("no-rank");
+    }
 
     const rankClass =
       medalClassForRank(
@@ -9194,66 +9218,62 @@ HTML = r"""
       `${total ? (cleared / total) * 100 : 0}%`;
   }
 
+  function runUiCleanup(callback) {
+    try {
+      callback();
+    } catch (error) {
+      // Do not allow cleanup failures to block navigation.
+    }
+  }
+
+  function forceHomeView() {
+    workspace.classList.remove("show");
+    results.classList.remove("show");
+    menuView.classList.add("hidden");
+    learningView.classList.remove("show");
+    anzanView.classList.remove("show");
+    settingsView.classList.remove("show");
+    homeView.classList.remove("hidden");
+  }
+
+  function forceChallengeMenuView() {
+    homeView.classList.add("hidden");
+    learningView.classList.remove("show");
+    anzanView.classList.remove("show");
+    settingsView.classList.remove("show");
+    workspace.classList.remove("show");
+    results.classList.remove("show");
+    menuView.classList.remove("hidden");
+  }
+
   function showHome() {
-    discardChallengeVideoSession();
-    stopTimer();
-    stopBgm();
-    hideSorobanHint();
-    stopLearningAnimation();
-    stopAnzanSession();
-    setVoiceAnswerEnabled(false);
+    // First switch the view. Camera/audio cleanup happens afterwards.
+    forceHomeView();
 
-    workspace.classList.remove(
-      "show"
-    );
-    results.classList.remove(
-      "show"
-    );
-    menuView.classList.add(
-      "hidden"
-    );
-    learningView.classList.remove(
-      "show"
-    );
-    anzanView.classList.remove(
-      "show"
-    );
-    settingsView.classList.remove(
-      "show"
-    );
-    homeView.classList.remove(
-      "hidden"
-    );
-
-    updateRankUi();
+    runUiCleanup(discardChallengeVideoSession);
+    runUiCleanup(stopTimer);
+    runUiCleanup(stopBgm);
+    runUiCleanup(hideSorobanHint);
+    runUiCleanup(stopLearningAnimation);
+    runUiCleanup(stopAnzanSession);
+    runUiCleanup(() => setVoiceAnswerEnabled(false));
+    runUiCleanup(closeRankingModal);
+    runUiCleanup(closeRankCelebration);
+    runUiCleanup(updateRankUi);
 
     currentMode = null;
   }
 
   function showChallengeMenu() {
-    stopLearningAnimation();
+    forceChallengeMenuView();
 
-    homeView.classList.add(
-      "hidden"
-    );
-    learningView.classList.remove(
-      "show"
-    );
-    anzanView.classList.remove(
-      "show"
-    );
-    settingsView.classList.remove(
-      "show"
-    );
-    workspace.classList.remove(
-      "show"
-    );
-    results.classList.remove(
-      "show"
-    );
-    menuView.classList.remove(
-      "hidden"
-    );
+    runUiCleanup(stopLearningAnimation);
+    runUiCleanup(stopAnzanSession);
+    runUiCleanup(stopTimer);
+    runUiCleanup(stopBgm);
+    runUiCleanup(hideSorobanHint);
+    runUiCleanup(() => setVoiceAnswerEnabled(false));
+    runUiCleanup(closeRankCelebration);
   }
 
   function showLearningHome() {
@@ -13731,37 +13751,31 @@ HTML = r"""
   }
 
   function goMenu() {
+    // Always restore the challenge menu before cleanup.
+    forceChallengeMenuView();
+
     if (
       sessionVideoActive ||
-      cameraSetupModal.classList
-        .contains("show")
+      cameraSetupModal.classList.contains("show")
     ) {
-      discardChallengeVideoSession();
+      runUiCleanup(discardChallengeVideoSession);
     }
 
     scoreAnimationToken += 1;
-    closeRankingModal();
-    stopTimer();
-    stopBgm();
-    hideSorobanHint();
-    setVoiceAnswerEnabled(false);
+    runUiCleanup(closeRankingModal);
+    runUiCleanup(stopTimer);
+    runUiCleanup(stopBgm);
+    runUiCleanup(hideSorobanHint);
+    runUiCleanup(() => setVoiceAnswerEnabled(false));
 
     if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      runUiCleanup(() => window.speechSynthesis.cancel());
     }
 
-    workspace.classList.remove("show");
-    homeView.classList.add("hidden");
-    learningView.classList.remove("show");
-    anzanView.classList.remove("show");
-    settingsView.classList.remove("show");
-    menuView.classList.remove("hidden");
-    results.classList.remove("show");
     questionCard.classList.remove("hidden");
-
     currentMode = null;
     correctStreak = 0;
-    updateStreakFrame(0);
+    runUiCleanup(() => updateStreakFrame(0));
   }
 
   const rankCelebrationCloseBtn =
@@ -13787,28 +13801,6 @@ HTML = r"""
       }
     );
   }
-
-  // TOPナビゲーションは bindCoreHomeNavigation() で先に登録済み。
-
-  $("#anzanTopBtn").addEventListener(
-    "click",
-    showHome
-  );
-
-  $("#settingsTopBtn").addEventListener(
-    "click",
-    showHome
-  );
-
-  $("#challengeTopBtn").addEventListener(
-    "click",
-    showHome
-  );
-
-  $("#learningTopBtn").addEventListener(
-    "click",
-    showHome
-  );
 
   $("#learningStageBackBtn").addEventListener(
     "click",
@@ -14204,8 +14196,6 @@ HTML = r"""
   );
 
   bgmBtn.addEventListener("click", toggleBgm);
-  $("#quitBtn").addEventListener("click", goMenu);
-  $("#menuBtn").addEventListener("click", goMenu);
 
   $("#retryBtn").addEventListener("click", () => {
     if (promotedMode) {
