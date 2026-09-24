@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V60-RANK-MEDALS-CELEBRATION-2026-09-24
+# VERSION: CLEAN-V61-NAV-FIX-RIBBON-MEDALS-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V60-RANK-MEDALS-CELEBRATION"
+APP_VERSION = "CLEAN-V61-NAV-FIX-RIBBON-MEDALS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -217,28 +217,40 @@ HTML = r"""
     line-height: 1;
   }
 
+  .rank-medal {
+    isolation: isolate;
+    overflow: visible;
+  }
+
   .rank-medal::before,
   .rank-medal::after {
     content: "";
     position: absolute;
-    z-index: -1;
-    top: 48px;
-    width: 18px;
-    height: 28px;
-    background: #334f72;
+    z-index: 0;
+    top: 43px;
+    width: 24px;
+    height: 43px;
+    clip-path: polygon(0 0, 100% 0, 84% 100%, 50% 78%, 16% 100%);
+    box-shadow: 0 4px 7px rgba(0,0,0,.14);
   }
 
   .rank-medal::before {
-    left: 11px;
-    transform: rotate(13deg);
+    left: 5px;
+    background: linear-gradient(180deg, #436d9f, #24486f);
+    transform: rotate(8deg);
+    transform-origin: top center;
   }
 
   .rank-medal::after {
-    right: 11px;
-    transform: rotate(-13deg);
+    right: 5px;
+    background: linear-gradient(180deg, #c65a58, #8d3437);
+    transform: rotate(-8deg);
+    transform-origin: top center;
   }
 
   .rank-medal-text {
+    position: relative;
+    z-index: 2;
     max-width: 52px;
     font-size: 12px;
     text-shadow: 0 1px 2px rgba(0,0,0,.32);
@@ -2347,6 +2359,7 @@ HTML = r"""
 
   .rank-celebration {
     display: none;
+    pointer-events: none;
     position: fixed;
     inset: 0;
     z-index: 5000;
@@ -2360,6 +2373,7 @@ HTML = r"""
 
   .rank-celebration.show {
     display: flex;
+    pointer-events: auto;
     animation: rankOverlayIn .35s ease both;
   }
 
@@ -2398,13 +2412,13 @@ HTML = r"""
 
   .rank-celebration-medal::before,
   .rank-celebration-medal::after {
-    top: 105px;
-    width: 34px;
-    height: 58px;
+    top: 100px;
+    width: 42px;
+    height: 72px;
   }
 
-  .rank-celebration-medal::before { left: 24px; }
-  .rank-celebration-medal::after { right: 24px; }
+  .rank-celebration-medal::before { left: 18px; }
+  .rank-celebration-medal::after { right: 18px; }
 
   .rank-celebration-medal .rank-medal-text {
     max-width: 100px;
@@ -3649,6 +3663,28 @@ HTML = r"""
   const abacusHint = $("#abacusHint");
   const hintStep = $("#hintStep");
   const sorobanBoard = $("#sorobanBoard");
+
+  // TOPの4ボタンは、メダル・ログ・カメラなどの初期化より先に独立して登録する。
+  // 追加機能側で例外が起きても、TOPから各モードへ移動できるようにする。
+  function bindCoreHomeNavigation() {
+    const bindings = [
+      [$("#homeChallengeBtn"), showChallengeMenu],
+      [$("#homeLearningBtn"), showLearningHome],
+      [$("#homeAnzanBtn"), showAnzanHome],
+      [$("#homeSettingsBtn"), showSettings]
+    ];
+
+    bindings.forEach(([button, handler]) => {
+      if (!button || button.dataset.coreNavBound === "1") {
+        return;
+      }
+
+      button.dataset.coreNavBound = "1";
+      button.addEventListener("click", handler);
+    });
+  }
+
+  bindCoreHomeNavigation();
 
   const modeInfo = {
     ba1: { title: "初級・足し算1｜1桁の足し算" },
@@ -5491,13 +5527,40 @@ HTML = r"""
       return parsed;
     } catch (error) {
       return {
-        bestByMode: {}
+        bestByMode: {},
+        medalAchievedAt: {}
       };
     }
   }
 
   let rankCertificationState =
     loadRankCertificationState();
+
+  // v60以前の保存形式や、localStorage制限環境でも
+  // メダル初期化がTOPナビゲーションを止めないよう必ず正規化する。
+  if (
+    !rankCertificationState ||
+    typeof rankCertificationState !== "object"
+  ) {
+    rankCertificationState = {
+      bestByMode: {},
+      medalAchievedAt: {}
+    };
+  }
+
+  if (
+    !rankCertificationState.bestByMode ||
+    typeof rankCertificationState.bestByMode !== "object"
+  ) {
+    rankCertificationState.bestByMode = {};
+  }
+
+  if (
+    !rankCertificationState.medalAchievedAt ||
+    typeof rankCertificationState.medalAchievedAt !== "object"
+  ) {
+    rankCertificationState.medalAchievedAt = {};
+  }
 
   function saveRankCertificationState() {
     try {
@@ -13701,42 +13764,31 @@ HTML = r"""
     updateStreakFrame(0);
   }
 
-  $("#rankCelebrationClose").addEventListener(
-    "click",
-    closeRankCelebration
-  );
+  const rankCelebrationCloseBtn =
+    $("#rankCelebrationClose");
 
-  rankCelebration.addEventListener(
-    "click",
-    (event) => {
-      if (
-        event.target ===
-        rankCelebration
-      ) {
-        closeRankCelebration();
+  if (rankCelebrationCloseBtn) {
+    rankCelebrationCloseBtn.addEventListener(
+      "click",
+      closeRankCelebration
+    );
+  }
+
+  if (rankCelebration) {
+    rankCelebration.addEventListener(
+      "click",
+      (event) => {
+        if (
+          event.target ===
+          rankCelebration
+        ) {
+          closeRankCelebration();
+        }
       }
-    }
-  );
+    );
+  }
 
-  $("#homeChallengeBtn").addEventListener(
-    "click",
-    showChallengeMenu
-  );
-
-  $("#homeLearningBtn").addEventListener(
-    "click",
-    showLearningHome
-  );
-
-  $("#homeAnzanBtn").addEventListener(
-    "click",
-    showAnzanHome
-  );
-
-  $("#homeSettingsBtn").addEventListener(
-    "click",
-    showSettings
-  );
+  // TOPナビゲーションは bindCoreHomeNavigation() で先に登録済み。
 
   $("#anzanTopBtn").addEventListener(
     "click",
@@ -14068,8 +14120,18 @@ HTML = r"""
     }
   });
 
-  rebuildRankCertificationStateFromHistory();
-  syncEarnedMedalsFromCurrentRank();
+  try {
+    rebuildRankCertificationStateFromHistory();
+    syncEarnedMedalsFromCurrentRank();
+  } catch (error) {
+    // 階級・メダルの復元失敗でアプリ全体を停止させない。
+    rankCertificationState = {
+      bestByMode:
+        rankCertificationState?.bestByMode || {},
+      medalAchievedAt:
+        rankCertificationState?.medalAchievedAt || {}
+    };
+  }
 
   setupModeChallengeCountLabels();
   setupModeRankingButtons();
@@ -14201,12 +14263,22 @@ HTML = r"""
   workspace.classList.remove("show");
 
   updateTimeLimitUi();
-  updateRankUi();
+
+  try {
+    updateRankUi();
+  } catch (error) {
+    // メダル表示だけ失敗しても、ゲーム操作は継続する。
+  }
+
   updateAnalysisVideoUi();
   updateLearningVoiceUi();
   updateBgmButton();
   updateSettingsUi();
-  updateRankUi();
+
+  try {
+    updateRankUi();
+  } catch (error) {}
+
   renderLearningCategories();
   installInAppBackGuard();
   updateBgmButton();
