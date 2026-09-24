@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V52-VOICE-STABLE-SLOW-HINT-2026-09-23
+# VERSION: CLEAN-V53-MANUAL-SOROBAN-HINT-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V52-VOICE-STABLE-SLOW-HINT"
+APP_VERSION = "CLEAN-V53-MANUAL-SOROBAN-HINT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1320,6 +1320,33 @@ HTML = r"""
     font-weight: 950;
   }
 
+  .hint-manual-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 8px;
+  }
+
+  .hint-manual-nav button {
+    min-height: 46px;
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  .hint-manual-counter {
+    min-width: 68px;
+    text-align: center;
+    color: #6d665d;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .hint-manual-nav button:disabled {
+    opacity: .35;
+    cursor: default;
+  }
+
   .hint-step {
     min-height: 42px;
     margin: 8px 0 10px;
@@ -2403,27 +2430,32 @@ HTML = r"""
 
     <div class="hint-launch">
       <button type="button" id="hintBtn" class="hint-btn">
-        珠ヒントを見る（音声解説）
+        珠ヒントを見る（手動＋音声）
       </button>
     </div>
 
     <div id="abacusHint" class="abacus-hint">
       <div class="hint-head">
-        <div class="hint-title">そろばんの珠の動かし方｜ゆっくり音声解説</div>
+        <div class="hint-title">そろばんの珠の動かし方｜1つずつ進む</div>
         <div class="hint-actions">
-          <button type="button" id="hintReplayBtn">もう一度</button>
           <button type="button" id="hintCloseBtn">閉じる</button>
         </div>
       </div>
 
       <div id="hintStep" class="hint-step"></div>
 
+      <div class="hint-manual-nav">
+        <button type="button" id="hintPrevBtn">← 戻る</button>
+        <div id="hintStepCounter" class="hint-manual-counter">STEP 1 / 1</div>
+        <button type="button" id="hintNextBtn" class="primary">進む →</button>
+      </div>
+
       <div class="soroban-scroll">
         <div id="sorobanBoard" class="soroban-board"></div>
       </div>
 
       <div class="hint-legend">
-        黄色く光っている位の珠が、いま動いているところです。
+        「進む」を押すと次の珠の状態へ進みます。黄色い位が、いま考えているところです。
       </div>
     </div>
 
@@ -2582,6 +2614,9 @@ HTML = r"""
   const bgmBtn = $("#bgmBtn");
   const bgmName = $("#bgmName");
   const hintBtn = $("#hintBtn");
+  const hintPrevBtn = $("#hintPrevBtn");
+  const hintNextBtn = $("#hintNextBtn");
+  const hintStepCounter = $("#hintStepCounter");
   const abacusHint = $("#abacusHint");
   const hintStep = $("#hintStep");
   const sorobanBoard = $("#sorobanBoard");
@@ -3112,6 +3147,8 @@ HTML = r"""
   let hintRunToken = 0;
   let hintDigitCount = 1;
   let hintRods = [];
+  let hintManualSteps = [];
+  let hintManualIndex = 0;
 
   let voiceAnswerEnabled = false;
   let voiceRecognition = null;
@@ -4978,10 +5015,13 @@ HTML = r"""
     stopSorobanHintAnimation();
 
     hintNarrationActive = false;
+    hintManualSteps = [];
+    hintManualIndex = 0;
     refreshBgmVolume();
 
     abacusHint.classList.remove("show");
     hintStep.textContent = "";
+    hintStepCounter.textContent = "";
     sorobanBoard.innerHTML = "";
     hintRods = [];
 
@@ -5000,13 +5040,11 @@ HTML = r"""
   }
 
   function speakHintNarration(
-    text,
-    token,
-    onDone
+    message
   ) {
     if (
-      token !== hintRunToken ||
-      !hintNarrationActive
+      !hintNarrationActive ||
+      !message
     ) {
       return;
     }
@@ -5016,10 +5054,6 @@ HTML = r"""
       typeof SpeechSynthesisUtterance ===
         "undefined"
     ) {
-      setTimeout(
-        onDone,
-        5200
-      );
       return;
     }
 
@@ -5030,7 +5064,7 @@ HTML = r"""
 
     const utterance =
       new SpeechSynthesisUtterance(
-        text
+        message
       );
 
     utterance.lang = "ja-JP";
@@ -5045,32 +5079,109 @@ HTML = r"""
       utterance.voice = voice;
     }
 
-    let finished = false;
-
-    const done = () => {
+    utterance.onend = () => {
       if (
-        finished ||
-        token !== hintRunToken ||
         narrationToken !==
-          hintNarrationToken
+        hintNarrationToken
       ) {
         return;
       }
-
-      finished = true;
-
-      // 説明を聞いたあとも、珠の形を少し見る時間を取る。
-      setTimeout(
-        onDone,
-        1700
-      );
     };
 
-    utterance.onend = done;
-    utterance.onerror = done;
+    utterance.onerror =
+      utterance.onend;
 
     window.speechSynthesis.speak(
       utterance
+    );
+  }
+
+  function renderManualHintStep(
+    stepIndex,
+    speak = true
+  ) {
+    if (
+      !hintManualSteps.length ||
+      !abacusHint.classList.contains(
+        "show"
+      )
+    ) {
+      return;
+    }
+
+    const safeIndex =
+      Math.max(
+        0,
+        Math.min(
+          hintManualSteps.length - 1,
+          Number(stepIndex) || 0
+        )
+      );
+
+    hintManualIndex =
+      safeIndex;
+
+    const step =
+      hintManualSteps[
+        hintManualIndex
+      ];
+
+    // 「進む」「戻る」を押した瞬間だけ珠の状態を変える。
+    showSorobanNumber(
+      step.value,
+      step.activePlace
+    );
+
+    hintStep.textContent =
+      step.text;
+
+    hintStepCounter.textContent =
+      `STEP ${hintManualIndex + 1} / ${hintManualSteps.length}`;
+
+    hintPrevBtn.disabled =
+      hintManualIndex <= 0;
+
+    hintNextBtn.disabled =
+      hintManualIndex >=
+      hintManualSteps.length - 1;
+
+    hintNextBtn.textContent =
+      hintManualIndex >=
+        hintManualSteps.length - 1
+        ? "ここで完成"
+        : "進む →";
+
+    if (speak) {
+      speakHintNarration(
+        step.text
+      );
+    }
+  }
+
+  function moveManualHint(
+    direction
+  ) {
+    if (
+      !hintManualSteps.length
+    ) {
+      return;
+    }
+
+    const nextIndex =
+      hintManualIndex +
+      direction;
+
+    if (
+      nextIndex < 0 ||
+      nextIndex >=
+        hintManualSteps.length
+    ) {
+      return;
+    }
+
+    renderManualHintStep(
+      nextIndex,
+      true
     );
   }
 
@@ -5109,15 +5220,11 @@ HTML = r"""
 
     stopSorobanHintAnimation();
 
-    // 回答用マイクとヒント解説が同時に動かないようにする。
+    // ヒントの音声と回答用マイクを同時に動かさない。
     hintNarrationActive = true;
     clearVoiceRestartTimer();
     stopVoiceRecognition();
-
     refreshBgmVolume();
-
-    const token =
-      hintRunToken;
 
     buildSorobanBoard(
       digitCount
@@ -5127,82 +5234,17 @@ HTML = r"""
       "show"
     );
 
-    let stepIndex = 0;
+    hintManualSteps =
+      steps;
 
-    const showStep = () => {
-      if (
-        token !== hintRunToken ||
-        !abacusHint.classList.contains(
-          "show"
-        )
-      ) {
-        return;
-      }
+    hintManualIndex = 0;
 
-      const step =
-        steps[stepIndex];
-
-      hintStep.textContent =
-        step.text;
-
-      // まず説明を始め、少し遅れて珠を動かす。
-      // 子どもが「何をするか」を聞いてから珠を追えるようにする。
-      const moveTimer =
-        setTimeout(() => {
-          if (
-            token !== hintRunToken ||
-            !abacusHint.classList.contains(
-              "show"
-            )
-          ) {
-            return;
-          }
-
-          showSorobanNumber(
-            step.value,
-            step.activePlace
-          );
-        }, 900);
-
-      speakHintNarration(
-        step.text,
-        token,
-        () => {
-          clearTimeout(
-            moveTimer
-          );
-
-          // 万一音声が極端に短くても、珠は必ず表示する。
-          showSorobanNumber(
-            step.value,
-            step.activePlace
-          );
-
-          stepIndex += 1;
-
-          if (
-            stepIndex >=
-            steps.length
-          ) {
-            // 1周終わったら完成形を長めに見せてから最初へ。
-            stepIndex = 0;
-
-            setTimeout(
-              showStep,
-              2800
-            );
-            return;
-          }
-
-          setTimeout(
-            showStep,
-            900
-          );
-        }
-      );
-    };
-
-    showStep();
+    // 開いた直後はSTEP1で停止。
+    // 以後は「進む」「戻る」を押した時だけ珠が変わる。
+    renderManualHintStep(
+      0,
+      true
+    );
   }
 
   function getTargetBgmVolume() {
@@ -10058,8 +10100,12 @@ HTML = r"""
     runSorobanHint();
   });
 
-  $("#hintReplayBtn").addEventListener("click", () => {
-    runSorobanHint();
+  hintPrevBtn.addEventListener("click", () => {
+    moveManualHint(-1);
+  });
+
+  hintNextBtn.addEventListener("click", () => {
+    moveManualHint(1);
   });
 
   $("#hintCloseBtn").addEventListener("click", () => {
