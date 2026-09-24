@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V56-INLINE-CAMERA-SETUP-2026-09-24
+# VERSION: CLEAN-V57-COACHING-RANK-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V56-INLINE-CAMERA-SETUP"
+APP_VERSION = "CLEAN-V57-COACHING-RANK"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2007,6 +2007,135 @@ HTML = r"""
     font-size: 14px;
   }
 
+  .coaching-rank-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #ece7dc;
+  }
+
+  .coaching-rank-label {
+    color: #6e665d;
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .coaching-rank-title {
+    margin-top: 2px;
+    font-size: 24px;
+    font-weight: 1000;
+  }
+
+  .coaching-issues {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .coaching-issue-card {
+    padding: 13px;
+    border: 1px solid #d8d0c3;
+    border-radius: 15px;
+    background: #fff;
+  }
+
+  .coaching-issue-title {
+    font-size: 16px;
+    font-weight: 1000;
+  }
+
+  .coaching-issue-evidence {
+    margin-top: 4px;
+    color: #746c62;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .coaching-issue-explain {
+    margin-top: 8px;
+    padding: 10px 11px;
+    border-radius: 11px;
+    background: #f2eee6;
+    color: #514b44;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .coaching-issue-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 9px;
+  }
+
+  .coaching-issue-actions button {
+    min-height: 44px;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .app-rank-card {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #d8d0c3;
+    border-radius: 18px;
+    background: #fffdf8;
+  }
+
+  .app-rank-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .app-rank-title {
+    font-size: 15px;
+    font-weight: 1000;
+  }
+
+  .app-rank-badge {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #e8dfc5;
+    color: #614f1f;
+    font-size: 16px;
+    font-weight: 1000;
+  }
+
+  .app-rank-meter {
+    height: 10px;
+    margin-top: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e7e1d7;
+  }
+
+  .app-rank-meter-fill {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #7d8c72;
+    transition: width .25s ease;
+  }
+
+  .app-rank-note,
+  .app-rank-next {
+    margin-top: 8px;
+    color: #6c655c;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .hint-btn.recording-disabled {
+    opacity: .65;
+    cursor: default;
+  }
+
   .video-review-panel {
     margin-top: 18px;
     padding: 16px;
@@ -2125,6 +2254,10 @@ HTML = r"""
     }
 
     .video-question-item {
+      grid-template-columns: 1fr;
+    }
+
+    .coaching-issue-actions {
       grid-template-columns: 1fr;
     }
 
@@ -2472,6 +2605,23 @@ HTML = r"""
       <div id="settingAnzanSpeedValue" class="setting-value">ゆっくり</div>
       <button type="button" id="settingAnzanSpeedBtn">速度を変える</button>
     </article>
+  </div>
+
+  <div class="app-rank-card">
+    <div class="app-rank-head">
+      <div>
+        <div class="app-rank-title">現在のアプリ内階級</div>
+        <div id="appRankSub" class="app-rank-next">学習ログから自動計算します。</div>
+      </div>
+      <div id="appRankBadge" class="app-rank-badge">10級</div>
+    </div>
+    <div class="app-rank-meter">
+      <div id="appRankMeterFill" class="app-rank-meter-fill"></div>
+    </div>
+    <div id="appRankNext" class="app-rank-next"></div>
+    <div class="app-rank-note">
+      この級・段・名人はアプリ内の学習ログから算出する称号です。公式の珠算検定の級・段ではありません。
+    </div>
   </div>
 
   <div class="settings-save-note">
@@ -2931,30 +3081,29 @@ HTML = r"""
     </div>
 
     <div id="videoReviewPanel" class="video-review-panel hidden">
-      <div class="video-review-title">🎥 動画で振り返り</div>
+      <div class="video-review-title">今回の課題と次の練習</div>
       <div class="video-review-note">
-        問題表示・回答・正誤・珠ヒント使用を、同じスマホ内の録画時刻と同期しています。
-        現段階では手の動きそのものをAI判定せず、確認すべき問題をログから絞り込みます。
+        正誤・回答時間・珠ヒント使用などのログから、復習する内容を短く整理します。
+        動画の問題別再生は表示せず、解説と補習を優先します。
       </div>
+
+      <div class="coaching-rank-strip">
+        <div>
+          <div class="coaching-rank-label">現在のアプリ内階級</div>
+          <div id="resultRankTitle" class="coaching-rank-title">10級</div>
+        </div>
+        <div id="resultRankProgress" class="video-question-meta"></div>
+      </div>
+
+      <div id="coachingIssueList" class="coaching-issues"></div>
 
       <div id="videoReviewStatus" class="camera-status">
-        動画を準備しています…
+        学習ログはこの端末内に自動保存されます。
       </div>
 
-      <video
-        id="sessionReviewVideo"
-        class="video-review-player hidden"
-        controls
-        playsinline
-      ></video>
-
-      <div id="videoReviewSummary" class="video-review-summary"></div>
-      <div id="videoReviewPriority" class="video-priority"></div>
-      <div id="videoQuestionList" class="video-question-list"></div>
-
       <div class="video-review-actions">
-        <button type="button" id="downloadSessionVideoBtn">動画を保存</button>
-        <button type="button" id="downloadSessionLogBtn">分析ログを保存</button>
+        <button type="button" id="downloadSessionVideoBtn">録画動画を保存（任意）</button>
+        <button type="button" id="downloadSessionLogBtn">今回のログを保存</button>
       </div>
     </div>
 
@@ -3029,6 +3178,10 @@ HTML = r"""
   const settingBgmValue = $("#settingBgmValue");
   const settingLearningVoiceValue = $("#settingLearningVoiceValue");
   const settingAnzanSpeedValue = $("#settingAnzanSpeedValue");
+  const appRankBadge = $("#appRankBadge");
+  const appRankMeterFill = $("#appRankMeterFill");
+  const appRankSub = $("#appRankSub");
+  const appRankNext = $("#appRankNext");
 
   const workspace = $("#workspace");
   const questionCard = $("#questionCard");
@@ -3054,10 +3207,9 @@ HTML = r"""
   const resultRankingPanel = $("#resultRankingPanel");
   const videoReviewPanel = $("#videoReviewPanel");
   const videoReviewStatus = $("#videoReviewStatus");
-  const sessionReviewVideo = $("#sessionReviewVideo");
-  const videoReviewSummary = $("#videoReviewSummary");
-  const videoReviewPriority = $("#videoReviewPriority");
-  const videoQuestionList = $("#videoQuestionList");
+  const coachingIssueList = $("#coachingIssueList");
+  const resultRankTitle = $("#resultRankTitle");
+  const resultRankProgress = $("#resultRankProgress");
   const rankingModal = $("#rankingModal");
   const rankingModalTitle = $("#rankingModalTitle");
   const rankingModalList = $("#rankingModalList");
@@ -3563,6 +3715,8 @@ HTML = r"""
   const LEARNING_STORAGE_KEY = "soroban_learning_stats_v1";
   const RANKING_STORAGE_KEY = "soroban_score_rankings_v1";
   const CHALLENGE_COUNT_STORAGE_KEY = "soroban_challenge_counts_v1";
+  const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
+  const MAX_SESSION_HISTORY = 200;
   const MAX_RANKING_ENTRIES_PER_MODE = 100;
 
   // 最初の5問（1〜5問目）には苦手克服問題を入れない。
@@ -3605,11 +3759,15 @@ HTML = r"""
   let learningStats = loadLearningStats();
   let scoreRankings = loadScoreRankings();
   let challengeCounts = loadChallengeCounts();
+  let sessionHistory = loadSessionHistory();
   let sessionWeakAsked = 0;
   let sessionWeakCorrect = 0;
   let promotedMode = null;
   let sessionRankingSaved = false;
   let sessionChallengeRecorded = false;
+  let sessionHistorySaved = false;
+  let activeRemedialSkillId = null;
+  let questionTimingLog = [];
   let rankingModalMode = null;
 
   let inAppBackGuardReady = false;
@@ -4635,6 +4793,486 @@ HTML = r"""
       });
   }
 
+  const SKILL_DEFS = Object.freeze({
+    add_direct: {
+      title: "足し算の基本操作",
+      shortIssue: "足せる珠をそのまま動かす",
+      explanation: "同じ位に使える一珠があるときは、その珠をそのまま梁へ寄せます。まずは1〜4の珠の形を見て判断します。",
+      category: "add",
+      lessonIndex: 0,
+      baseMode: "ba1",
+      weight: 1.0
+    },
+    add_five: {
+      title: "5の補数",
+      shortIssue: "5の補数をすぐ出す",
+      explanation: "5をまたぐ足し算では、足したい数をそのまま足せないときに5の補数を使います。たとえば＋4は、先に−1してから＋5です。",
+      category: "add",
+      lessonIndex: 2,
+      baseMode: "ba1",
+      weight: 1.2
+    },
+    add_ten: {
+      title: "10の補数・繰り上がり",
+      shortIssue: "10の補数をすぐ出す",
+      explanation: "10をまたぐ足し算では、先に一の位から10の補数を引き、そのあと1つ上の位へ1を足します。8＋7なら−3→＋10です。",
+      category: "add",
+      lessonIndex: 3,
+      baseMode: "ba1",
+      weight: 1.5
+    },
+    add_multi: {
+      title: "複数桁の足し算",
+      shortIssue: "位ごとに分けて足す",
+      explanation: "2桁以上は大きい位から順に分けます。十の位を処理してから一の位を処理すると、繰り上がりの場所が分かりやすくなります。",
+      category: "add",
+      lessonIndex: 4,
+      baseMode: "ba2",
+      weight: 1.7
+    },
+    sub_direct: {
+      title: "引き算の基本操作",
+      shortIssue: "取れる珠をそのまま取る",
+      explanation: "引きたい数だけ珠があるときは、その珠を梁から離します。答えを新しく作るのではなく、今ある珠から取ります。",
+      category: "sub",
+      lessonIndex: 0,
+      baseMode: "bs1",
+      weight: 1.0
+    },
+    sub_five: {
+      title: "5の補数で引く",
+      shortIssue: "5の補数で引く",
+      explanation: "一珠だけでは引けないときは、先に−5して補数を足し戻します。7−4なら−5→＋1です。",
+      category: "sub",
+      lessonIndex: 2,
+      baseMode: "bs1",
+      weight: 1.2
+    },
+    sub_ten: {
+      title: "10の補数・繰り下がり",
+      shortIssue: "繰り下がりを安定させる",
+      explanation: "一の位だけで引けないときは、先に1つ上の位から1を引き、そのあと10の補数を一の位へ足し戻します。",
+      category: "sub",
+      lessonIndex: 3,
+      baseMode: "bs1",
+      weight: 1.5
+    },
+    sub_multi: {
+      title: "複数桁の引き算",
+      shortIssue: "位ごとに分けて引く",
+      explanation: "2桁以上は大きい位から順に引きます。下の位で足りないときだけ、繰り下がりを使います。",
+      category: "sub",
+      lessonIndex: 4,
+      baseMode: "bs2",
+      weight: 1.7
+    },
+    mul_basic: {
+      title: "九九",
+      shortIssue: "九九を安定させる",
+      explanation: "まず掛け算の答えを確実に出し、そのあと答えを十の位・一の位へ分けて珠に置きます。",
+      category: "mul",
+      lessonIndex: 0,
+      baseMode: "mm1",
+      weight: 1.7
+    },
+    mul_place: {
+      title: "掛け算の位取り",
+      shortIssue: "部分積の位をそろえる",
+      explanation: "2桁以上の掛け算では、十の位と一の位の部分積を分け、元の数字の位を保って足し合わせます。",
+      category: "mul",
+      lessonIndex: 1,
+      baseMode: "mm2",
+      weight: 2.1
+    },
+    div_basic: {
+      title: "割り算の基本",
+      shortIssue: "割り算の答えを安定させる",
+      explanation: "割り算は、割る数を何倍すると元の数になるかを考えます。まず小さい整数の割り算を安定させます。",
+      category: "div",
+      lessonIndex: 0,
+      baseMode: "md1",
+      weight: 1.8
+    },
+    div_place: {
+      title: "割り算の位取り",
+      shortIssue: "大きい数の割り算を位で考える",
+      explanation: "大きい数の割り算では、上の位から商を考え、答えを正しい位へ置きます。",
+      category: "div",
+      lessonIndex: 1,
+      baseMode: "md2",
+      weight: 2.2
+    }
+  });
+
+  const APP_RANKS = Object.freeze([
+    { name: "10級", min: 0 },
+    { name: "9級", min: 5 },
+    { name: "8級", min: 10 },
+    { name: "7級", min: 16 },
+    { name: "6級", min: 23 },
+    { name: "5級", min: 31 },
+    { name: "4級", min: 40 },
+    { name: "3級", min: 50 },
+    { name: "2級", min: 60 },
+    { name: "1級", min: 70 },
+    { name: "初段", min: 78 },
+    { name: "二段", min: 85 },
+    { name: "三段", min: 91 },
+    { name: "名人", min: 96 }
+  ]);
+
+  function loadSessionHistory() {
+    try {
+      const raw = localStorage.getItem(
+        SESSION_HISTORY_STORAGE_KEY
+      );
+
+      if (!raw) {
+        return [];
+      }
+
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.slice(-MAX_SESSION_HISTORY)
+        : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveSessionHistory() {
+    try {
+      sessionHistory = sessionHistory
+        .slice(-MAX_SESSION_HISTORY);
+
+      localStorage.setItem(
+        SESSION_HISTORY_STORAGE_KEY,
+        JSON.stringify(sessionHistory)
+      );
+    } catch (error) {}
+  }
+
+  function digitLength(value) {
+    return String(
+      Math.abs(
+        Math.floor(Number(value) || 0)
+      )
+    ).length;
+  }
+
+  function hasAdditionCarry(a, b) {
+    let x = Math.floor(Math.abs(a));
+    let y = Math.floor(Math.abs(b));
+    let carry = 0;
+
+    while (x > 0 || y > 0 || carry > 0) {
+      const dx = x % 10;
+      const dy = y % 10;
+      const sum = dx + dy + carry;
+
+      if (sum >= 10) {
+        return true;
+      }
+
+      carry = sum >= 10 ? 1 : 0;
+      x = Math.floor(x / 10);
+      y = Math.floor(y / 10);
+    }
+
+    return false;
+  }
+
+  function hasSubtractionBorrow(a, b) {
+    let x = Math.floor(Math.abs(a));
+    let y = Math.floor(Math.abs(b));
+    let borrow = 0;
+
+    while (x > 0 || y > 0) {
+      let dx = (x % 10) - borrow;
+      const dy = y % 10;
+
+      if (dx < dy) {
+        return true;
+      }
+
+      borrow = dx < dy ? 1 : 0;
+      x = Math.floor(x / 10);
+      y = Math.floor(y / 10);
+    }
+
+    return false;
+  }
+
+  function skillForQuestion(q) {
+    if (!q) {
+      return "add_direct";
+    }
+
+    if (q.op === "＋") {
+      if (
+        digitLength(q.a) > 1 ||
+        digitLength(q.b) > 1
+      ) {
+        return "add_multi";
+      }
+
+      if (q.a + q.b >= 10) {
+        return "add_ten";
+      }
+
+      if (
+        q.a < 5 &&
+        q.b < 5 &&
+        q.a + q.b >= 5
+      ) {
+        return "add_five";
+      }
+
+      return "add_direct";
+    }
+
+    if (q.op === "－") {
+      if (
+        digitLength(q.a) > 1 ||
+        digitLength(q.b) > 1
+      ) {
+        return hasSubtractionBorrow(
+          q.a,
+          q.b
+        )
+          ? "sub_multi"
+          : "sub_direct";
+      }
+
+      if (
+        q.a >= 5 &&
+        q.b < 5 &&
+        (q.a % 5) < q.b
+      ) {
+        return "sub_five";
+      }
+
+      return "sub_direct";
+    }
+
+    if (q.op === "×") {
+      return (
+        q.a <= 9 &&
+        q.b <= 9
+      )
+        ? "mul_basic"
+        : "mul_place";
+    }
+
+    if (q.op === "÷") {
+      return (
+        q.a <= 81 &&
+        q.b <= 9
+      )
+        ? "div_basic"
+        : "div_place";
+    }
+
+    return "add_direct";
+  }
+
+  function collectSkillEvidence() {
+    const evidence = {};
+
+    Object.keys(SKILL_DEFS).forEach(
+      (skillId) => {
+        evidence[skillId] = {
+          attempts: 0,
+          correct: 0,
+          hints: 0
+        };
+      }
+    );
+
+    Object.values(
+      learningStats.problems || {}
+    ).forEach((stat) => {
+      const skillId =
+        skillForQuestion(stat);
+
+      if (!evidence[skillId]) {
+        return;
+      }
+
+      evidence[skillId].attempts +=
+        Number(stat.attempts) || 0;
+
+      evidence[skillId].correct +=
+        Number(stat.correct) || 0;
+    });
+
+    sessionHistory.forEach((session) => {
+      (session.questions || [])
+        .forEach((question) => {
+          const skillId =
+            question.skillId ||
+            skillForQuestion(question);
+
+          if (
+            evidence[skillId] &&
+            question.hintUsed
+          ) {
+            evidence[skillId].hints += 1;
+          }
+        });
+    });
+
+    return evidence;
+  }
+
+  function calculateAppRank() {
+    const evidence =
+      collectSkillEvidence();
+
+    let earned = 0;
+    let possible = 0;
+    let attemptedSkills = 0;
+
+    Object.entries(SKILL_DEFS)
+      .forEach(([skillId, def]) => {
+        const e = evidence[skillId];
+        const weight = def.weight || 1;
+
+        possible += 100 * weight;
+
+        if (!e || e.attempts <= 0) {
+          return;
+        }
+
+        attemptedSkills += 1;
+
+        const accuracy =
+          Math.max(
+            0,
+            Math.min(
+              1,
+              e.correct /
+                Math.max(1, e.attempts)
+            )
+          );
+
+        const evidenceFactor =
+          Math.min(
+            1,
+            e.attempts / 6
+          );
+
+        const hintRate =
+          Math.min(
+            1,
+            e.hints /
+              Math.max(1, e.attempts)
+          );
+
+        const mastery =
+          Math.max(
+            0,
+            accuracy *
+              evidenceFactor *
+              (1 - hintRate * 0.20)
+          );
+
+        earned +=
+          mastery * 100 * weight;
+      });
+
+    const percent =
+      possible > 0
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              earned / possible * 100
+            )
+          )
+        : 0;
+
+    let current = APP_RANKS[0];
+    let next = null;
+
+    APP_RANKS.forEach((rank, index) => {
+      if (percent >= rank.min) {
+        current = rank;
+        next =
+          APP_RANKS[index + 1] ||
+          null;
+      }
+    });
+
+    let nextProgress = 100;
+
+    if (next) {
+      const span =
+        Math.max(
+          1,
+          next.min - current.min
+        );
+
+      nextProgress =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            (percent - current.min) /
+              span * 100
+          )
+        );
+    }
+
+    return {
+      name: current.name,
+      percent,
+      nextName:
+        next?.name || null,
+      nextProgress,
+      attemptedSkills
+    };
+  }
+
+  function updateRankUi() {
+    const rank = calculateAppRank();
+
+    if (appRankBadge) {
+      appRankBadge.textContent = rank.name;
+    }
+
+    if (appRankMeterFill) {
+      appRankMeterFill.style.width =
+        `${rank.nextProgress.toFixed(1)}%`;
+    }
+
+    if (appRankSub) {
+      appRankSub.textContent =
+        `習得指標 ${rank.percent.toFixed(1)} / 100・評価した知識 ${rank.attemptedSkills}項目`;
+    }
+
+    if (appRankNext) {
+      appRankNext.textContent =
+        rank.nextName
+          ? `次の称号：${rank.nextName}`
+          : "現在、最高称号です。";
+    }
+
+    if (resultRankTitle) {
+      resultRankTitle.textContent =
+        rank.name;
+    }
+
+    if (resultRankProgress) {
+      resultRankProgress.textContent =
+        rank.nextName
+          ? `次：${rank.nextName}`
+          : "最高称号";
+    }
+
+    return rank;
+  }
+
   function loadLearningStats() {
     try {
       const raw = localStorage.getItem(LEARNING_STORAGE_KEY);
@@ -4692,6 +5330,63 @@ HTML = r"""
     }
 
     return learningStats.problems[key];
+  }
+
+  function ensureQuestionTiming(
+    questionIndex
+  ) {
+    if (!questionTimingLog[questionIndex]) {
+      questionTimingLog[questionIndex] = {
+        startPerf: null,
+        responseMs: null,
+        hintCount: 0
+      };
+    }
+
+    return questionTimingLog[questionIndex];
+  }
+
+  function markQuestionDisplayed(
+    questionIndex
+  ) {
+    const timing =
+      ensureQuestionTiming(
+        questionIndex
+      );
+
+    if (timing.startPerf === null) {
+      timing.startPerf =
+        performance.now();
+    }
+  }
+
+  function markQuestionAnswered(
+    questionIndex
+  ) {
+    const timing =
+      ensureQuestionTiming(
+        questionIndex
+      );
+
+    if (timing.startPerf !== null) {
+      timing.responseMs =
+        Math.max(
+          0,
+          performance.now() -
+            timing.startPerf
+        );
+    }
+  }
+
+  function markQuestionHintUsed(
+    questionIndex
+  ) {
+    const timing =
+      ensureQuestionTiming(
+        questionIndex
+      );
+
+    timing.hintCount += 1;
   }
 
   function recordAnswer(mode, q, ok) {
@@ -4792,7 +5487,194 @@ HTML = r"""
     return statToWeakQuestion(source);
   }
 
+  function makeFinalQuestion(
+    a,
+    op,
+    b
+  ) {
+    const q = {
+      a,
+      op,
+      b,
+      answer: calculate(a, op, b),
+      isWeakness: false,
+      weaknessKey: null
+    };
+
+    if (!isValidQuestion(q)) {
+      throw new Error(
+        `補習問題生成失敗: ${a} ${op} ${b}`
+      );
+    }
+
+    return q;
+  }
+
+  function makeRemedialQuestion(
+    skillId
+  ) {
+    for (
+      let tries = 0;
+      tries < 200;
+      tries += 1
+    ) {
+      let q = null;
+
+      if (skillId === "add_direct") {
+        const a = randInt(1, 3);
+        const b = randInt(1, Math.max(1, 4 - a));
+        q = makeFinalQuestion(a, "＋", b);
+      } else if (skillId === "add_five") {
+        const a = randInt(1, 4);
+        const b = randInt(1, 4);
+
+        if (a + b >= 5 && a + b <= 8) {
+          q = makeFinalQuestion(a, "＋", b);
+        }
+      } else if (skillId === "add_ten") {
+        const a = randInt(6, 9);
+        const b = randInt(2, 9);
+
+        if (a + b >= 10) {
+          q = makeFinalQuestion(a, "＋", b);
+        }
+      } else if (skillId === "add_multi") {
+        const a = randInt(20, 69);
+        const b = randInt(10, 29);
+
+        if (
+          a + b <= 99 &&
+          (a % 10) + (b % 10) >= 10
+        ) {
+          q = makeFinalQuestion(a, "＋", b);
+        }
+      } else if (skillId === "sub_direct") {
+        const a = randInt(3, 9);
+        const b = randInt(1, Math.min(4, a - 1));
+
+        if (
+          !(
+            a >= 5 &&
+            b < 5 &&
+            (a % 5) < b
+          )
+        ) {
+          q = makeFinalQuestion(a, "－", b);
+        }
+      } else if (skillId === "sub_five") {
+        const a = randInt(5, 9);
+        const b = randInt(1, 4);
+
+        if ((a % 5) < b) {
+          q = makeFinalQuestion(a, "－", b);
+        }
+      } else if (skillId === "sub_ten") {
+        const ones = randInt(0, 8);
+        const a = 10 + ones;
+        const b = randInt(
+          ones + 1,
+          9
+        );
+        q = makeFinalQuestion(a, "－", b);
+      } else if (skillId === "sub_multi") {
+        const a = randInt(30, 99);
+        const b = randInt(10, a - 1);
+
+        if (
+          (a % 10) < (b % 10)
+        ) {
+          q = makeFinalQuestion(a, "－", b);
+        }
+      } else if (skillId === "mul_basic") {
+        q = makeFinalQuestion(
+          randInt(1, 9),
+          "×",
+          randInt(1, 9)
+        );
+      } else if (skillId === "mul_place") {
+        q = makeFinalQuestion(
+          randInt(10, 99),
+          "×",
+          randInt(2, 9)
+        );
+      } else if (skillId === "div_basic") {
+        const divisor = randInt(2, 9);
+        const quotient = randInt(1, 9);
+        q = makeFinalQuestion(
+          divisor * quotient,
+          "÷",
+          divisor
+        );
+      } else if (skillId === "div_place") {
+        const divisor = randInt(2, 9);
+        const quotient = randInt(12, 99);
+        q = makeFinalQuestion(
+          divisor * quotient,
+          "÷",
+          divisor
+        );
+      }
+
+      if (q) {
+        q.remedialSkillId = skillId;
+        return q;
+      }
+    }
+
+    return makeOneQuestion(
+      SKILL_DEFS[skillId]?.baseMode ||
+      currentMode ||
+      "ba1"
+    );
+  }
+
+  function startRemedialPractice(
+    skillId
+  ) {
+    const def =
+      SKILL_DEFS[skillId];
+
+    if (!def) {
+      return;
+    }
+
+    // 補習は録画なし・時間制限なしで、考え方の定着を優先。
+    resetSessionVideoData();
+
+    startMode(
+      def.baseMode,
+      {
+        remedialSkillId:
+          skillId
+      }
+    );
+  }
+
+  function openSkillLesson(
+    skillId
+  ) {
+    const def =
+      SKILL_DEFS[skillId];
+
+    if (!def) {
+      return;
+    }
+
+    showLearningHome();
+
+    openLearningLesson(
+      def.category,
+      def.lessonIndex
+    );
+  }
+
   function makeQuestionForIndex(questionIndex, mode) {
+    if (activeRemedialSkillId) {
+      return makeRemedialQuestion(
+        activeRemedialSkillId
+      );
+    }
+
     // 1〜5問目は必ず通常問題。
     if (questionIndex < 5) {
       const q = makeOneQuestion(mode);
@@ -5657,6 +6539,14 @@ HTML = r"""
   }
 
   function runSorobanHint() {
+    if (sessionVideoActive) {
+      feedback.textContent =
+        "撮影中は珠ヒントを使わず、終了後の解説・補習で復習します。";
+      feedback.className =
+        "feedback";
+      return;
+    }
+
     if (
       index >= TOTAL_QUESTIONS ||
       !questions[index]
@@ -5666,6 +6556,10 @@ HTML = r"""
 
     const q =
       questions[index];
+
+    markQuestionHintUsed(
+      index
+    );
 
     recordVideoHintUse(
       index
@@ -9062,6 +9956,8 @@ HTML = r"""
 
     settingAnzanSpeedValue.textContent =
       anzanSpeedInfo().label;
+
+    updateRankUi();
   }
 
   function cycleAnzanSpeed() {
@@ -9226,15 +10122,6 @@ HTML = r"""
     sessionVideoUrl = null;
     sessionVideoBlob = null;
 
-    if (sessionReviewVideo) {
-      sessionReviewVideo.pause();
-      sessionReviewVideo.removeAttribute(
-        "src"
-      );
-      try {
-        sessionReviewVideo.load();
-      } catch (error) {}
-    }
   }
 
   function resetSessionVideoData() {
@@ -9258,6 +10145,15 @@ HTML = r"""
     videoReviewPanel.classList.add(
       "hidden"
     );
+
+    if (hintBtn) {
+      hintBtn.disabled = false;
+      hintBtn.classList.remove(
+        "recording-disabled"
+      );
+      hintBtn.textContent =
+        "珠ヒントを見る（手動＋音声）";
+    }
   }
 
   function chooseSessionVideoMimeType() {
@@ -9595,17 +10491,10 @@ HTML = r"""
             blob
           );
 
-        sessionReviewVideo.src =
-          sessionVideoUrl;
-
-        sessionReviewVideo.classList.remove(
-          "hidden"
-        );
-
         videoReviewStatus.textContent =
-          "録画と問題ログの同期が完了しました。問題を選ぶと、その場面へ移動します。";
+          "録画が完了しました。学習ログは端末内に自動保存されています。";
 
-        renderVideoReviewPanel();
+        renderPostSessionCoaching();
       };
 
     try {
@@ -9999,12 +10888,308 @@ HTML = r"""
     ) / 2;
   }
 
-  function renderVideoReviewPanel() {
+  function buildCurrentSessionRecord(
+    challengeScore,
+    timeup
+  ) {
+    const questionsForLog =
+      answers.map((entry, i) => {
+        const timing =
+          questionTimingLog[i] || {};
+
+        const videoMark =
+          sessionQuestionMarks[i] || {};
+
+        const skillId =
+          skillForQuestion(
+            entry.q
+          );
+
+        return {
+          index: i,
+          a: entry.q.a,
+          b: entry.q.b,
+          op: entry.q.op,
+          answer: entry.q.answer,
+          user: entry.user,
+          ok: Boolean(entry.ok),
+          skillId,
+          isWeakness:
+            Boolean(
+              entry.q.isWeakness
+            ),
+          responseMs:
+            Number(
+              timing.responseMs ??
+              (
+                videoMark.answerMs !== undefined &&
+                videoMark.startMs !== undefined &&
+                videoMark.answerMs !== null &&
+                videoMark.startMs !== null
+                  ? videoMark.answerMs -
+                    videoMark.startMs
+                  : 0
+              )
+            ) || 0,
+          hintUsed:
+            (Number(timing.hintCount) || 0) > 0 ||
+            Boolean(videoMark.hintUsed),
+          hintCount:
+            Math.max(
+              Number(timing.hintCount) || 0,
+              Number(videoMark.hintCount) || 0
+            )
+        };
+      });
+
+    const record = {
+      id:
+        `${Date.now()}-` +
+        Math.random()
+          .toString(36)
+          .slice(2, 9),
+      finishedAt:
+        new Date().toISOString(),
+      mode:
+        currentMode,
+      modeTitle:
+        activeRemedialSkillId
+          ? `補習｜${SKILL_DEFS[activeRemedialSkillId]?.title || ""}`
+          : modeInfo[currentMode]?.title,
+      remedialSkillId:
+        activeRemedialSkillId,
+      timeup:
+        Boolean(timeup),
+      correctCount:
+        Number(score) || 0,
+      totalQuestions:
+        TOTAL_QUESTIONS,
+      maxStreak:
+        Number(maxCorrectStreak) || 0,
+      finalScore:
+        Number(
+          challengeScore?.finalScore
+        ) || 0,
+      videoUsed:
+        sessionVideoStartedAtPerf !==
+          null,
+      videoDurationMs:
+        Number(
+          sessionVideoDurationMs
+        ) || 0,
+      questions:
+        questionsForLog,
+      issues: []
+    };
+
+    record.issues =
+      analyzeSessionIssues(record);
+
+    return record;
+  }
+
+  function medianPositive(values) {
+    const clean = values
+      .map(Number)
+      .filter(
+        (value) =>
+          Number.isFinite(value) &&
+          value > 0
+      )
+      .sort(
+        (a, b) => a - b
+      );
+
+    if (!clean.length) {
+      return 0;
+    }
+
+    const mid =
+      Math.floor(clean.length / 2);
+
+    return clean.length % 2
+      ? clean[mid]
+      : (
+          clean[mid - 1] +
+          clean[mid]
+        ) / 2;
+  }
+
+  function analyzeSessionIssues(
+    record
+  ) {
+    const responseTimes =
+      (record.questions || [])
+        .map((q) => q.responseMs)
+        .filter((ms) => ms > 0);
+
+    const medianMs =
+      medianPositive(
+        responseTimes
+      );
+
+    const slowThreshold =
+      Math.max(
+        7000,
+        medianMs > 0
+          ? medianMs * 1.45
+          : 7000
+      );
+
+    const bySkill = {};
+
+    (record.questions || [])
+      .forEach((question) => {
+        const skillId =
+          question.skillId ||
+          skillForQuestion(question);
+
+        if (!bySkill[skillId]) {
+          bySkill[skillId] = {
+            skillId,
+            count: 0,
+            wrong: 0,
+            slow: 0,
+            hints: 0,
+            score: 0,
+            examples: []
+          };
+        }
+
+        const item =
+          bySkill[skillId];
+
+        item.count += 1;
+
+        if (!question.ok) {
+          item.wrong += 1;
+          item.score += 3;
+        }
+
+        if (question.hintUsed) {
+          item.hints += 1;
+          item.score += 2;
+        }
+
+        if (
+          question.responseMs >
+          slowThreshold
+        ) {
+          item.slow += 1;
+          item.score += 1;
+        }
+
+        if (
+          !question.ok ||
+          question.hintUsed ||
+          question.responseMs >
+            slowThreshold
+        ) {
+          if (item.examples.length < 2) {
+            item.examples.push(
+              `${question.a}${question.op}${question.b}`
+            );
+          }
+        }
+      });
+
+    const issues =
+      Object.values(bySkill)
+        .filter((item) => item.score > 0)
+        .sort(
+          (a, b) =>
+            b.score - a.score
+        )
+        .slice(0, 3)
+        .map((item) => {
+          const def =
+            SKILL_DEFS[item.skillId];
+
+          const reasons = [];
+
+          if (item.wrong > 0) {
+            reasons.push(
+              `間違い${item.wrong}問`
+            );
+          }
+
+          if (item.slow > 0) {
+            reasons.push(
+              `時間が長い${item.slow}問`
+            );
+          }
+
+          if (item.hints > 0) {
+            reasons.push(
+              `ヒント使用${item.hints}問`
+            );
+          }
+
+          const examples =
+            item.examples.length
+              ? `（${item.examples.join("、")}）`
+              : "";
+
+          return {
+            skillId:
+              item.skillId,
+            title:
+              def?.shortIssue ||
+              def?.title ||
+              "計算の考え方を復習",
+            evidence:
+              `${reasons.join("・")}${examples}`,
+            explanation:
+              def?.explanation ||
+              "同じ種類の問題をゆっくり確認してから、補習問題で定着を確認します。"
+          };
+        });
+
+    if (!issues.length) {
+      return [{
+        skillId: null,
+        title:
+          "今回は大きなつまずきなし",
+        evidence:
+          "正誤・回答時間・ヒント利用のログでは、大きな課題は見つかりませんでした。",
+        explanation:
+          "同じ考え方を別の数字でも安定して使えるか、次回も確認します。"
+      }];
+    }
+
+    return issues;
+  }
+
+  function saveCompletedSession(
+    record
+  ) {
     if (
-      sessionVideoStartedAtPerf ===
-      null &&
-      !sessionVideoUrl
+      sessionHistorySaved ||
+      !record
     ) {
+      return;
+    }
+
+    sessionHistory.push(record);
+    sessionHistory = sessionHistory
+      .slice(-MAX_SESSION_HISTORY);
+
+    saveSessionHistory();
+    sessionHistorySaved = true;
+    updateRankUi();
+  }
+
+  function renderPostSessionCoaching(
+    record = null
+  ) {
+    const target =
+      record ||
+      sessionHistory[
+        sessionHistory.length - 1
+      ] ||
+      null;
+
+    if (!target) {
       videoReviewPanel.classList.add(
         "hidden"
       );
@@ -10015,269 +11200,144 @@ HTML = r"""
       "hidden"
     );
 
-    if (!sessionVideoUrl) {
-      sessionReviewVideo.classList.add(
-        "hidden"
-      );
+    updateRankUi();
 
-      videoReviewStatus.textContent =
-        "録画を停止して動画を準備しています…";
-    } else {
-      sessionReviewVideo.classList.remove(
-        "hidden"
-      );
-    }
+    coachingIssueList.innerHTML = "";
 
-    const marks =
-      sessionQuestionMarks
-        .filter(Boolean);
-
-    const answered =
-      marks.filter(
-        (mark) =>
-          mark.answerMs !== null &&
-          mark.startMs !== null
-      );
-
-    const responseTimes =
-      answered.map(
-        (mark) =>
-          Math.max(
-            0,
-            mark.answerMs -
-              mark.startMs
-          )
-      );
-
-    const averageMs =
-      responseTimes.length
-        ? responseTimes.reduce(
-            (sum, value) =>
-              sum + value,
-            0
-          ) /
-          responseTimes.length
-        : 0;
-
-    const medianMs =
-      medianNumber(
-        responseTimes
-      );
-
-    const slowThresholdMs =
-      Math.max(
-        8000,
-        medianMs * 1.6
-      );
-
-    const wrongCount =
-      marks.filter(
-        (mark) =>
-          mark.ok === false
-      ).length;
-
-    const hintCount =
-      marks.filter(
-        (mark) =>
-          mark.hintUsed
-      ).length;
-
-    videoReviewSummary.innerHTML = `
-      <div class="video-summary-card">
-        <div class="video-summary-value">${responseTimes.length ? (averageMs / 1000).toFixed(1) : "-"}</div>
-        <div class="video-summary-label">平均回答時間（秒）</div>
-      </div>
-      <div class="video-summary-card">
-        <div class="video-summary-value">${wrongCount}</div>
-        <div class="video-summary-label">間違い</div>
-      </div>
-      <div class="video-summary-card">
-        <div class="video-summary-value">${hintCount}</div>
-        <div class="video-summary-label">珠ヒント使用問題</div>
-      </div>
-    `;
-
-    const priority =
-      marks
-        .filter((mark) => {
-          const responseMs =
-            (
-              mark.startMs !== null &&
-              mark.answerMs !== null
-            )
-              ? mark.answerMs -
-                mark.startMs
-              : 0;
-
-          return (
-            mark.ok === false ||
-            mark.hintUsed ||
-            responseMs >
-              slowThresholdMs
-          );
-        })
-        .slice(0, 4);
-
-    if (priority.length) {
-      const labels =
-        priority.map(
-          (mark) =>
-            `Q${mark.index + 1}「${mark.formula}」`
-        );
-
-      videoReviewPriority.textContent =
-        `先に確認する候補：${labels.join("、")}。間違い・珠ヒント使用・回答時間が長い問題を優先しています。`;
-    } else {
-      videoReviewPriority.textContent =
-        "操作ログ上は大きなつまずき候補はありません。動画では、正解した問題でも珠を動かす順番や迷いがないか確認できます。";
-    }
-
-    videoQuestionList.innerHTML =
-      "";
-
-    marks.forEach(
-      (mark) => {
-        const item =
+    (target.issues || [])
+      .forEach((issue) => {
+        const card =
           document.createElement(
             "div"
           );
 
-        item.className =
-          `video-question-item ${
-            mark.ok === false
-              ? "wrong"
-              : "correct"
-          }`;
+        card.className =
+          "coaching-issue-card";
 
-        const main =
+        const title =
           document.createElement(
             "div"
           );
 
-        main.className =
-          "video-question-main";
+        title.className =
+          "coaching-issue-title";
 
-        const responseMs =
-          (
-            mark.startMs !== null &&
-            mark.answerMs !== null
-          )
-            ? Math.max(
-                0,
-                mark.answerMs -
-                  mark.startMs
-              )
-            : null;
+        title.textContent =
+          `課題：${issue.title}`;
 
-        const statusText =
-          mark.ok === null
-            ? "未回答"
-            : mark.ok
-              ? "正解"
-              : "不正解";
-
-        const hintText =
-          mark.hintUsed
-            ? `・珠ヒント ${mark.hintCount}回`
-            : "";
-
-        main.innerHTML = `
-          <strong>Q${mark.index + 1}　${mark.formula} ＝ ${mark.expected}</strong><br>
-          <span class="video-question-meta">
-            ${statusText}・回答 ${mark.user ?? "-"}・回答時間 ${formatVideoSeconds(responseMs)}${hintText}
-          </span>
-        `;
-
-        const button =
+        const evidence =
           document.createElement(
-            "button"
+            "div"
           );
 
-        button.type =
-          "button";
+        evidence.className =
+          "coaching-issue-evidence";
 
-        button.textContent =
-          "▶ この問題を見る";
+        evidence.textContent =
+          issue.evidence || "";
 
-        button.disabled =
-          !sessionVideoUrl ||
-          mark.startMs === null;
+        const explain =
+          document.createElement(
+            "div"
+          );
 
-        button.addEventListener(
-          "click",
-          () => {
-            playVideoQuestionClip(
-              mark.index
+        explain.className =
+          "coaching-issue-explain";
+
+        explain.textContent =
+          issue.explanation || "";
+
+        card.appendChild(title);
+        card.appendChild(evidence);
+        card.appendChild(explain);
+
+        if (
+          issue.skillId &&
+          SKILL_DEFS[issue.skillId]
+        ) {
+          const actions =
+            document.createElement(
+              "div"
             );
-          }
-        );
 
-        item.appendChild(
-          main
-        );
+          actions.className =
+            "coaching-issue-actions";
 
-        item.appendChild(
-          button
-        );
+          const lessonButton =
+            document.createElement(
+              "button"
+            );
 
-        videoQuestionList.appendChild(
-          item
+          lessonButton.type =
+            "button";
+
+          lessonButton.textContent =
+            "解説を見る";
+
+          lessonButton.addEventListener(
+            "click",
+            () => {
+              openSkillLesson(
+                issue.skillId
+              );
+            }
+          );
+
+          const practiceButton =
+            document.createElement(
+              "button"
+            );
+
+          practiceButton.type =
+            "button";
+
+          practiceButton.className =
+            "primary";
+
+          practiceButton.textContent =
+            "補習問題をやる";
+
+          practiceButton.addEventListener(
+            "click",
+            () => {
+              startRemedialPractice(
+                issue.skillId
+              );
+            }
+          );
+
+          actions.appendChild(
+            lessonButton
+          );
+
+          actions.appendChild(
+            practiceButton
+          );
+
+          card.appendChild(
+            actions
+          );
+        }
+
+        coachingIssueList.appendChild(
+          card
         );
-      }
-    );
+      });
+
+    videoReviewStatus.textContent =
+      target.videoUsed
+        ? "学習ログは端末内へ自動保存済みです。録画動画は必要な場合だけ保存できます。"
+        : "学習ログは端末内へ自動保存済みです。";
 
     $("#downloadSessionVideoBtn").disabled =
       !sessionVideoUrl;
 
     $("#downloadSessionLogBtn").disabled =
-      marks.length === 0;
+      false;
   }
 
-  function playVideoQuestionClip(
-    questionIndex
-  ) {
-    if (
-      !sessionVideoUrl
-    ) {
-      return;
-    }
-
-    const mark =
-      getVideoQuestionMark(
-        questionIndex
-      );
-
-    if (
-      !mark ||
-      mark.startMs === null
-    ) {
-      return;
-    }
-
-    const startSec =
-      Math.max(
-        0,
-        mark.startMs / 1000 -
-          0.7
-      );
-
-    const rawEndMs =
-      mark.answerMs ??
-      mark.endMs ??
-      (
-        mark.startMs +
-        8000
-      );
-
-    reviewClipEndSec =
-      rawEndMs / 1000 +
-      1.0;
-
-    sessionReviewVideo.currentTime =
-      startSec;
-
-    sessionReviewVideo.play()
-      .catch(() => {});
+  function renderVideoReviewPanel() {
+    renderPostSessionCoaching();
   }
 
   function downloadSessionVideo() {
@@ -10314,27 +11374,16 @@ HTML = r"""
   }
 
   function downloadSessionLog() {
-    const payload = {
-      appVersion:
-        APP_VERSION,
-      mode:
-        sessionVideoMode,
-      modeTitle:
-        sessionVideoMode
-          ? modeInfo[
-              sessionVideoMode
-            ]?.title
-          : null,
-      startedAt:
-        sessionVideoStartedAtIso,
-      durationMs:
-        sessionVideoDurationMs,
-      videoMimeType:
-        sessionVideoMimeType,
-      questions:
-        sessionQuestionMarks
-          .filter(Boolean)
-    };
+    const payload =
+      sessionHistory[
+        sessionHistory.length - 1
+      ] || {
+        appVersion:
+          APP_VERSION,
+        mode:
+          currentMode,
+        questions: []
+      };
 
     const blob =
       new Blob(
@@ -10361,11 +11410,9 @@ HTML = r"""
         "a"
       );
 
-    link.href =
-      url;
-
+    link.href = url;
     link.download =
-      `soroban_analysis_${sessionVideoMode || "challenge"}_${Date.now()}.json`;
+      `soroban_analysis_${payload.mode || "challenge"}_${Date.now()}.json`;
 
     document.body.appendChild(
       link
@@ -10376,13 +11423,12 @@ HTML = r"""
 
     setTimeout(
       () => {
-        URL.revokeObjectURL(
-          url
-        );
+        URL.revokeObjectURL(url);
       },
       1000
     );
   }
+
 
   function toggleTimeLimit() {
     timeLimitEnabled =
@@ -10392,7 +11438,10 @@ HTML = r"""
     updateTimeLimitUi();
   }
 
-  function startMode(mode) {
+  function startMode(
+    mode,
+    options = {}
+  ) {
     scoreAnimationToken += 1;
 
     // 「はじめる」のクリック中にWebAudioを先に起動。
@@ -10401,7 +11450,13 @@ HTML = r"""
     bgmEngine.ensureRunning();
 
     currentMode = mode;
+    activeRemedialSkillId =
+      options.remedialSkillId ||
+      null;
+
     questions = [];
+    questionTimingLog = [];
+    sessionHistorySaved = false;
 
     if (
       !sessionVideoActive
@@ -10449,8 +11504,25 @@ HTML = r"""
     );
     results.classList.remove("show");
 
-    $("#statusTitle").textContent = modeInfo[mode].title;
+    $("#statusTitle").textContent =
+      activeRemedialSkillId
+        ? `補習｜${SKILL_DEFS[activeRemedialSkillId].title}`
+        : modeInfo[mode].title;
+
     $("#streak").textContent = "連続正解 0";
+
+    hintBtn.disabled =
+      sessionVideoActive;
+
+    hintBtn.classList.toggle(
+      "recording-disabled",
+      sessionVideoActive
+    );
+
+    hintBtn.textContent =
+      sessionVideoActive
+        ? "撮影中：終了後に復習"
+        : "珠ヒントを見る（手動＋音声）";
 
     voiceAnswerEnabled =
       preferredVoiceAnswerEnabled;
@@ -10470,7 +11542,10 @@ HTML = r"""
     updateTimeLimitUi();
     updateTimer();
 
-    if (timeLimitEnabled) {
+    if (
+      timeLimitEnabled &&
+      !activeRemedialSkillId
+    ) {
       timerHandle = setInterval(() => {
         seconds -= 1;
         updateTimer();
@@ -10479,6 +11554,12 @@ HTML = r"""
           finish(true);
         }
       }, 1000);
+    }
+
+    if (activeRemedialSkillId) {
+      timerEl.textContent = "補習";
+      statusSub.textContent =
+        "補習問題12問・時間制限なし";
     }
 
     playBgmForStreak(0, true);
@@ -10560,6 +11641,10 @@ HTML = r"""
     equation.textContent =
       `${q.a} ${q.op} ${q.b} ＝ ?`;
 
+    markQuestionDisplayed(
+      index
+    );
+
     recordVideoQuestionStart(
       index,
       q
@@ -10598,6 +11683,10 @@ HTML = r"""
 
     const q = questions[index];
     const ok = user === q.answer;
+
+    markQuestionAnswered(
+      index
+    );
 
     recordVideoQuestionAnswer(
       index,
@@ -11191,7 +12280,6 @@ HTML = r"""
       sessionVideoStartedAtPerf !==
       null
     ) {
-      renderVideoReviewPanel();
       stopChallengeVideoRecording(
         false
       );
@@ -11246,7 +12334,15 @@ HTML = r"""
     const challengeScore =
       calculateChallengeScore();
 
-    if (!sessionChallengeRecorded) {
+    if (activeRemedialSkillId) {
+      challengeScore.challengeCount =
+        getChallengeCount(
+          currentMode
+        );
+
+      challengeScore.mode =
+        currentMode;
+    } else if (!sessionChallengeRecorded) {
       challengeScore.challengeCount =
         incrementChallengeCount(
           currentMode
@@ -11267,7 +12363,8 @@ HTML = r"""
     }
 
     const timedResult =
-      timeLimitEnabled;
+      timeLimitEnabled &&
+      !activeRemedialSkillId;
 
     scoreStage.classList.toggle(
       "hidden",
@@ -11312,6 +12409,7 @@ HTML = r"""
         : "今回は苦手克服問題なし。";
 
     const canPromote =
+      !activeRemedialSkillId &&
       !timeup &&
       Boolean(
         NEXT_MODE[currentMode]
@@ -11328,7 +12426,10 @@ HTML = r"""
 
     let resultMessage;
 
-    if (timeup) {
+    if (activeRemedialSkillId) {
+      resultMessage =
+        `補習12問終了。正解は${score}問です。`;
+    } else if (timeup) {
       resultMessage =
         `5分になりました。正解は${score}問です。${weakSummary}`;
     } else if (timeLimitEnabled) {
@@ -11339,8 +12440,10 @@ HTML = r"""
         `12問終了。正解は${score}問です。${weakSummary}`;
     }
 
-    resultMessage +=
-      ` 総チャレンジ回数は${challengeScore.challengeCount}回です。`;
+    if (!activeRemedialSkillId) {
+      resultMessage +=
+        ` 総チャレンジ回数は${challengeScore.challengeCount}回です。`;
+    }
 
     if (promotedMode) {
       resultMessage +=
@@ -11388,6 +12491,20 @@ HTML = r"""
 
         review.appendChild(div);
       }
+    );
+
+    const sessionRecord =
+      buildCurrentSessionRecord(
+        challengeScore,
+        timeup
+      );
+
+    saveCompletedSession(
+      sessionRecord
+    );
+
+    renderPostSessionCoaching(
+      sessionRecord
     );
 
     if (timedResult) {
@@ -11954,19 +13071,6 @@ HTML = r"""
     }
   );
 
-  sessionReviewVideo.addEventListener(
-    "timeupdate",
-    () => {
-      if (
-        reviewClipEndSec !== null &&
-        sessionReviewVideo.currentTime >=
-          reviewClipEndSec
-      ) {
-        sessionReviewVideo.pause();
-        reviewClipEndSec = null;
-      }
-    }
-  );
 
   $("#downloadSessionVideoBtn").addEventListener(
     "click",
@@ -12052,6 +13156,7 @@ HTML = r"""
   updateLearningVoiceUi();
   updateBgmButton();
   updateSettingsUi();
+  updateRankUi();
   renderLearningCategories();
   installInAppBackGuard();
   updateBgmButton();
