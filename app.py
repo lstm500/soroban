@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V59-CERTIFICATION-RANK-CAPS-2026-09-24
+# VERSION: CLEAN-V60-RANK-MEDALS-CELEBRATION-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V59-CERTIFICATION-RANK-CAPS"
+APP_VERSION = "CLEAN-V60-RANK-MEDALS-CELEBRATION"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -160,6 +160,145 @@ HTML = r"""
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
+
+
+  .home-rank-card {
+    width: min(680px, 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 0 auto 18px;
+    padding: 12px 16px;
+    border: 1px solid #d9cfb8;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #fffdf7, #f4eddc);
+    box-shadow: 0 8px 22px rgba(74, 60, 35, .08);
+  }
+
+  .home-rank-copy {
+    min-width: 0;
+  }
+
+  .home-rank-label {
+    color: #786d5a;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .08em;
+  }
+
+  .home-rank-name {
+    margin-top: 2px;
+    font-size: 22px;
+    font-weight: 1000;
+  }
+
+  .rank-medal {
+    --medal-a: #8e7d68;
+    --medal-b: #c7b8a4;
+    --medal-c: #6f6253;
+    position: relative;
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    display: grid;
+    place-items: center;
+    border: 4px solid rgba(255,255,255,.72);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 28%, #fff 0 6%, transparent 7%),
+      linear-gradient(145deg, var(--medal-b), var(--medal-a) 52%, var(--medal-c));
+    color: #fff;
+    box-shadow:
+      0 5px 12px rgba(0,0,0,.16),
+      inset 0 0 0 3px rgba(255,255,255,.28);
+    text-align: center;
+    font-weight: 1000;
+    line-height: 1;
+  }
+
+  .rank-medal::before,
+  .rank-medal::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 48px;
+    width: 18px;
+    height: 28px;
+    background: #334f72;
+  }
+
+  .rank-medal::before {
+    left: 11px;
+    transform: rotate(13deg);
+  }
+
+  .rank-medal::after {
+    right: 11px;
+    transform: rotate(-13deg);
+  }
+
+  .rank-medal-text {
+    max-width: 52px;
+    font-size: 12px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.32);
+  }
+
+  .rank-medal.rank-kyu-low {
+    --medal-a: #9a6943;
+    --medal-b: #d6a36f;
+    --medal-c: #70472d;
+  }
+
+  .rank-medal.rank-kyu-mid {
+    --medal-a: #7b8490;
+    --medal-b: #d4d9df;
+    --medal-c: #5e6670;
+  }
+
+  .rank-medal.rank-kyu-high {
+    --medal-a: #ba8a29;
+    --medal-b: #f3d977;
+    --medal-c: #8b651d;
+  }
+
+  .rank-medal.rank-dan-1 {
+    --medal-a: #b35c33;
+    --medal-b: #e9a46d;
+    --medal-c: #7d3e25;
+  }
+
+  .rank-medal.rank-dan-2 {
+    --medal-a: #8793a0;
+    --medal-b: #edf2f6;
+    --medal-c: #626e7a;
+  }
+
+  .rank-medal.rank-dan-3 {
+    --medal-a: #c4901f;
+    --medal-b: #ffe792;
+    --medal-c: #8d6415;
+  }
+
+  .rank-medal.rank-master {
+    --medal-a: #7566d8;
+    --medal-b: #f6d66f;
+    --medal-c: #2e7ea5;
+    background:
+      radial-gradient(circle at 35% 28%, #fff 0 7%, transparent 8%),
+      conic-gradient(
+        from 0deg,
+        #f1c85b,
+        #8dd8ce,
+        #8da6ef,
+        #d397e9,
+        #f1c85b
+      );
+    box-shadow:
+      0 7px 20px rgba(70, 73, 167, .30),
+      inset 0 0 0 4px rgba(255,255,255,.42);
+  }
+
 
   .home-mode-btn {
     min-height: 168px;
@@ -2139,6 +2278,233 @@ HTML = r"""
     line-height: 1.6;
   }
 
+
+  .medal-collection {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #d8d0c3;
+    border-radius: 18px;
+    background: #fffdf8;
+  }
+
+  .medal-collection-title {
+    font-size: 17px;
+    font-weight: 1000;
+  }
+
+  .medal-collection-note {
+    margin-top: 4px;
+    color: #71695f;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .medal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .medal-slot {
+    min-height: 122px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 8px;
+    padding: 10px 6px;
+    border: 1px solid #ded7cb;
+    border-radius: 15px;
+    background: #fff;
+    text-align: center;
+  }
+
+  .medal-slot.locked {
+    background: #f4f1ec;
+    color: #9c958b;
+  }
+
+  .medal-slot.locked .rank-medal {
+    filter: grayscale(1);
+    opacity: .22;
+  }
+
+  .medal-slot.earned {
+    box-shadow: 0 7px 18px rgba(95, 75, 40, .09);
+  }
+
+  .medal-slot-name {
+    font-size: 11px;
+    font-weight: 950;
+  }
+
+  .medal-slot-status {
+    min-height: 14px;
+    color: #837a6d;
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .rank-celebration {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 18px;
+    background:
+      radial-gradient(circle at center, rgba(43,58,83,.38), rgba(15,17,24,.88));
+  }
+
+  .rank-celebration.show {
+    display: flex;
+    animation: rankOverlayIn .35s ease both;
+  }
+
+  .rank-celebration-card {
+    position: relative;
+    z-index: 3;
+    width: min(430px, 94vw);
+    padding: 28px 18px 22px;
+    border: 2px solid rgba(255,255,255,.7);
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at 50% 0%, #fff9cf, #fffdf7 45%, #eee3c4);
+    box-shadow:
+      0 24px 80px rgba(0,0,0,.34),
+      0 0 42px rgba(255,218,103,.36);
+    text-align: center;
+    animation: rankCardPop .75s cubic-bezier(.18,.89,.32,1.28) both;
+  }
+
+  .rank-celebration-kicker {
+    color: #86691f;
+    font-size: 12px;
+    font-weight: 1000;
+    letter-spacing: .16em;
+  }
+
+  .rank-celebration-medal {
+    width: 132px;
+    height: 132px;
+    margin: 18px auto 22px;
+    border-width: 7px;
+    animation:
+      medalReveal 1s cubic-bezier(.17,.86,.24,1.35) both,
+      medalShine 2.4s ease-in-out 1s infinite;
+  }
+
+  .rank-celebration-medal::before,
+  .rank-celebration-medal::after {
+    top: 105px;
+    width: 34px;
+    height: 58px;
+  }
+
+  .rank-celebration-medal::before { left: 24px; }
+  .rank-celebration-medal::after { right: 24px; }
+
+  .rank-celebration-medal .rank-medal-text {
+    max-width: 100px;
+    font-size: 25px;
+  }
+
+  .rank-celebration-title {
+    font-size: clamp(28px, 8vw, 42px);
+    font-weight: 1000;
+    letter-spacing: .02em;
+  }
+
+  .rank-celebration-sub {
+    margin-top: 8px;
+    color: #6d624e;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .rank-celebration button {
+    width: min(260px, 100%);
+    margin-top: 18px;
+    min-height: 50px;
+    font-size: 15px;
+  }
+
+  .rank-burst {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 520px;
+    height: 520px;
+    margin: -260px 0 0 -260px;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(
+        from 0deg,
+        rgba(255,231,122,.48) 0 5deg,
+        transparent 5deg 15deg
+      );
+    animation: rankBurstSpin 14s linear infinite;
+  }
+
+  .rank-confetti {
+    position: absolute;
+    z-index: 2;
+    top: -12vh;
+    width: 9px;
+    height: 20px;
+    border-radius: 3px;
+    opacity: .95;
+    animation: confettiFall var(--fall, 2.8s) linear var(--delay, 0s) infinite;
+  }
+
+  @keyframes rankOverlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes rankCardPop {
+    0% { transform: scale(.56) translateY(28px); opacity: 0; }
+    68% { transform: scale(1.06) translateY(-4px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  @keyframes medalReveal {
+    0% { transform: scale(.25) rotate(-24deg); opacity: 0; }
+    65% { transform: scale(1.16) rotate(6deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  @keyframes medalShine {
+    0%, 100% { filter: brightness(1); transform: scale(1); }
+    50% { filter: brightness(1.22); transform: scale(1.035); }
+  }
+
+  @keyframes rankBurstSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes confettiFall {
+    0% { transform: translate3d(0, -12vh, 0) rotate(0); }
+    100% { transform: translate3d(var(--drift, 30px), 115vh, 0) rotate(720deg); }
+  }
+
+  @media (max-width: 760px) {
+    .medal-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .home-rank-card {
+      justify-content: flex-start;
+    }
+
+    .home-rank-name {
+      font-size: 19px;
+    }
+  }
+
+
   .hint-btn.recording-disabled {
     opacity: .65;
     cursor: default;
@@ -2400,7 +2766,14 @@ HTML = r"""
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .question-card.streak10 { animation: none; }
+    .question-card.streak10,
+    .rank-celebration,
+    .rank-celebration-card,
+    .rank-celebration-medal,
+    .rank-burst,
+    .rank-confetti {
+      animation: none !important;
+    }
   }
 
   @media (max-width: 760px) {
@@ -2432,6 +2805,17 @@ HTML = r"""
   <div class="home-title">そろばん</div>
   <div class="home-sub">
     計算に挑戦するか、珠の動かし方を順番に学ぶかを選んでください。
+  </div>
+
+  <div class="home-rank-card">
+    <div id="homeRankMedal" class="rank-medal">
+      <span class="rank-medal-text">－</span>
+    </div>
+    <div class="home-rank-copy">
+      <div class="home-rank-label">あなたの階級</div>
+      <div id="homeRankName" class="home-rank-name">見習い</div>
+      <div id="homeRankNext" class="app-rank-next">チャレンジでメダルを獲得しよう</div>
+    </div>
   </div>
 
   <div class="home-mode-grid">
@@ -2632,8 +3016,30 @@ HTML = r"""
     </div>
   </div>
 
+  <div class="medal-collection">
+    <div class="medal-collection-title">獲得メダル</div>
+    <div class="medal-collection-note">
+      認定済みの階級メダルを保存します。上位階級を獲得すると、それまでの階級メダルもコレクションへ追加されます。
+    </div>
+    <div id="medalCollectionGrid" class="medal-grid"></div>
+  </div>
+
   <div class="settings-save-note">
     設定はこの端末のブラウザに自動保存されます。暗算モードは、音声回答をONにしておくと答えるときの画面操作も減らせます。
+  </div>
+</div>
+
+<div id="rankCelebration" class="rank-celebration" aria-hidden="true">
+  <div class="rank-burst"></div>
+  <div id="rankConfettiLayer"></div>
+  <div class="rank-celebration-card">
+    <div class="rank-celebration-kicker">NEW MEDAL</div>
+    <div id="rankCelebrationMedal" class="rank-medal rank-celebration-medal">
+      <span id="rankCelebrationMedalText" class="rank-medal-text">10級</span>
+    </div>
+    <div id="rankCelebrationTitle" class="rank-celebration-title">10級 認定！</div>
+    <div id="rankCelebrationSub" class="rank-celebration-sub"></div>
+    <button type="button" id="rankCelebrationClose" class="primary">メダルを受け取る</button>
   </div>
 </div>
 
@@ -3190,6 +3596,16 @@ HTML = r"""
   const appRankMeterFill = $("#appRankMeterFill");
   const appRankSub = $("#appRankSub");
   const appRankNext = $("#appRankNext");
+  const homeRankMedal = $("#homeRankMedal");
+  const homeRankName = $("#homeRankName");
+  const homeRankNext = $("#homeRankNext");
+  const medalCollectionGrid = $("#medalCollectionGrid");
+  const rankCelebration = $("#rankCelebration");
+  const rankConfettiLayer = $("#rankConfettiLayer");
+  const rankCelebrationMedal = $("#rankCelebrationMedal");
+  const rankCelebrationMedalText = $("#rankCelebrationMedalText");
+  const rankCelebrationTitle = $("#rankCelebrationTitle");
+  const rankCelebrationSub = $("#rankCelebrationSub");
 
   const workspace = $("#workspace");
   const questionCard = $("#questionCard");
@@ -5038,7 +5454,8 @@ HTML = r"""
 
       if (!raw) {
         return {
-          bestByMode: {}
+          bestByMode: {},
+          medalAchievedAt: {}
         };
       }
 
@@ -5050,7 +5467,8 @@ HTML = r"""
         typeof parsed !== "object"
       ) {
         return {
-          bestByMode: {}
+          bestByMode: {},
+          medalAchievedAt: {}
         };
       }
 
@@ -5060,6 +5478,14 @@ HTML = r"""
           "object"
       ) {
         parsed.bestByMode = {};
+      }
+
+      if (
+        !parsed.medalAchievedAt ||
+        typeof parsed.medalAchievedAt !==
+          "object"
+      ) {
+        parsed.medalAchievedAt = {};
       }
 
       return parsed;
@@ -5281,6 +5707,423 @@ HTML = r"""
     return parts.join("・");
   }
 
+  function medalClassForRank(
+    rankName
+  ) {
+    if (
+      rankName === "10級" ||
+      rankName === "9級" ||
+      rankName === "8級"
+    ) {
+      return "rank-kyu-low";
+    }
+
+    if (
+      rankName === "7級" ||
+      rankName === "6級" ||
+      rankName === "5級"
+    ) {
+      return "rank-kyu-mid";
+    }
+
+    if (
+      rankName === "4級" ||
+      rankName === "3級" ||
+      rankName === "2級" ||
+      rankName === "1級"
+    ) {
+      return "rank-kyu-high";
+    }
+
+    if (rankName === "初段") {
+      return "rank-dan-1";
+    }
+
+    if (rankName === "二段") {
+      return "rank-dan-2";
+    }
+
+    if (rankName === "三段") {
+      return "rank-dan-3";
+    }
+
+    if (rankName === "名人") {
+      return "rank-master";
+    }
+
+    return "";
+  }
+
+  function setMedalVisual(
+    element,
+    rankName
+  ) {
+    if (!element) {
+      return;
+    }
+
+    element.classList.remove(
+      "rank-kyu-low",
+      "rank-kyu-mid",
+      "rank-kyu-high",
+      "rank-dan-1",
+      "rank-dan-2",
+      "rank-dan-3",
+      "rank-master"
+    );
+
+    const rankClass =
+      medalClassForRank(
+        rankName
+      );
+
+    if (rankClass) {
+      element.classList.add(
+        rankClass
+      );
+    }
+
+    const textNode =
+      element.querySelector(
+        ".rank-medal-text"
+      );
+
+    if (textNode) {
+      textNode.textContent =
+        rankName === "見習い"
+          ? "－"
+          : rankName;
+    }
+  }
+
+  function ensureEarnedMedalsThrough(
+    rankIndex,
+    achievedAt = null
+  ) {
+    if (
+      !Number.isInteger(rankIndex) ||
+      rankIndex < 0
+    ) {
+      return [];
+    }
+
+    const newlyEarned = [];
+    const stamp =
+      achievedAt ||
+      new Date().toISOString();
+
+    for (
+      let i = 0;
+      i <= rankIndex;
+      i += 1
+    ) {
+      const rank =
+        APP_RANK_CERTIFICATIONS[i];
+
+      if (
+        !rankCertificationState
+          .medalAchievedAt[
+            rank.name
+          ]
+      ) {
+        rankCertificationState
+          .medalAchievedAt[
+            rank.name
+          ] = stamp;
+
+        newlyEarned.push(
+          rank.name
+        );
+      }
+    }
+
+    if (newlyEarned.length) {
+      saveRankCertificationState();
+    }
+
+    return newlyEarned;
+  }
+
+  function syncEarnedMedalsFromCurrentRank() {
+    const rank =
+      calculateAppRank();
+
+    if (rank.currentIndex >= 0) {
+      ensureEarnedMedalsThrough(
+        rank.currentIndex
+      );
+    }
+  }
+
+  function isMedalEarned(
+    rankName
+  ) {
+    return Boolean(
+      rankCertificationState
+        .medalAchievedAt[
+          rankName
+        ]
+    );
+  }
+
+  function formatMedalDate(
+    iso
+  ) {
+    if (!iso) {
+      return "";
+    }
+
+    try {
+      return new Date(iso)
+        .toLocaleDateString(
+          "ja-JP",
+          {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric"
+          }
+        );
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function renderMedalCollection() {
+    if (!medalCollectionGrid) {
+      return;
+    }
+
+    medalCollectionGrid.innerHTML =
+      "";
+
+    APP_RANK_CERTIFICATIONS
+      .forEach((rank) => {
+        const earned =
+          isMedalEarned(
+            rank.name
+          );
+
+        const slot =
+          document.createElement(
+            "div"
+          );
+
+        slot.className =
+          `medal-slot ${
+            earned
+              ? "earned"
+              : "locked"
+          }`;
+
+        const medal =
+          document.createElement(
+            "div"
+          );
+
+        medal.className =
+          "rank-medal";
+
+        medal.innerHTML =
+          `<span class="rank-medal-text">${rank.name}</span>`;
+
+        setMedalVisual(
+          medal,
+          rank.name
+        );
+
+        const name =
+          document.createElement(
+            "div"
+          );
+
+        name.className =
+          "medal-slot-name";
+
+        name.textContent =
+          rank.name;
+
+        const status =
+          document.createElement(
+            "div"
+          );
+
+        status.className =
+          "medal-slot-status";
+
+        status.textContent =
+          earned
+            ? `獲得 ${formatMedalDate(
+                rankCertificationState
+                  .medalAchievedAt[
+                    rank.name
+                  ]
+              )}`
+            : "未獲得";
+
+        slot.appendChild(medal);
+        slot.appendChild(name);
+        slot.appendChild(status);
+
+        medalCollectionGrid.appendChild(
+          slot
+        );
+      });
+  }
+
+  function buildRankConfetti() {
+    if (!rankConfettiLayer) {
+      return;
+    }
+
+    rankConfettiLayer.innerHTML =
+      "";
+
+    const colors = [
+      "#f2c84b",
+      "#ef7d67",
+      "#6fc2d0",
+      "#8d86d8",
+      "#8cc36f",
+      "#ffffff"
+    ];
+
+    for (
+      let i = 0;
+      i < 42;
+      i += 1
+    ) {
+      const piece =
+        document.createElement(
+          "div"
+        );
+
+      piece.className =
+        "rank-confetti";
+
+      piece.style.left =
+        `${(i * 37) % 100}%`;
+
+      piece.style.background =
+        colors[
+          i %
+          colors.length
+        ];
+
+      piece.style.setProperty(
+        "--delay",
+        `${(i % 9) * -0.23}s`
+      );
+
+      piece.style.setProperty(
+        "--fall",
+        `${2.2 + (i % 7) * 0.18}s`
+      );
+
+      piece.style.setProperty(
+        "--drift",
+        `${-55 + (i % 11) * 11}px`
+      );
+
+      rankConfettiLayer.appendChild(
+        piece
+      );
+    }
+  }
+
+  function closeRankCelebration() {
+    if (!rankCelebration) {
+      return;
+    }
+
+    rankCelebration.classList.remove(
+      "show"
+    );
+
+    rankCelebration.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    if (rankConfettiLayer) {
+      rankConfettiLayer.innerHTML =
+        "";
+    }
+  }
+
+  function showRankCelebration(
+    rankName,
+    newlyEarned = []
+  ) {
+    if (
+      !rankCelebration ||
+      !rankName ||
+      rankName === "見習い"
+    ) {
+      return;
+    }
+
+    setMedalVisual(
+      rankCelebrationMedal,
+      rankName
+    );
+
+    rankCelebrationMedalText.textContent =
+      rankName;
+
+    rankCelebrationTitle.textContent =
+      `${rankName} 認定！`;
+
+    rankCelebrationSub.textContent =
+      newlyEarned.length > 1
+        ? `一気に${newlyEarned.length}個のメダルを獲得しました。設定画面のメダル一覧に保存されています。`
+        : "新しいメダルを獲得しました。設定画面のメダル一覧に保存されています。";
+
+    buildRankConfetti();
+
+    rankCelebration.classList.add(
+      "show"
+    );
+
+    rankCelebration.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+    if (
+      "speechSynthesis" in window &&
+      typeof SpeechSynthesisUtterance !==
+        "undefined"
+    ) {
+      try {
+        const utterance =
+          new SpeechSynthesisUtterance(
+            `${rankName}、認定！おめでとう！`
+          );
+
+        utterance.lang =
+          "ja-JP";
+
+        utterance.rate =
+          0.95;
+
+        utterance.pitch =
+          1.08;
+
+        const voice =
+          getJapaneseVoice();
+
+        if (voice) {
+          utterance.voice =
+            voice;
+        }
+
+        window.speechSynthesis.speak(
+          utterance
+        );
+      } catch (error) {}
+    }
+  }
+
   function calculateAppRank() {
     let currentRule = null;
     let currentIndex = -1;
@@ -5376,6 +6219,27 @@ HTML = r"""
           ? `次：${rank.nextName}｜${rank.nextRequirement}`
           : "最高称号";
     }
+
+    if (homeRankName) {
+      homeRankName.textContent =
+        rank.name;
+    }
+
+    if (homeRankNext) {
+      homeRankNext.textContent =
+        rank.nextName
+          ? `次は ${rank.nextName}`
+          : rank.name === "見習い"
+            ? "チャレンジで最初のメダルを獲得しよう"
+            : "最高称号を獲得しています";
+    }
+
+    setMedalVisual(
+      homeRankMedal,
+      rank.name
+    );
+
+    renderMedalCollection();
 
     return rank;
   }
@@ -8297,6 +9161,8 @@ HTML = r"""
     homeView.classList.remove(
       "hidden"
     );
+
+    updateRankUi();
 
     currentMode = null;
   }
@@ -11300,12 +12166,46 @@ HTML = r"""
 
     saveSessionHistory();
 
+    const beforeRank =
+      calculateAppRank();
+
     updateRankCertificationState(
       record
     );
 
+    const afterRank =
+      calculateAppRank();
+
+    let newlyEarned = [];
+
+    if (
+      afterRank.currentIndex >= 0
+    ) {
+      newlyEarned =
+        ensureEarnedMedalsThrough(
+          afterRank.currentIndex,
+          record.finishedAt
+        );
+    }
+
     sessionHistorySaved = true;
     updateRankUi();
+
+    if (
+      afterRank.currentIndex >
+        beforeRank.currentIndex &&
+      newlyEarned.length
+    ) {
+      setTimeout(
+        () => {
+          showRankCelebration(
+            afterRank.name,
+            newlyEarned
+          );
+        },
+        900
+      );
+    }
   }
 
   function renderPostSessionCoaching(
@@ -12801,6 +13701,23 @@ HTML = r"""
     updateStreakFrame(0);
   }
 
+  $("#rankCelebrationClose").addEventListener(
+    "click",
+    closeRankCelebration
+  );
+
+  rankCelebration.addEventListener(
+    "click",
+    (event) => {
+      if (
+        event.target ===
+        rankCelebration
+      ) {
+        closeRankCelebration();
+      }
+    }
+  );
+
   $("#homeChallengeBtn").addEventListener(
     "click",
     showChallengeMenu
@@ -13152,6 +14069,7 @@ HTML = r"""
   });
 
   rebuildRankCertificationStateFromHistory();
+  syncEarnedMedalsFromCurrentRank();
 
   setupModeChallengeCountLabels();
   setupModeRankingButtons();
@@ -13283,6 +14201,7 @@ HTML = r"""
   workspace.classList.remove("show");
 
   updateTimeLimitUi();
+  updateRankUi();
   updateAnalysisVideoUi();
   updateLearningVoiceUi();
   updateBgmButton();
