@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V57-COACHING-RANK-2026-09-24
+# VERSION: CLEAN-V58-CAMERA-CTA-UX-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V57-COACHING-RANK"
+APP_VERSION = "CLEAN-V58-CAMERA-CTA-UX"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1870,6 +1870,14 @@ HTML = r"""
     display: inline-flex;
   }
 
+  .mode-card.camera-setup-active > .start-mode {
+    display: none;
+  }
+
+  .mode-card.camera-setup-active {
+    border-color: #b9c9d5;
+  }
+
   .camera-modal {
     display: none;
     position: static;
@@ -2928,7 +2936,7 @@ HTML = r"""
 
 <div id="cameraSetupModal" class="camera-modal">
   <div class="camera-dialog">
-    <h3>撮影する画角を確認</h3>
+    <h3>撮影準備｜画角を確認</h3>
     <p>
       <strong>両手とそろばん全体を下の白い枠へ。</strong>
       顔は上の小さい枠に一部入れば十分です。
@@ -10103,6 +10111,16 @@ HTML = r"""
       "show"
     );
 
+    root
+      .querySelectorAll(
+        ".mode-card.camera-setup-active"
+      )
+      .forEach((card) => {
+        card.classList.remove(
+          "camera-setup-active"
+        );
+      });
+
     if (stopStream) {
       releaseAnalysisCameraStream();
     }
@@ -10227,6 +10245,10 @@ HTML = r"""
     }
 
     if (targetCard) {
+      targetCard.classList.add(
+        "camera-setup-active"
+      );
+
       targetCard.appendChild(
         cameraSetupModal
       );
