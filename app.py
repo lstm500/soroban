@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V58-CAMERA-CTA-UX-2026-09-24
+# VERSION: CLEAN-V59-CERTIFICATION-RANK-CAPS-2026-09-24
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V58-CAMERA-CTA-UX"
+APP_VERSION = "CLEAN-V59-CERTIFICATION-RANK-CAPS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2619,16 +2619,16 @@ HTML = r"""
     <div class="app-rank-head">
       <div>
         <div class="app-rank-title">現在のアプリ内階級</div>
-        <div id="appRankSub" class="app-rank-next">学習ログから自動計算します。</div>
+        <div id="appRankSub" class="app-rank-next">クリアした難易度と正答数から自動認定します。</div>
       </div>
-      <div id="appRankBadge" class="app-rank-badge">10級</div>
+      <div id="appRankBadge" class="app-rank-badge">見習い</div>
     </div>
     <div class="app-rank-meter">
       <div id="appRankMeterFill" class="app-rank-meter-fill"></div>
     </div>
     <div id="appRankNext" class="app-rank-next"></div>
     <div class="app-rank-note">
-      この級・段・名人はアプリ内の学習ログから算出する称号です。公式の珠算検定の級・段ではありません。
+      簡単な問題を繰り返すだけでは昇格しません。対応する難易度のチャレンジを認定水準でクリアした場合だけ級・段が上がります。公式の珠算検定とは別のアプリ内称号です。
     </div>
   </div>
 
@@ -3098,7 +3098,7 @@ HTML = r"""
       <div class="coaching-rank-strip">
         <div>
           <div class="coaching-rank-label">現在のアプリ内階級</div>
-          <div id="resultRankTitle" class="coaching-rank-title">10級</div>
+          <div id="resultRankTitle" class="coaching-rank-title">見習い</div>
         </div>
         <div id="resultRankProgress" class="video-question-meta"></div>
       </div>
@@ -3724,6 +3724,7 @@ HTML = r"""
   const RANKING_STORAGE_KEY = "soroban_score_rankings_v1";
   const CHALLENGE_COUNT_STORAGE_KEY = "soroban_challenge_counts_v1";
   const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
+  const RANK_CERTIFICATION_STORAGE_KEY = "soroban_rank_certification_v2";
   const MAX_SESSION_HISTORY = 200;
   const MAX_RANKING_ENTRIES_PER_MODE = 100;
 
@@ -4912,341 +4913,437 @@ HTML = r"""
     }
   });
 
-  const APP_RANKS = Object.freeze([
-    { name: "10級", min: 0 },
-    { name: "9級", min: 5 },
-    { name: "8級", min: 10 },
-    { name: "7級", min: 16 },
-    { name: "6級", min: 23 },
-    { name: "5級", min: 31 },
-    { name: "4級", min: 40 },
-    { name: "3級", min: 50 },
-    { name: "2級", min: 60 },
-    { name: "1級", min: 70 },
-    { name: "初段", min: 78 },
-    { name: "二段", min: 85 },
-    { name: "三段", min: 91 },
-    { name: "名人", min: 96 }
-  ]);
+  const APP_RANK_CERTIFICATIONS =
+    Object.freeze([
+      {
+        name: "10級",
+        type: "any",
+        modes: ["ba1", "bs1"],
+        minCorrect: 10,
+        requirement:
+          "1桁の足し算 または 1桁の引き算で10/12以上"
+      },
+      {
+        name: "9級",
+        type: "all",
+        modes: ["ba1", "bs1"],
+        minCorrect: 10,
+        requirement:
+          "1桁の足し算・引き算を両方10/12以上"
+      },
+      {
+        name: "8級",
+        type: "any",
+        modes: ["ba2", "bs2"],
+        minCorrect: 10,
+        requirement:
+          "2桁の足し算 または 2桁の引き算で10/12以上"
+      },
+      {
+        name: "7級",
+        type: "all",
+        modes: ["ba2", "bs2"],
+        minCorrect: 10,
+        requirement:
+          "2桁の足し算・引き算を両方10/12以上"
+      },
+      {
+        name: "6級",
+        type: "any",
+        modes: ["ba3", "bs3"],
+        minCorrect: 10,
+        requirement:
+          "3桁の足し算 または 3桁の引き算で10/12以上"
+      },
+      {
+        name: "5級",
+        type: "all",
+        modes: ["ba3", "bs3"],
+        minCorrect: 10,
+        requirement:
+          "3桁の足し算・引き算を両方10/12以上"
+      },
+      {
+        name: "4級",
+        type: "all",
+        modes: ["mm1", "md1"],
+        minCorrect: 10,
+        requirement:
+          "1桁の掛け算・割り算を両方10/12以上"
+      },
+      {
+        name: "3級",
+        type: "all",
+        modes: ["mm2", "md2"],
+        minCorrect: 10,
+        requirement:
+          "中級2の掛け算・割り算を両方10/12以上"
+      },
+      {
+        name: "2級",
+        type: "all",
+        modes: ["mm3", "md3"],
+        minCorrect: 10,
+        requirement:
+          "中級3の掛け算・割り算を両方10/12以上"
+      },
+      {
+        name: "1級",
+        type: "all",
+        modes: ["mm3", "md3"],
+        minCorrect: 11,
+        requirement:
+          "中級3の掛け算・割り算を両方11/12以上"
+      },
+      {
+        name: "初段",
+        type: "any",
+        modes: ["a1"],
+        minCorrect: 11,
+        requirement:
+          "上級1（4桁の足し算・引き算）で11/12以上"
+      },
+      {
+        name: "二段",
+        type: "any",
+        modes: ["a1"],
+        minCorrect: 12,
+        requirement:
+          "上級1（4桁の足し算・引き算）で12/12"
+      },
+      {
+        name: "三段",
+        type: "any",
+        modes: ["a2"],
+        minCorrect: 11,
+        requirement:
+          "上級2（3桁×2桁 / 4桁÷2桁）で11/12以上"
+      },
+      {
+        name: "名人",
+        type: "any",
+        modes: ["a3"],
+        minCorrect: 12,
+        requirement:
+          "上級3（3桁×3桁 / 5桁÷3桁）で12/12"
+      }
+    ]);
 
-  function loadSessionHistory() {
+  function loadRankCertificationState() {
     try {
-      const raw = localStorage.getItem(
-        SESSION_HISTORY_STORAGE_KEY
-      );
+      const raw =
+        localStorage.getItem(
+          RANK_CERTIFICATION_STORAGE_KEY
+        );
 
       if (!raw) {
-        return [];
+        return {
+          bestByMode: {}
+        };
       }
 
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed)
-        ? parsed.slice(-MAX_SESSION_HISTORY)
-        : [];
+      const parsed =
+        JSON.parse(raw);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object"
+      ) {
+        return {
+          bestByMode: {}
+        };
+      }
+
+      if (
+        !parsed.bestByMode ||
+        typeof parsed.bestByMode !==
+          "object"
+      ) {
+        parsed.bestByMode = {};
+      }
+
+      return parsed;
     } catch (error) {
-      return [];
+      return {
+        bestByMode: {}
+      };
     }
   }
 
-  function saveSessionHistory() {
-    try {
-      sessionHistory = sessionHistory
-        .slice(-MAX_SESSION_HISTORY);
+  let rankCertificationState =
+    loadRankCertificationState();
 
+  function saveRankCertificationState() {
+    try {
       localStorage.setItem(
-        SESSION_HISTORY_STORAGE_KEY,
-        JSON.stringify(sessionHistory)
+        RANK_CERTIFICATION_STORAGE_KEY,
+        JSON.stringify(
+          rankCertificationState
+        )
       );
     } catch (error) {}
   }
 
-  function digitLength(value) {
-    return String(
-      Math.abs(
-        Math.floor(Number(value) || 0)
-      )
-    ).length;
-  }
-
-  function hasAdditionCarry(a, b) {
-    let x = Math.floor(Math.abs(a));
-    let y = Math.floor(Math.abs(b));
-    let carry = 0;
-
-    while (x > 0 || y > 0 || carry > 0) {
-      const dx = x % 10;
-      const dy = y % 10;
-      const sum = dx + dy + carry;
-
-      if (sum >= 10) {
-        return true;
-      }
-
-      carry = sum >= 10 ? 1 : 0;
-      x = Math.floor(x / 10);
-      y = Math.floor(y / 10);
+  function updateRankCertificationState(
+    record
+  ) {
+    if (
+      !record ||
+      record.remedialSkillId ||
+      record.timeup ||
+      !record.mode ||
+      Number(record.totalQuestions) !==
+        TOTAL_QUESTIONS
+    ) {
+      return;
     }
 
-    return false;
-  }
-
-  function hasSubtractionBorrow(a, b) {
-    let x = Math.floor(Math.abs(a));
-    let y = Math.floor(Math.abs(b));
-    let borrow = 0;
-
-    while (x > 0 || y > 0) {
-      let dx = (x % 10) - borrow;
-      const dy = y % 10;
-
-      if (dx < dy) {
-        return true;
-      }
-
-      borrow = dx < dy ? 1 : 0;
-      x = Math.floor(x / 10);
-      y = Math.floor(y / 10);
-    }
-
-    return false;
-  }
-
-  function skillForQuestion(q) {
-    if (!q) {
-      return "add_direct";
-    }
-
-    if (q.op === "＋") {
-      if (
-        digitLength(q.a) > 1 ||
-        digitLength(q.b) > 1
-      ) {
-        return "add_multi";
-      }
-
-      if (q.a + q.b >= 10) {
-        return "add_ten";
-      }
-
-      if (
-        q.a < 5 &&
-        q.b < 5 &&
-        q.a + q.b >= 5
-      ) {
-        return "add_five";
-      }
-
-      return "add_direct";
-    }
-
-    if (q.op === "－") {
-      if (
-        digitLength(q.a) > 1 ||
-        digitLength(q.b) > 1
-      ) {
-        return hasSubtractionBorrow(
-          q.a,
-          q.b
+    const correct =
+      Math.max(
+        0,
+        Math.min(
+          TOTAL_QUESTIONS,
+          Number(
+            record.correctCount
+          ) || 0
         )
-          ? "sub_multi"
-          : "sub_direct";
-      }
+      );
 
-      if (
-        q.a >= 5 &&
-        q.b < 5 &&
-        (q.a % 5) < q.b
-      ) {
-        return "sub_five";
-      }
+    const current =
+      rankCertificationState
+        .bestByMode[
+          record.mode
+        ];
 
-      return "sub_direct";
-    }
-
-    if (q.op === "×") {
-      return (
-        q.a <= 9 &&
-        q.b <= 9
-      )
-        ? "mul_basic"
-        : "mul_place";
-    }
-
-    if (q.op === "÷") {
-      return (
-        q.a <= 81 &&
-        q.b <= 9
-      )
-        ? "div_basic"
-        : "div_place";
-    }
-
-    return "add_direct";
-  }
-
-  function collectSkillEvidence() {
-    const evidence = {};
-
-    Object.keys(SKILL_DEFS).forEach(
-      (skillId) => {
-        evidence[skillId] = {
-          attempts: 0,
-          correct: 0,
-          hints: 0
+    if (
+      !current ||
+      correct >
+        Number(
+          current.correct
+        )
+    ) {
+      rankCertificationState
+        .bestByMode[
+          record.mode
+        ] = {
+          correct,
+          achievedAt:
+            record.finishedAt ||
+            new Date()
+              .toISOString()
         };
-      }
-    );
 
-    Object.values(
-      learningStats.problems || {}
-    ).forEach((stat) => {
-      const skillId =
-        skillForQuestion(stat);
-
-      if (!evidence[skillId]) {
-        return;
-      }
-
-      evidence[skillId].attempts +=
-        Number(stat.attempts) || 0;
-
-      evidence[skillId].correct +=
-        Number(stat.correct) || 0;
-    });
-
-    sessionHistory.forEach((session) => {
-      (session.questions || [])
-        .forEach((question) => {
-          const skillId =
-            question.skillId ||
-            skillForQuestion(question);
-
-          if (
-            evidence[skillId] &&
-            question.hintUsed
-          ) {
-            evidence[skillId].hints += 1;
-          }
-        });
-    });
-
-    return evidence;
+      saveRankCertificationState();
+    }
   }
 
-  function calculateAppRank() {
-    const evidence =
-      collectSkillEvidence();
-
-    let earned = 0;
-    let possible = 0;
-    let attemptedSkills = 0;
-
-    Object.entries(SKILL_DEFS)
-      .forEach(([skillId, def]) => {
-        const e = evidence[skillId];
-        const weight = def.weight || 1;
-
-        possible += 100 * weight;
-
-        if (!e || e.attempts <= 0) {
-          return;
+  function rebuildRankCertificationStateFromHistory() {
+    (sessionHistory || [])
+      .forEach(
+        (record) => {
+          updateRankCertificationState(
+            record
+          );
         }
+      );
+  }
 
-        attemptedSkills += 1;
+  function bestCorrectForMode(
+    mode
+  ) {
+    return Math.max(
+      0,
+      Math.min(
+        TOTAL_QUESTIONS,
+        Number(
+          rankCertificationState
+            .bestByMode[
+              mode
+            ]?.correct
+        ) || 0
+      )
+    );
+  }
 
-        const accuracy =
+  function certificationRuleSatisfied(
+    rule
+  ) {
+    if (
+      !rule ||
+      !Array.isArray(
+        rule.modes
+      ) ||
+      !rule.modes.length
+    ) {
+      return false;
+    }
+
+    const checks =
+      rule.modes.map(
+        (mode) =>
+          bestCorrectForMode(
+            mode
+          ) >=
+          rule.minCorrect
+      );
+
+    return (
+      rule.type === "all"
+        ? checks.every(Boolean)
+        : checks.some(Boolean)
+    );
+  }
+
+  function certificationRuleProgress(
+    rule
+  ) {
+    if (
+      !rule ||
+      !Array.isArray(
+        rule.modes
+      ) ||
+      !rule.modes.length
+    ) {
+      return 0;
+    }
+
+    const ratios =
+      rule.modes.map(
+        (mode) =>
           Math.max(
             0,
             Math.min(
               1,
-              e.correct /
-                Math.max(1, e.attempts)
-            )
-          );
-
-        const evidenceFactor =
-          Math.min(
-            1,
-            e.attempts / 6
-          );
-
-        const hintRate =
-          Math.min(
-            1,
-            e.hints /
-              Math.max(1, e.attempts)
-          );
-
-        const mastery =
-          Math.max(
-            0,
-            accuracy *
-              evidenceFactor *
-              (1 - hintRate * 0.20)
-          );
-
-        earned +=
-          mastery * 100 * weight;
-      });
-
-    const percent =
-      possible > 0
-        ? Math.max(
-            0,
-            Math.min(
-              100,
-              earned / possible * 100
+              bestCorrectForMode(
+                mode
+              ) /
+              Math.max(
+                1,
+                rule.minCorrect
+              )
             )
           )
-        : 0;
+      );
 
-    let current = APP_RANKS[0];
-    let next = null;
-
-    APP_RANKS.forEach((rank, index) => {
-      if (percent >= rank.min) {
-        current = rank;
-        next =
-          APP_RANKS[index + 1] ||
-          null;
-      }
-    });
-
-    let nextProgress = 100;
-
-    if (next) {
-      const span =
-        Math.max(
-          1,
-          next.min - current.min
-        );
-
-      nextProgress =
-        Math.max(
-          0,
-          Math.min(
-            100,
-            (percent - current.min) /
-              span * 100
-          )
-        );
+    if (
+      rule.type === "all"
+    ) {
+      return (
+        ratios.reduce(
+          (sum, value) =>
+            sum + value,
+          0
+        ) /
+        ratios.length *
+        100
+      );
     }
 
+    return (
+      Math.max(
+        ...ratios
+      ) * 100
+    );
+  }
+
+  function shortModeName(
+    mode
+  ) {
+    const title =
+      modeInfo[
+        mode
+      ]?.title || mode;
+
+    const pieces =
+      String(title)
+        .split("｜");
+
+    return (
+      pieces[
+        pieces.length - 1
+      ] || title
+    );
+  }
+
+  function certificationEvidenceText(
+    rule
+  ) {
+    if (!rule) {
+      return "";
+    }
+
+    const parts =
+      rule.modes.map(
+        (mode) =>
+          `${shortModeName(mode)} ${bestCorrectForMode(mode)}/12`
+      );
+
+    return parts.join("・");
+  }
+
+  function calculateAppRank() {
+    let currentRule = null;
+    let currentIndex = -1;
+
+    APP_RANK_CERTIFICATIONS
+      .forEach(
+        (rule, index) => {
+          if (
+            certificationRuleSatisfied(
+              rule
+            )
+          ) {
+            currentRule =
+              rule;
+
+            currentIndex =
+              index;
+          }
+        }
+      );
+
+    const nextRule =
+      APP_RANK_CERTIFICATIONS[
+        currentIndex + 1
+      ] || null;
+
+    const name =
+      currentRule
+        ? currentRule.name
+        : "見習い";
+
     return {
-      name: current.name,
-      percent,
+      name,
+      currentRule,
+      currentIndex,
+      currentEvidence:
+        currentRule
+          ? certificationEvidenceText(
+              currentRule
+            )
+          : "",
       nextName:
-        next?.name || null,
-      nextProgress,
-      attemptedSkills
+        nextRule?.name ||
+        null,
+      nextRequirement:
+        nextRule?.requirement ||
+        null,
+      nextProgress:
+        nextRule
+          ? certificationRuleProgress(
+              nextRule
+            )
+          : 100
     };
   }
 
   function updateRankUi() {
-    const rank = calculateAppRank();
+    const rank =
+      calculateAppRank();
 
     if (appRankBadge) {
-      appRankBadge.textContent = rank.name;
+      appRankBadge.textContent =
+        rank.name;
     }
 
     if (appRankMeterFill) {
@@ -5256,13 +5353,15 @@ HTML = r"""
 
     if (appRankSub) {
       appRankSub.textContent =
-        `習得指標 ${rank.percent.toFixed(1)} / 100・評価した知識 ${rank.attemptedSkills}項目`;
+        rank.currentRule
+          ? `認定根拠：${rank.currentEvidence}`
+          : "まだ級の認定条件を満たしていません。";
     }
 
     if (appRankNext) {
       appRankNext.textContent =
         rank.nextName
-          ? `次の称号：${rank.nextName}`
+          ? `次の称号：${rank.nextName}｜${rank.nextRequirement}`
           : "現在、最高称号です。";
     }
 
@@ -5274,7 +5373,7 @@ HTML = r"""
     if (resultRankProgress) {
       resultRankProgress.textContent =
         rank.nextName
-          ? `次：${rank.nextName}`
+          ? `次：${rank.nextName}｜${rank.nextRequirement}`
           : "最高称号";
     }
 
@@ -10982,6 +11081,9 @@ HTML = r"""
         activeRemedialSkillId,
       timeup:
         Boolean(timeup),
+      certificationEligible:
+        !activeRemedialSkillId &&
+        !timeup,
       correctCount:
         Number(score) || 0,
       totalQuestions:
@@ -11197,6 +11299,11 @@ HTML = r"""
       .slice(-MAX_SESSION_HISTORY);
 
     saveSessionHistory();
+
+    updateRankCertificationState(
+      record
+    );
+
     sessionHistorySaved = true;
     updateRankUi();
   }
@@ -13043,6 +13150,8 @@ HTML = r"""
         String(answerInput.value || "").slice(0, -1);
     }
   });
+
+  rebuildRankCertificationStateFromHistory();
 
   setupModeChallengeCountLabels();
   setupModeRankingButtons();
