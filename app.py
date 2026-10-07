@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V63-HARD-NAV-FLAT-MEDALS-2026-09-24
+# VERSION: CLEAN-V65-RUNTIME-NAV-FIX-2026-10-07
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V63-HARD-NAV-FLAT-MEDALS"
+APP_VERSION = "CLEAN-V65-RUNTIME-NAV-FIX"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3584,6 +3584,16 @@ HTML = r"""
   const root = document.getElementById("soroban-app");
   const $ = (selector) => root.querySelector(selector);
 
+  window.addEventListener(
+    "error",
+    (event) => {
+      try {
+        root.dataset.runtimeError =
+          String(event.message || "runtime error");
+      } catch (error) {}
+    }
+  );
+
   // Navigation is deliberately dependency-free and installed before all other app logic.
   // It changes only view classes using raw DOM queries, so even a later JS error cannot trap the user.
   function hardSetView(target) {
@@ -4700,6 +4710,9 @@ HTML = r"""
   const randInt = (min, max) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
 
+  // 暗算モードの旧呼び出し名も同じ実装へ統一。
+  const randomInt = randInt;
+
   const coin = () => Math.random() < 0.5;
 
   function calculate(a, op, b) {
@@ -5479,6 +5492,210 @@ HTML = r"""
       weight: 2.2
     }
   });
+
+  function loadSessionHistory() {
+    try {
+      const raw = localStorage.getItem(
+        SESSION_HISTORY_STORAGE_KEY
+      );
+
+      if (!raw) {
+        return [];
+      }
+
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.slice(-MAX_SESSION_HISTORY)
+        : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveSessionHistory() {
+    try {
+      sessionHistory = sessionHistory
+        .slice(-MAX_SESSION_HISTORY);
+
+      localStorage.setItem(
+        SESSION_HISTORY_STORAGE_KEY,
+        JSON.stringify(sessionHistory)
+      );
+    } catch (error) {}
+  }
+
+  function digitLength(value) {
+    return String(
+      Math.abs(
+        Math.floor(Number(value) || 0)
+      )
+    ).length;
+  }
+
+  function hasAdditionCarry(a, b) {
+    let x = Math.floor(Math.abs(a));
+    let y = Math.floor(Math.abs(b));
+    let carry = 0;
+
+    while (x > 0 || y > 0 || carry > 0) {
+      const dx = x % 10;
+      const dy = y % 10;
+      const sum = dx + dy + carry;
+
+      if (sum >= 10) {
+        return true;
+      }
+
+      carry = sum >= 10 ? 1 : 0;
+      x = Math.floor(x / 10);
+      y = Math.floor(y / 10);
+    }
+
+    return false;
+  }
+
+  function hasSubtractionBorrow(a, b) {
+    let x = Math.floor(Math.abs(a));
+    let y = Math.floor(Math.abs(b));
+    let borrow = 0;
+
+    while (x > 0 || y > 0) {
+      let dx = (x % 10) - borrow;
+      const dy = y % 10;
+
+      if (dx < dy) {
+        return true;
+      }
+
+      borrow = dx < dy ? 1 : 0;
+      x = Math.floor(x / 10);
+      y = Math.floor(y / 10);
+    }
+
+    return false;
+  }
+
+  function skillForQuestion(q) {
+    if (!q) {
+      return "add_direct";
+    }
+
+    if (q.op === "＋") {
+      if (
+        digitLength(q.a) > 1 ||
+        digitLength(q.b) > 1
+      ) {
+        return "add_multi";
+      }
+
+      if (q.a + q.b >= 10) {
+        return "add_ten";
+      }
+
+      if (
+        q.a < 5 &&
+        q.b < 5 &&
+        q.a + q.b >= 5
+      ) {
+        return "add_five";
+      }
+
+      return "add_direct";
+    }
+
+    if (q.op === "－") {
+      if (
+        digitLength(q.a) > 1 ||
+        digitLength(q.b) > 1
+      ) {
+        return hasSubtractionBorrow(
+          q.a,
+          q.b
+        )
+          ? "sub_multi"
+          : "sub_direct";
+      }
+
+      if (
+        q.a >= 5 &&
+        q.b < 5 &&
+        (q.a % 5) < q.b
+      ) {
+        return "sub_five";
+      }
+
+      return "sub_direct";
+    }
+
+    if (q.op === "×") {
+      return (
+        q.a <= 9 &&
+        q.b <= 9
+      )
+        ? "mul_basic"
+        : "mul_place";
+    }
+
+    if (q.op === "÷") {
+      return (
+        q.a <= 81 &&
+        q.b <= 9
+      )
+        ? "div_basic"
+        : "div_place";
+    }
+
+    return "add_direct";
+  }
+
+  function collectSkillEvidence() {
+    const evidence = {};
+
+    Object.keys(SKILL_DEFS).forEach(
+      (skillId) => {
+        evidence[skillId] = {
+          attempts: 0,
+          correct: 0,
+          hints: 0
+        };
+      }
+    );
+
+    Object.values(
+      learningStats.problems || {}
+    ).forEach((stat) => {
+      const skillId =
+        skillForQuestion(stat);
+
+      if (!evidence[skillId]) {
+        return;
+      }
+
+      evidence[skillId].attempts +=
+        Number(stat.attempts) || 0;
+
+      evidence[skillId].correct +=
+        Number(stat.correct) || 0;
+    });
+
+    sessionHistory.forEach((session) => {
+      (session.questions || [])
+        .forEach((question) => {
+          const skillId =
+            question.skillId ||
+            skillForQuestion(question);
+
+          if (
+            evidence[skillId] &&
+            question.hintUsed
+          ) {
+            evidence[skillId].hints += 1;
+          }
+        });
+    });
+
+    return evidence;
+  }
 
   const APP_RANK_CERTIFICATIONS =
     Object.freeze([
