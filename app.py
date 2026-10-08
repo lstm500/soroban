@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V66-NATURAL-JA-LOUDER-BGM-2026-10-08
+# VERSION: CLEAN-V67-EXACT-GOWASAN-JA-VOICE-2026-10-08
 
 import json
 
@@ -4374,7 +4374,7 @@ HTML = r"""
   let voiceListeningStartedAt = 0;
   let voiceSpeechDetected = false;
 
-  // 「ご破算」は1問につき1回だけ。
+  // 「ゴワサン」は1問につき1回だけ。
   // 音声認識が無音で切れても、この番号が同じ間は言い直さない。
   let gowasanSpokenForIndex = -1;
 
@@ -4382,7 +4382,7 @@ HTML = r"""
   let hintNarrationActive = false;
   let hintNarrationToken = 0;
 
-  // 「ご破算！」の直後だけ短く余韻を待つ。
+  // 「ゴワサン！」の直後だけ短く余韻を待つ。
   // 問題を解いている間はBGMを止めない。
   const MIC_PRE_SILENCE_MS = 450;
   const MIC_RESULT_GUARD_MS = 350;
@@ -7750,7 +7750,7 @@ HTML = r"""
     hintRods = [];
 
     // ヒント前から音声回答ONだった場合は、
-    // 「ご破算」を言い直さず、同じ問題でマイクだけ戻す。
+    // 「ゴワサン」を言い直さず、同じ問題でマイクだけ戻す。
     if (
       voiceAnswerEnabled &&
       !locked &&
@@ -8793,7 +8793,7 @@ HTML = r"""
         workspace.classList.contains("show") &&
         !results.classList.contains("show")
       ) {
-        // 無音タイムアウトでは「ご破算！」を言い直さない。
+        // 無音タイムアウトでは「ゴワサン！」を言い直さない。
         // 同じ問題を表示したまま、マイクだけ静かに再開する。
         scheduleSilentVoiceRestart(
           320
@@ -8947,13 +8947,11 @@ HTML = r"""
     gowasanSpokenForIndex =
       index;
 
-    // 音声回答ON中は「ご破算」が終わるまで問題を隠す。
+    // 表示はカタカナで固定。
     hideQuestionForVoiceCallout();
 
-    // ① まず「ご破算！」を読み上げる。
-    // この間、音声認識はまだ開始しない。
     updateVoiceUi(
-      "音声回答：ご破算！"
+      "音声回答：ゴワサン！"
     );
 
     voicePauseForFeedback = true;
@@ -8973,8 +8971,7 @@ HTML = r"""
         return;
       }
 
-      // 「ご破算！」の余韻だけはマイクへ入れない。
-      // この短い待機中だけ無音にし、問題表示後はBGMを通常音量へ戻す。
+      // ゴワサンの語尾が回答用マイクへ入らないよう、短い無音時間を置く。
       bgmEngine.setVolume(
         BGM_VOLUME_LISTENING,
         0.06
@@ -9011,47 +9008,73 @@ HTML = r"""
 
     window.speechSynthesis.cancel();
 
-    const utterance =
-      new SpeechSynthesisUtterance(
-        "ご破算。"
-      );
-
-    utterance.lang = "ja-JP";
-
-    // 正式表記を日本語TTSへ渡し、
-    // 子ども向けでも不自然に高くならない声にする。
-    utterance.rate = 0.90;
-    utterance.pitch = 1.00;
-    utterance.volume = 1.0;
-
-    const voice =
-      getJapaneseVoice();
-
-    if (voice) {
-      utterance.voice = voice;
-    }
-
-    let finished = false;
-
-    const done = () => {
-      if (finished) {
+    // Chrome/Androidでは getVoices() の準備が遅れることがある。
+    // 日本語音声が得られてから発声し、英語系フォールバックを避ける。
+    waitForJapaneseVoice(
+      1400
+    ).then((voice) => {
+      if (
+        !voiceAnswerEnabled ||
+        locked ||
+        results.classList.contains("show")
+      ) {
+        voiceCalloutRunning = false;
+        voicePauseForFeedback = false;
+        refreshBgmVolume();
         return;
       }
 
-      finished = true;
+      const utterance =
+        new SpeechSynthesisUtterance(
+          "ゴワサン！"
+        );
+
+      utterance.lang =
+        "ja-JP";
+
+      // 速すぎず、ピッチを上げず、日本語の短い掛け声として発声。
+      utterance.rate =
+        0.92;
+
+      utterance.pitch =
+        1.00;
+
+      utterance.volume =
+        1.0;
+
+      if (voice) {
+        utterance.voice =
+          voice;
+      }
+
+      let finished = false;
+
+      const done = () => {
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+        beginListening();
+      };
+
+      utterance.onend =
+        done;
+
+      utterance.onerror =
+        done;
+
+      window.speechSynthesis.speak(
+        utterance
+      );
+    }).catch(() => {
+      // 音声取得に失敗してもゲームは止めない。
       beginListening();
-    };
-
-    utterance.onend = done;
-    utterance.onerror = done;
-
-    window.speechSynthesis.speak(
-      utterance
-    );
+    });
   }
 
   function startVoiceRecognition() {
-    // 同じ問題ですでに「ご破算」を言っていたら、
+    // 同じ問題ですでに「ゴワサン」を言っていたら、
     // どこから呼ばれても二度と言わず、マイクだけ再開する。
     if (
       gowasanSpokenForIndex ===
@@ -9149,10 +9172,11 @@ HTML = r"""
       return null;
     }
 
-    // Android / iPhone / Windows で、
-    // 日本語ネイティブ向けの音声をなるべく優先する。
+    // 端末に複数音声がある場合は、日本語専用音声を最優先する。
+    // Android Chrome では "Google 日本語" が自然な場合が多い。
     const preferredNames = [
       "google 日本語",
+      "google japanese",
       "日本語",
       "japanese",
       "nanami",
@@ -9181,13 +9205,7 @@ HTML = r"""
           if (
             lang === "ja-jp"
           ) {
-            score += 100;
-          }
-
-          if (
-            voice.localService
-          ) {
-            score += 15;
+            score += 300;
           }
 
           preferredNames.forEach(
@@ -9198,17 +9216,24 @@ HTML = r"""
                 )
               ) {
                 score +=
-                  60 - idx;
+                  220 - idx * 8;
               }
             }
           );
 
           if (
-            /english|en-us|en-gb/.test(
+            voice.localService
+          ) {
+            score += 25;
+          }
+
+          // 日本語候補に入っていても名前に英語系表記が混ざるものは避ける。
+          if (
+            /english|en-us|en-gb|american|british/.test(
               name
             )
           ) {
-            score -= 100;
+            score -= 500;
           }
 
           return {
@@ -9227,6 +9252,92 @@ HTML = r"""
       scored[0]?.voice ||
       japaneseVoices[0]
     );
+  }
+
+  function waitForJapaneseVoice(
+    timeoutMs = 1400
+  ) {
+    return new Promise((resolve) => {
+      if (
+        !("speechSynthesis" in window)
+      ) {
+        resolve(null);
+        return;
+      }
+
+      const immediate =
+        getJapaneseVoice();
+
+      if (immediate) {
+        resolve(immediate);
+        return;
+      }
+
+      let finished = false;
+      const startedAt =
+        performance.now();
+
+      const finish = (voice) => {
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+
+        try {
+          window.speechSynthesis.removeEventListener(
+            "voiceschanged",
+            onVoicesChanged
+          );
+        } catch (error) {}
+
+        resolve(
+          voice || null
+        );
+      };
+
+      const check = () => {
+        const voice =
+          getJapaneseVoice();
+
+        if (voice) {
+          finish(voice);
+          return;
+        }
+
+        if (
+          performance.now() -
+            startedAt >=
+          timeoutMs
+        ) {
+          finish(null);
+          return;
+        }
+
+        setTimeout(
+          check,
+          80
+        );
+      };
+
+      const onVoicesChanged = () => {
+        const voice =
+          getJapaneseVoice();
+
+        if (voice) {
+          finish(voice);
+        }
+      };
+
+      try {
+        window.speechSynthesis.addEventListener(
+          "voiceschanged",
+          onVoicesChanged
+        );
+      } catch (error) {}
+
+      check();
+    });
   }
 
   function speakAnswerFeedback(
@@ -12995,7 +13106,7 @@ HTML = r"""
     hideSorobanHint();
 
     // 音声モードでは、
-    // 「ご破算！」→マイクonstart の前に問題を作らない。
+    // 「ゴワサン！」→マイクonstart の前に問題を作らない。
     if (
       voiceAnswerEnabled &&
       !voiceReady
