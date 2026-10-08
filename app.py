@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V65-RUNTIME-NAV-FIX-2026-10-07
+# VERSION: CLEAN-V66-NATURAL-JA-LOUDER-BGM-2026-10-08
 
 import json
 
@@ -1312,7 +1312,7 @@ HTML = r"""
   }
 
   .question-card.voice-waiting::after {
-    content: "ゴワサン！";
+    content: "ご破算！";
     position: absolute;
     inset: 0;
     display: grid;
@@ -4374,7 +4374,7 @@ HTML = r"""
   let voiceListeningStartedAt = 0;
   let voiceSpeechDetected = false;
 
-  // 「ごわさん」は1問につき1回だけ。
+  // 「ご破算」は1問につき1回だけ。
   // 音声認識が無音で切れても、この番号が同じ間は言い直さない。
   let gowasanSpokenForIndex = -1;
 
@@ -4382,12 +4382,12 @@ HTML = r"""
   let hintNarrationActive = false;
   let hintNarrationToken = 0;
 
-  // 「ゴワサン！」の直後だけ短く余韻を待つ。
+  // 「ご破算！」の直後だけ短く余韻を待つ。
   // 問題を解いている間はBGMを止めない。
   const MIC_PRE_SILENCE_MS = 450;
   const MIC_RESULT_GUARD_MS = 350;
 
-  const BGM_VOLUME_NORMAL = 0.14;
+  const BGM_VOLUME_NORMAL = 0.18;
   const BGM_VOLUME_APP_SPEECH = 0.03;
   const BGM_VOLUME_LISTENING = 0.00;
 
@@ -7750,7 +7750,7 @@ HTML = r"""
     hintRods = [];
 
     // ヒント前から音声回答ONだった場合は、
-    // 「ごわさん」を言い直さず、同じ問題でマイクだけ戻す。
+    // 「ご破算」を言い直さず、同じ問題でマイクだけ戻す。
     if (
       voiceAnswerEnabled &&
       !locked &&
@@ -8793,7 +8793,7 @@ HTML = r"""
         workspace.classList.contains("show") &&
         !results.classList.contains("show")
       ) {
-        // 無音タイムアウトでは「ゴワサン！」を言い直さない。
+        // 無音タイムアウトでは「ご破算！」を言い直さない。
         // 同じ問題を表示したまま、マイクだけ静かに再開する。
         scheduleSilentVoiceRestart(
           320
@@ -8947,13 +8947,13 @@ HTML = r"""
     gowasanSpokenForIndex =
       index;
 
-    // 音声回答ON中は「ごわさん」が終わるまで問題を隠す。
+    // 音声回答ON中は「ご破算」が終わるまで問題を隠す。
     hideQuestionForVoiceCallout();
 
-    // ① まず「ゴワサン！」を読み上げる。
+    // ① まず「ご破算！」を読み上げる。
     // この間、音声認識はまだ開始しない。
     updateVoiceUi(
-      "音声回答：ごわさん！"
+      "音声回答：ご破算！"
     );
 
     voicePauseForFeedback = true;
@@ -8973,7 +8973,7 @@ HTML = r"""
         return;
       }
 
-      // 「ゴワサン！」の余韻だけはマイクへ入れない。
+      // 「ご破算！」の余韻だけはマイクへ入れない。
       // この短い待機中だけ無音にし、問題表示後はBGMを通常音量へ戻す。
       bgmEngine.setVolume(
         BGM_VOLUME_LISTENING,
@@ -9013,16 +9013,16 @@ HTML = r"""
 
     const utterance =
       new SpeechSynthesisUtterance(
-        "ごわさん"
+        "ご破算。"
       );
 
     utterance.lang = "ja-JP";
 
-    // 高すぎるピッチと速さをやめ、
-    // 日本語として自然に聞こえる速度へ。
-    utterance.rate = 0.94;
-    utterance.pitch = 1.02;
-    utterance.volume = 0.95;
+    // 正式表記を日本語TTSへ渡し、
+    // 子ども向けでも不自然に高くならない声にする。
+    utterance.rate = 0.90;
+    utterance.pitch = 1.00;
+    utterance.volume = 1.0;
 
     const voice =
       getJapaneseVoice();
@@ -9051,7 +9051,7 @@ HTML = r"""
   }
 
   function startVoiceRecognition() {
-    // 同じ問題ですでに「ごわさん」を言っていたら、
+    // 同じ問題ですでに「ご破算」を言っていたら、
     // どこから呼ばれても二度と言わず、マイクだけ再開する。
     if (
       gowasanSpokenForIndex ===
@@ -9272,9 +9272,9 @@ HTML = r"""
       );
 
     utterance.lang = "ja-JP";
-    utterance.rate = 1.30;
-    utterance.pitch = 1.48;
-    utterance.volume = 0.95;
+    utterance.rate = 0.98;
+    utterance.pitch = 1.03;
+    utterance.volume = 1.0;
 
     const voice =
       getJapaneseVoice();
@@ -12995,7 +12995,7 @@ HTML = r"""
     hideSorobanHint();
 
     // 音声モードでは、
-    // 「ゴワサン！」→マイクonstart の前に問題を作らない。
+    // 「ご破算！」→マイクonstart の前に問題を作らない。
     if (
       voiceAnswerEnabled &&
       !voiceReady
@@ -13415,8 +13415,8 @@ HTML = r"""
 
     const makeUtterance = (
       message,
-      rate = 1.18,
-      pitch = 1.52
+      rate = 0.96,
+      pitch = 1.03
     ) => {
       const utterance =
         new SpeechSynthesisUtterance(
@@ -13446,8 +13446,8 @@ HTML = r"""
       const challengeUtterance =
         makeUtterance(
           challengeMessage,
-          1.08,
-          1.42
+          0.95,
+          1.02
         );
 
       window.speechSynthesis.speak(
@@ -13459,8 +13459,8 @@ HTML = r"""
       const scoreUtterance =
         makeUtterance(
           `得点は、${points}点！`,
-          1.22,
-          1.62
+          0.98,
+          1.04
         );
 
       if (challengeMessage) {
@@ -13494,8 +13494,8 @@ HTML = r"""
       const openingUtterance =
         makeUtterance(
           openingMessage,
-          1.18,
-          1.55
+          0.96,
+          1.03
         );
 
       let continued = false;
@@ -13580,8 +13580,8 @@ HTML = r"""
         );
 
       utterance.lang = "ja-JP";
-      utterance.rate = 1.14;
-      utterance.pitch = 1.5;
+      utterance.rate = 0.96;
+      utterance.pitch = 1.03;
       utterance.volume = 1.0;
 
       const voice =
