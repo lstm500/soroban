@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V68-SIMPLE-HINT-2026-10-10
+# VERSION: CLEAN-V69-PRECISE-COMPLEMENTS-2026-10-10
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V68-SIMPLE-HINT"
+APP_VERSION = "CLEAN-V69-PRECISE-COMPLEMENTS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1533,6 +1533,7 @@ HTML = r"""
   }
 
   .hint-step {
+    white-space: pre-line;
     min-height: 42px;
     margin: 8px 0 10px;
     text-align: center;
@@ -3453,13 +3454,13 @@ HTML = r"""
 
     <div class="hint-launch">
       <button type="button" id="hintBtn" class="hint-btn">
-        たまのヒントをみる
+        珠ヒントを見る
       </button>
     </div>
 
     <div id="abacusHint" class="abacus-hint">
       <div class="hint-head">
-        <div class="hint-title">たまを うごかそう</div>
+        <div class="hint-title">珠の動かし方</div>
         <div class="hint-actions">
           <button type="button" id="hintCloseBtn">とじる</button>
         </div>
@@ -3478,7 +3479,7 @@ HTML = r"""
       </div>
 
       <div class="hint-legend">
-        きいろい ところを みてね。
+        黄色は今動かす位。補数は、足して5または10になる数。
       </div>
     </div>
 
@@ -7284,23 +7285,13 @@ HTML = r"""
     ) % 10;
   }
 
-  function easyHintPlaceName(place) {
-    const names = {
-      1: "1のくらい",
-      10: "10のくらい",
-      100: "100のくらい",
-      1000: "1000のくらい",
-      10000: "1まんのくらい",
-      100000: "10まんのくらい",
-      1000000: "100まんのくらい"
-    };
-    return names[place] || `${place}のくらい`;
-  }
-
+  // 珠ヒント：正しい珠算用語を使い、1操作につき1つの短い説明を表示する。
+  // 一珠（1を表す下の珠）、五珠（5を表す上の珠）。
+  // 補数は「足して5または10になる数」。1操作に複数の理由を重ねない。
   function pushHintMove(steps, state, delta, activePlace, text) {
     const last = steps[steps.length - 1];
     const placeIntro = !last || last.activePlace !== activePlace
-      ? `${easyHintPlaceName(activePlace)}：`
+      ? `${placeName(activePlace)}：`
       : "";
 
     state.value += delta;
@@ -7311,74 +7302,90 @@ HTML = r"""
     });
   }
 
-  function addWithinDigitHint(steps, state, place, amount, context = "") {
+  // 既存の操作ステップへ、理由を1行だけ追加する。
+  function prependHintReason(step, reason) {
+    if (!step || !reason) return;
+    const label = `${placeName(step.activePlace)}：`;
+    if (step.text.startsWith(label)) {
+      step.text = `${label}${reason}\n${step.text.slice(label.length)}`;
+    } else {
+      step.text = `${reason}\n${step.text}`;
+    }
+  }
+
+  // 10の補数と5の補数が同時に必要なら、2つの操作に理由を分散。
+  // 1画面に長い説明を詰め込まない。
+  function attachComplementReason(steps, startIndex, amount, complement, base) {
+    const first = steps[startIndex];
+    if (!first) return;
+    const reason = `${base}の補数：${amount}＋${complement}＝${base}。`;
+    const fiveReason = first.text.match(/5の補数：\d＋\d＝5。\n/);
+    const next = steps[startIndex + 1];
+    if (fiveReason && next) {
+      first.text = first.text.replace(fiveReason[0], "");
+      prependHintReason(next, fiveReason[0].trim());
+    }
+    prependHintReason(first, reason);
+  }
+
+  function addWithinDigitHint(steps, state, place, amount) {
     if (amount <= 0) return;
-
     const digit = hintDigitAt(state.value, place);
-    const intro = context ? `${context} ` : "";
 
-    // 1操作＝1画面。珠を動かさない説明画面は作らない。
+    // 五珠を使って5〜9を作る（例：1＋7 は ＋5、＋2）。
     if (amount >= 5 && digit < 5) {
-      pushHintMove(steps, state, 5 * place, place,
-        `${intro}5のたまをいれよう。`);
-
+      pushHintMove(steps, state, 5 * place, place, "五珠を入れる。");
       const rest = amount - 5;
       if (rest > 0) {
         pushHintMove(steps, state, rest * place, place,
-          `のこりの${rest}をいれよう。`);
+          `一珠を${rest}個入れる。`);
       }
       return;
     }
 
-    // 例：2+4 -> -1, +5。理由は最初の操作で一度だけ伝える。
+    // 5の補数：例 2＋4 は −1、＋5。
     if (digit < 5 && amount < 5 && digit + amount >= 5) {
       const complement = 5 - amount;
       pushHintMove(steps, state, -complement * place, place,
-        `${intro}${amount}をたすよ。まず${complement}をとろう。`);
-      pushHintMove(steps, state, 5 * place, place,
-        `5のたまをいれよう。`);
+        `5の補数：${amount}＋${complement}＝5。\n一珠を${complement}個取る。`);
+      pushHintMove(steps, state, 5 * place, place, "五珠を入れる。");
       return;
     }
 
     pushHintMove(steps, state, amount * place, place,
-      `${intro}${amount}をいれよう。`);
+      `一珠を${amount}個入れる。`);
   }
 
-  function subtractWithinDigitHint(steps, state, place, amount, context = "", explainAmount = true) {
+  function subtractWithinDigitHint(steps, state, place, amount) {
     if (amount <= 0) return;
-
     const digit = hintDigitAt(state.value, place);
-    const intro = context ? `${context} ` : "";
 
     if (digit >= 5 && amount >= 5) {
-      pushHintMove(steps, state, -5 * place, place,
-        `${intro}5のたまをとろう。`);
-
+      pushHintMove(steps, state, -5 * place, place, "五珠を取る。");
       const rest = amount - 5;
       if (rest > 0) {
         pushHintMove(steps, state, -rest * place, place,
-          `のこりの${rest}をとろう。`);
+          `一珠を${rest}個取る。`);
       }
       return;
     }
 
-    // 例：7-4 -> -5, +1。
+    // 5の補数：例 7−4 は −5、＋1。
     if (digit >= 5 && amount < 5 && digit - 5 < amount) {
       const complement = 5 - amount;
       pushHintMove(steps, state, -5 * place, place,
-        `${intro}${explainAmount ? `${amount}をひくよ。` : ""}5のたまをとろう。`);
+        `5の補数：${amount}＋${complement}＝5。\n五珠を取る。`);
       pushHintMove(steps, state, complement * place, place,
-        `${complement}をもどそう。`);
+        `一珠を${complement}個入れる。`);
       return;
     }
 
     pushHintMove(steps, state, -amount * place, place,
-      `${intro}${amount}をとろう。`);
+      `一珠を${amount}個取る。`);
   }
 
   function addDigitWithCarryHint(steps, state, place, amount) {
     if (amount <= 0) return;
-
     const digit = hintDigitAt(state.value, place);
 
     if (digit + amount <= 9) {
@@ -7386,25 +7393,17 @@ HTML = r"""
       return;
     }
 
-    // 例：8+7 -> -3, +10。新しい位に移るときだけ位を読み上げる。
+    // 10の補数：例 8＋7 は −3、＋10。
     const complement = 10 - amount;
-    const before = steps.length;
-    subtractWithinDigitHint(steps, state, place, complement, "", false);
-    if (steps.length > before) {
-      const first = steps[before];
-      const marker = "：";
-      const pos = first.text.indexOf(marker);
-      const placeText = pos >= 0 ? first.text.slice(0, pos + 1) : "";
-      const actionText = pos >= 0 ? first.text.slice(pos + 1) : first.text;
-      first.text = `${placeText}${amount}をたすよ。${actionText}`;
-    }
-
+    const start = steps.length;
+    subtractWithinDigitHint(steps, state, place, complement);
+    attachComplementReason(steps, start, amount, complement, 10);
+    // 9の位ならさらに上へ繰り上げる（再帰）。
     addDigitWithCarryHint(steps, state, place * 10, 1);
   }
 
   function subtractDigitWithBorrowHint(steps, state, place, amount) {
     if (amount <= 0) return;
-
     const digit = hintDigitAt(state.value, place);
 
     if (digit >= amount) {
@@ -7412,63 +7411,65 @@ HTML = r"""
       return;
     }
 
-    // 例：14-7 -> -10, +3。上の位から先に珠をとる。
+    // 10の補数：例 12−7 は −10、＋3。
     const complement = 10 - amount;
+    const borrowedStart = steps.length;
     subtractDigitWithBorrowHint(steps, state, place * 10, 1);
+    const restoreStart = steps.length;
     addWithinDigitHint(steps, state, place, complement);
+
+    // 上の位から借りる操作がすでに10の補数を説明している場合、
+    // 次の操作へ理由を移し、同じステップで繰り返さない。
+    const firstBorrow = steps[borrowedStart];
+    const reasonStart = firstBorrow && firstBorrow.text.includes("10の補数：")
+      ? restoreStart
+      : borrowedStart;
+    attachComplementReason(steps, reasonStart, amount, complement, 10);
   }
 
   function buildAddSubHintSteps(q) {
     const steps = [{
       value: q.a,
       activePlace: null,
-      text: `まず ${q.a} をおこう。`
+      text: `${q.a}を置く。`
     }];
-
     const state = { value: q.a };
 
+    // 大きい位から順に珠を操作する。
     decomposeByPlace(q.b).forEach((part) => {
       if (q.op === "＋") {
         addDigitWithCarryHint(steps, state, part.place, part.digit);
       } else {
-        const needsBorrow = hintDigitAt(state.value, part.place) < part.digit;
-        const before = steps.length;
         subtractDigitWithBorrowHint(steps, state, part.place, part.digit);
-        if (needsBorrow && steps.length > before) {
-          const first = steps[before];
-          // 何を引くかを先に伝え、実際に動かす位をあとに伝える。
-          first.text = `${part.digit}をひくよ。${first.text}`;
-        }
       }
     });
 
     steps.push({
       value: q.answer,
       activePlace: null,
-      text: `できた！ こたえは ${q.answer}。`
+      text: `答えは${q.answer}。`
     });
     return steps;
   }
 
   function buildResultPlacementSteps(q) {
+    // 掛け算・割り算では計算過程を再現せず、答えの珠の形を確認する。
     const answer = Math.max(0, Math.floor(q.answer));
     const parts = decomposeByPlace(answer);
     const steps = [{
       value: 0,
       activePlace: null,
-      text: "こたえの たまを おいてみよう。"
+      text: "計算した答えを、珠の形で確認する。"
     }];
-
     const state = { value: 0 };
     parts.forEach((part) => {
       pushHintMove(steps, state, part.amount, part.place,
-        `${part.digit}をいれよう。`);
+        `${part.digit}を表す珠を入れる。`);
     });
-
     steps.push({
       value: answer,
       activePlace: null,
-      text: `できた！ こたえは ${answer}。`
+      text: `答えは${answer}。`
     });
     return steps;
   }
@@ -7477,7 +7478,6 @@ HTML = r"""
     if (q.op === "＋" || q.op === "－") {
       return buildAddSubHintSteps(q);
     }
-
     return buildResultPlacementSteps(q);
   }
 
@@ -11400,7 +11400,7 @@ HTML = r"""
         "recording-disabled"
       );
       hintBtn.textContent =
-        "たまのヒントをみる";
+        "珠ヒントを見る";
     }
   }
 
@@ -12816,7 +12816,7 @@ HTML = r"""
     hintBtn.textContent =
       sessionVideoActive
         ? "撮影中：終了後に復習"
-        : "たまのヒントをみる";
+        : "珠ヒントを見る";
 
     voiceAnswerEnabled =
       preferredVoiceAnswerEnabled;
