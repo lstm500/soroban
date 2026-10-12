@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V69-PRECISE-COMPLEMENTS-2026-10-10
+# VERSION: CLEAN-V68-CARRY-BORROW-SPLIT-2026-10-12
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V69-PRECISE-COMPLEMENTS"
+APP_VERSION = "CLEAN-V65-RUNTIME-NAV-FIX"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1533,11 +1533,10 @@ HTML = r"""
   }
 
   .hint-step {
-    white-space: pre-line;
     min-height: 42px;
     margin: 8px 0 10px;
     text-align: center;
-    font-size: clamp(18px, 3.4vw, 23px);
+    font-size: 16px;
     font-weight: 900;
     line-height: 1.55;
     color: #4c473e;
@@ -3125,26 +3124,42 @@ HTML = r"""
   <div class="mode-grid">
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 1</div>
-      <div class="mode-name">1桁の足し算</div>
-      <div class="mode-desc">最終表示は1〜9の数だけ。足し算のみ12問です。</div>
+      <div class="mode-name">1桁・繰り上がりなし</div>
+      <div class="mode-desc">1〜9同士の足し算。一の位から十の位への繰り上がりがない12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba1">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 2</div>
-      <div class="mode-name">2桁の足し算</div>
-      <div class="mode-desc">最終表示は10〜99。足し算のみ12問です。</div>
+      <div class="mode-name">1桁・繰り上がりあり</div>
+      <div class="mode-desc">1〜9同士の足し算。一の位から十の位へ必ず繰り上がる12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba2">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 3</div>
-      <div class="mode-name">3桁の足し算</div>
-      <div class="mode-desc">最終表示は100〜999。足し算のみ12問です。</div>
+      <div class="mode-name">2桁・繰り上がりなし</div>
+      <div class="mode-desc">10〜99同士。一の位から十の位への繰り上がりがない2桁レベルです。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="ba3">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER ADD 4</div>
+      <div class="mode-name">2桁・繰り上がりあり</div>
+      <div class="mode-desc">10〜99同士。一の位から十の位へ必ず繰り上がる2桁レベルです。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <button type="button" class="primary start-mode" data-mode="ba4">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER ADD 5</div>
+      <div class="mode-name">3桁の足し算</div>
+      <div class="mode-desc">100〜999同士の足し算。従来の3桁レベルです。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <button type="button" class="primary start-mode" data-mode="ba5">はじめる</button>
     </article>
   </div>
 
@@ -3152,26 +3167,42 @@ HTML = r"""
   <div class="mode-grid">
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 1</div>
-      <div class="mode-name">1桁の引き算</div>
-      <div class="mode-desc">最終表示は1〜9。引き算のみ12問。答えは必ず0以上です。</div>
+      <div class="mode-name">1桁・繰り下がりなし</div>
+      <div class="mode-desc">1〜9同士。一の位だけで引ける、繰り下がりなしの12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs1">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 2</div>
-      <div class="mode-name">2桁の引き算</div>
-      <div class="mode-desc">最終表示は10〜99。引き算のみ12問。答えは必ず0以上です。</div>
+      <div class="mode-name">1桁を引く・繰り下がりあり</div>
+      <div class="mode-desc">10〜18から1〜9を引き、一の位の不足で十の位から必ず繰り下がる12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs2">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 3</div>
-      <div class="mode-name">3桁の引き算</div>
-      <div class="mode-desc">最終表示は100〜999。引き算のみ12問。答えは必ず0以上です。</div>
+      <div class="mode-name">2桁・繰り下がりなし</div>
+      <div class="mode-desc">10〜99同士。一の位から十の位への繰り下がりがない2桁レベルです。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
       <button type="button" class="primary start-mode" data-mode="bs3">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER SUB 4</div>
+      <div class="mode-name">2桁・繰り下がりあり</div>
+      <div class="mode-desc">10〜99同士。一の位の不足で十の位から必ず繰り下がる2桁レベルです。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <button type="button" class="primary start-mode" data-mode="bs4">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER SUB 5</div>
+      <div class="mode-name">3桁の引き算</div>
+      <div class="mode-desc">100〜999同士の引き算。従来の3桁レベルです。答えは0以上です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <button type="button" class="primary start-mode" data-mode="bs5">はじめる</button>
     </article>
   </div>
 
@@ -3454,24 +3485,24 @@ HTML = r"""
 
     <div class="hint-launch">
       <button type="button" id="hintBtn" class="hint-btn">
-        珠ヒントを見る
+        珠ヒントを見る（手動＋音声）
       </button>
     </div>
 
     <div id="abacusHint" class="abacus-hint">
       <div class="hint-head">
-        <div class="hint-title">珠の動かし方</div>
+        <div class="hint-title">そろばんの珠の動かし方｜1つずつ進む</div>
         <div class="hint-actions">
-          <button type="button" id="hintCloseBtn">とじる</button>
+          <button type="button" id="hintCloseBtn">閉じる</button>
         </div>
       </div>
 
       <div id="hintStep" class="hint-step"></div>
 
       <div class="hint-manual-nav">
-        <button type="button" id="hintPrevBtn">← まえ</button>
-        <div id="hintStepCounter" class="hint-manual-counter">1 / 1</div>
-        <button type="button" id="hintNextBtn" class="primary">つぎ →</button>
+        <button type="button" id="hintPrevBtn">← 戻る</button>
+        <div id="hintStepCounter" class="hint-manual-counter">STEP 1 / 1</div>
+        <button type="button" id="hintNextBtn" class="primary">進む →</button>
       </div>
 
       <div class="soroban-scroll">
@@ -3479,7 +3510,7 @@ HTML = r"""
       </div>
 
       <div class="hint-legend">
-        黄色は今動かす位。補数は、足して5または10になる数。
+        「進む」を押すと次の珠の状態へ進みます。黄色い位が、いま考えているところです。
       </div>
     </div>
 
@@ -3813,12 +3844,16 @@ HTML = r"""
   // Primary navigation is handled by the delegated data-app-nav listener.
 
   const modeInfo = {
-    ba1: { title: "初級・足し算1｜1桁の足し算" },
-    ba2: { title: "初級・足し算2｜2桁の足し算" },
-    ba3: { title: "初級・足し算3｜3桁の足し算" },
-    bs1: { title: "初級・引き算1｜1桁の引き算" },
-    bs2: { title: "初級・引き算2｜2桁の引き算" },
-    bs3: { title: "初級・引き算3｜3桁の引き算" },
+    ba1: { title: "初級・足し算1｜1桁・繰り上がりなし" },
+    ba2: { title: "初級・足し算2｜1桁・繰り上がりあり" },
+    ba3: { title: "初級・足し算3｜2桁・繰り上がりなし" },
+    ba4: { title: "初級・足し算4｜2桁・繰り上がりあり" },
+    ba5: { title: "初級・足し算5｜3桁の足し算" },
+    bs1: { title: "初級・引き算1｜1桁・繰り下がりなし" },
+    bs2: { title: "初級・引き算2｜1桁を引く・繰り下がりあり" },
+    bs3: { title: "初級・引き算3｜2桁・繰り下がりなし" },
+    bs4: { title: "初級・引き算4｜2桁・繰り下がりあり" },
+    bs5: { title: "初級・引き算5｜3桁の引き算" },
     mm1: { title: "中級・掛け算1｜1桁×1桁" },
     mm2: { title: "中級・掛け算2｜2桁×1桁" },
     mm3: { title: "中級・掛け算3｜2桁×2桁" },
@@ -4303,6 +4338,7 @@ HTML = r"""
   const CHALLENGE_COUNT_STORAGE_KEY = "soroban_challenge_counts_v1";
   const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
   const RANK_CERTIFICATION_STORAGE_KEY = "soroban_rank_certification_v2";
+  const CHALLENGE_CURRICULUM_VERSION = "carry-borrow-split-v1";
   const MAX_SESSION_HISTORY = 200;
   const MAX_RANKING_ENTRIES_PER_MODE = 100;
 
@@ -4318,8 +4354,12 @@ HTML = r"""
   const NEXT_MODE = Object.freeze({
     ba1: "ba2",
     ba2: "ba3",
+    ba3: "ba4",
+    ba4: "ba5",
     bs1: "bs2",
     bs2: "bs3",
+    bs3: "bs4",
+    bs4: "bs5",
     mm1: "mm2",
     mm2: "mm3",
     md1: "md2",
@@ -4804,6 +4844,239 @@ HTML = r"""
     const rawB = randInt(rawMin, rawA);
 
     return makeQuestion(rawA, "－", rawB);
+  }
+
+
+  function onesAdditionCarries(a, b) {
+    return (
+      (Math.abs(a) % 10) +
+      (Math.abs(b) % 10)
+    ) >= 10;
+  }
+
+  function onesSubtractionBorrows(a, b) {
+    return (
+      Math.abs(a) % 10
+    ) < (
+      Math.abs(b) % 10
+    );
+  }
+
+  function makeAdditionByOnesCarry(
+    digitLevel,
+    carryRequired
+  ) {
+    for (
+      let tries = 0;
+      tries < 2000;
+      tries += 1
+    ) {
+      const min =
+        digitLevel === 1
+          ? 1
+          : 10;
+
+      const max =
+        digitLevel === 1
+          ? 9
+          : 99;
+
+      const a = randInt(min, max);
+      const b = randInt(min, max);
+
+      if (
+        digitLevel === 2 &&
+        a + b > 99
+      ) {
+        continue;
+      }
+
+      if (
+        onesAdditionCarries(a, b) !==
+        Boolean(carryRequired)
+      ) {
+        continue;
+      }
+
+      // 非除算は従来どおり raw 値から +1 して確定する。
+      return makeQuestion(
+        a - 1,
+        "＋",
+        b - 1
+      );
+    }
+
+    throw new Error(
+      `繰り上がり条件の足し算を生成できません: level=${digitLevel}, carry=${carryRequired}`
+    );
+  }
+
+  function makeSubtractionByOnesBorrow(
+    digitLevel,
+    borrowRequired
+  ) {
+    for (
+      let tries = 0;
+      tries < 2000;
+      tries += 1
+    ) {
+      let a;
+      let b;
+
+      if (
+        digitLevel === 1 &&
+        borrowRequired
+      ) {
+        // 例: 12-7。引く数は1桁のまま、十の位から必ず繰り下がる。
+        a = randInt(10, 18);
+        b = randInt(1, 9);
+      } else if (
+        digitLevel === 1
+      ) {
+        a = randInt(1, 9);
+        b = randInt(1, a);
+      } else {
+        a = randInt(10, 99);
+        b = randInt(10, a);
+      }
+
+      if (a < b) {
+        continue;
+      }
+
+      if (
+        onesSubtractionBorrows(a, b) !==
+        Boolean(borrowRequired)
+      ) {
+        continue;
+      }
+
+      return makeQuestion(
+        a - 1,
+        "－",
+        b - 1
+      );
+    }
+
+    throw new Error(
+      `繰り下がり条件の引き算を生成できません: level=${digitLevel}, borrow=${borrowRequired}`
+    );
+  }
+
+  function questionMatchesMode(
+    mode,
+    q
+  ) {
+    if (!q) {
+      return false;
+    }
+
+    const a = Number(q.a);
+    const b = Number(q.b);
+
+    if (
+      !Number.isFinite(a) ||
+      !Number.isFinite(b)
+    ) {
+      return false;
+    }
+
+    if (mode === "ba1") {
+      return (
+        q.op === "＋" &&
+        a >= 1 && a <= 9 &&
+        b >= 1 && b <= 9 &&
+        !onesAdditionCarries(a, b)
+      );
+    }
+
+    if (mode === "ba2") {
+      return (
+        q.op === "＋" &&
+        a >= 1 && a <= 9 &&
+        b >= 1 && b <= 9 &&
+        onesAdditionCarries(a, b)
+      );
+    }
+
+    if (mode === "ba3") {
+      return (
+        q.op === "＋" &&
+        a >= 10 && a <= 99 &&
+        b >= 10 && b <= 99 &&
+        a + b <= 99 &&
+        !onesAdditionCarries(a, b)
+      );
+    }
+
+    if (mode === "ba4") {
+      return (
+        q.op === "＋" &&
+        a >= 10 && a <= 99 &&
+        b >= 10 && b <= 99 &&
+        a + b <= 99 &&
+        onesAdditionCarries(a, b)
+      );
+    }
+
+    if (mode === "ba5") {
+      return (
+        q.op === "＋" &&
+        a >= 100 && a <= 999 &&
+        b >= 100 && b <= 999
+      );
+    }
+
+    if (mode === "bs1") {
+      return (
+        q.op === "－" &&
+        a >= 1 && a <= 9 &&
+        b >= 1 && b <= 9 &&
+        a >= b &&
+        !onesSubtractionBorrows(a, b)
+      );
+    }
+
+    if (mode === "bs2") {
+      return (
+        q.op === "－" &&
+        a >= 10 && a <= 18 &&
+        b >= 1 && b <= 9 &&
+        a >= b &&
+        onesSubtractionBorrows(a, b)
+      );
+    }
+
+    if (mode === "bs3") {
+      return (
+        q.op === "－" &&
+        a >= 10 && a <= 99 &&
+        b >= 10 && b <= 99 &&
+        a >= b &&
+        !onesSubtractionBorrows(a, b)
+      );
+    }
+
+    if (mode === "bs4") {
+      return (
+        q.op === "－" &&
+        a >= 10 && a <= 99 &&
+        b >= 10 && b <= 99 &&
+        a >= b &&
+        onesSubtractionBorrows(a, b)
+      );
+    }
+
+    if (mode === "bs5") {
+      return (
+        q.op === "－" &&
+        a >= 100 && a <= 999 &&
+        b >= 100 && b <= 999 &&
+        a >= b
+      );
+    }
+
+    return true;
   }
 
   function makeMul(finalAMin, finalAMax, finalBMin, finalBMax) {
@@ -5408,7 +5681,7 @@ HTML = r"""
       explanation: "10をまたぐ足し算では、先に一の位から10の補数を引き、そのあと1つ上の位へ1を足します。8＋7なら−3→＋10です。",
       category: "add",
       lessonIndex: 3,
-      baseMode: "ba1",
+      baseMode: "ba2",
       weight: 1.5
     },
     add_multi: {
@@ -5417,7 +5690,7 @@ HTML = r"""
       explanation: "2桁以上は大きい位から順に分けます。十の位を処理してから一の位を処理すると、繰り上がりの場所が分かりやすくなります。",
       category: "add",
       lessonIndex: 4,
-      baseMode: "ba2",
+      baseMode: "ba3",
       weight: 1.7
     },
     sub_direct: {
@@ -5444,7 +5717,7 @@ HTML = r"""
       explanation: "一の位だけで引けないときは、先に1つ上の位から1を引き、そのあと10の補数を一の位へ足し戻します。",
       category: "sub",
       lessonIndex: 3,
-      baseMode: "bs1",
+      baseMode: "bs2",
       weight: 1.5
     },
     sub_multi: {
@@ -5453,7 +5726,7 @@ HTML = r"""
       explanation: "2桁以上は大きい位から順に引きます。下の位で足りないときだけ、繰り下がりを使います。",
       category: "sub",
       lessonIndex: 4,
-      baseMode: "bs2",
+      baseMode: "bs3",
       weight: 1.7
     },
     mul_basic: {
@@ -5606,6 +5879,14 @@ HTML = r"""
 
     if (q.op === "－") {
       if (
+        digitLength(q.a) === 2 &&
+        digitLength(q.b) === 1 &&
+        onesSubtractionBorrows(q.a, q.b)
+      ) {
+        return "sub_ten";
+      }
+
+      if (
         digitLength(q.a) > 1 ||
         digitLength(q.b) > 1
       ) {
@@ -5706,7 +5987,7 @@ HTML = r"""
         modes: ["ba1", "bs1"],
         minCorrect: 10,
         requirement:
-          "1桁の足し算 または 1桁の引き算で10/12以上"
+          "繰り上がり・繰り下がりなしの1桁レベルで10/12以上"
       },
       {
         name: "9級",
@@ -5714,36 +5995,36 @@ HTML = r"""
         modes: ["ba1", "bs1"],
         minCorrect: 10,
         requirement:
-          "1桁の足し算・引き算を両方10/12以上"
+          "ADD1・SUB1を両方10/12以上"
       },
       {
         name: "8級",
-        type: "any",
+        type: "all",
         modes: ["ba2", "bs2"],
         minCorrect: 10,
         requirement:
-          "2桁の足し算 または 2桁の引き算で10/12以上"
+          "1桁レベルの繰り上がり・繰り下がりを両方10/12以上"
       },
       {
         name: "7級",
         type: "all",
-        modes: ["ba2", "bs2"],
-        minCorrect: 10,
-        requirement:
-          "2桁の足し算・引き算を両方10/12以上"
-      },
-      {
-        name: "6級",
-        type: "any",
         modes: ["ba3", "bs3"],
         minCorrect: 10,
         requirement:
-          "3桁の足し算 または 3桁の引き算で10/12以上"
+          "2桁の繰り上がり・繰り下がりなしを両方10/12以上"
+      },
+      {
+        name: "6級",
+        type: "all",
+        modes: ["ba4", "bs4"],
+        minCorrect: 10,
+        requirement:
+          "2桁の繰り上がり・繰り下がりありを両方10/12以上"
       },
       {
         name: "5級",
         type: "all",
-        modes: ["ba3", "bs3"],
+        modes: ["ba5", "bs5"],
         minCorrect: 10,
         requirement:
           "3桁の足し算・引き算を両方10/12以上"
@@ -5824,7 +6105,8 @@ HTML = r"""
       if (!raw) {
         return {
           bestByMode: {},
-          medalAchievedAt: {}
+          medalAchievedAt: {},
+          curriculumVersion: CHALLENGE_CURRICULUM_VERSION
         };
       }
 
@@ -5837,7 +6119,8 @@ HTML = r"""
       ) {
         return {
           bestByMode: {},
-          medalAchievedAt: {}
+          medalAchievedAt: {},
+          curriculumVersion: CHALLENGE_CURRICULUM_VERSION
         };
       }
 
@@ -5855,6 +6138,28 @@ HTML = r"""
           "object"
       ) {
         parsed.medalAchievedAt = {};
+      }
+
+      if (
+        parsed.curriculumVersion !==
+        CHALLENGE_CURRICULUM_VERSION
+      ) {
+        [
+          "ba1", "ba2", "ba3", "ba4", "ba5",
+          "bs1", "bs2", "bs3", "bs4", "bs5"
+        ].forEach((mode) => {
+          delete parsed.bestByMode[mode];
+        });
+
+        parsed.curriculumVersion =
+          CHALLENGE_CURRICULUM_VERSION;
+
+        try {
+          localStorage.setItem(
+            RANK_CERTIFICATION_STORAGE_KEY,
+            JSON.stringify(parsed)
+          );
+        } catch (error) {}
       }
 
       return parsed;
@@ -5895,6 +6200,14 @@ HTML = r"""
     rankCertificationState.medalAchievedAt = {};
   }
 
+  if (
+    rankCertificationState.curriculumVersion !==
+    CHALLENGE_CURRICULUM_VERSION
+  ) {
+    rankCertificationState.curriculumVersion =
+      CHALLENGE_CURRICULUM_VERSION;
+  }
+
   function saveRankCertificationState() {
     try {
       localStorage.setItem(
@@ -5916,6 +6229,20 @@ HTML = r"""
       !record.mode ||
       Number(record.totalQuestions) !==
         TOTAL_QUESTIONS
+    ) {
+      return;
+    }
+
+    if (
+      Array.isArray(record.questions) &&
+      record.questions.length > 0 &&
+      !record.questions.every(
+        (q) =>
+          questionMatchesMode(
+            record.mode,
+            q
+          )
+      )
     ) {
       return;
     }
@@ -6791,7 +7118,8 @@ HTML = r"""
       .filter((stat) =>
         stat.mode === mode &&
         stat.wrong > 0 &&
-        !stat.mastered
+        !stat.mastered &&
+        questionMatchesMode(mode, stat)
       )
       .sort((a, b) => {
         const scoreA =
@@ -7088,13 +7416,17 @@ HTML = r"""
   }
 
   function makeOneQuestion(mode) {
-    if (mode === "ba1") return makeAdditionOnly(1, 9);
-    if (mode === "ba2") return makeAdditionOnly(10, 99);
-    if (mode === "ba3") return makeAdditionOnly(100, 999);
+    if (mode === "ba1") return makeAdditionByOnesCarry(1, false);
+    if (mode === "ba2") return makeAdditionByOnesCarry(1, true);
+    if (mode === "ba3") return makeAdditionByOnesCarry(2, false);
+    if (mode === "ba4") return makeAdditionByOnesCarry(2, true);
+    if (mode === "ba5") return makeAdditionOnly(100, 999);
 
-    if (mode === "bs1") return makeSubtractionOnly(1, 9);
-    if (mode === "bs2") return makeSubtractionOnly(10, 99);
-    if (mode === "bs3") return makeSubtractionOnly(100, 999);
+    if (mode === "bs1") return makeSubtractionByOnesBorrow(1, false);
+    if (mode === "bs2") return makeSubtractionByOnesBorrow(1, true);
+    if (mode === "bs3") return makeSubtractionByOnesBorrow(2, false);
+    if (mode === "bs4") return makeSubtractionByOnesBorrow(2, true);
+    if (mode === "bs5") return makeSubtractionOnly(100, 999);
 
     if (mode === "mm1") {
       return makeMul(1, 9, 1, 9);
@@ -7285,192 +7617,434 @@ HTML = r"""
     ) % 10;
   }
 
-  // 珠ヒント：正しい珠算用語を使い、1操作につき1つの短い説明を表示する。
-  // 一珠（1を表す下の珠）、五珠（5を表す上の珠）。
-  // 補数は「足して5または10になる数」。1操作に複数の理由を重ねない。
-  function pushHintMove(steps, state, delta, activePlace, text) {
-    const last = steps[steps.length - 1];
-    const placeIntro = !last || last.activePlace !== activePlace
-      ? `${placeName(activePlace)}：`
-      : "";
-
+  function pushHintMove(
+    steps,
+    state,
+    delta,
+    activePlace,
+    text
+  ) {
     state.value += delta;
+
     steps.push({
       value: state.value,
       activePlace,
-      text: `${placeIntro}${text}`
+      text
     });
   }
 
-  // 既存の操作ステップへ、理由を1行だけ追加する。
-  function prependHintReason(step, reason) {
-    if (!step || !reason) return;
-    const label = `${placeName(step.activePlace)}：`;
-    if (step.text.startsWith(label)) {
-      step.text = `${label}${reason}\n${step.text.slice(label.length)}`;
-    } else {
-      step.text = `${reason}\n${step.text}`;
-    }
+  function pushHintExplain(
+    steps,
+    state,
+    activePlace,
+    text
+  ) {
+    steps.push({
+      value: state.value,
+      activePlace,
+      text
+    });
   }
 
-  // 10の補数と5の補数が同時に必要なら、2つの操作に理由を分散。
-  // 1画面に長い説明を詰め込まない。
-  function attachComplementReason(steps, startIndex, amount, complement, base) {
-    const first = steps[startIndex];
-    if (!first) return;
-    const reason = `${base}の補数：${amount}＋${complement}＝${base}。`;
-    const fiveReason = first.text.match(/5の補数：\d＋\d＝5。\n/);
-    const next = steps[startIndex + 1];
-    if (fiveReason && next) {
-      first.text = first.text.replace(fiveReason[0], "");
-      prependHintReason(next, fiveReason[0].trim());
+  function addWithinDigitHint(
+    steps,
+    state,
+    place,
+    amount,
+    context = ""
+  ) {
+    if (amount <= 0) {
+      return;
     }
-    prependHintReason(first, reason);
-  }
 
-  function addWithinDigitHint(steps, state, place, amount) {
-    if (amount <= 0) return;
-    const digit = hintDigitAt(state.value, place);
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
 
-    // 五珠を使って5〜9を作る（例：1＋7 は ＋5、＋2）。
-    if (amount >= 5 && digit < 5) {
-      pushHintMove(steps, state, 5 * place, place, "五珠を入れる。");
-      const rest = amount - 5;
+    const prefix =
+      context
+        ? `${context} `
+        : "";
+
+    // 5以上を足す場合、五珠を使えるなら先に五珠。
+    if (
+      amount >= 5 &&
+      digit < 5
+    ) {
+      pushHintMove(
+        steps,
+        state,
+        5 * place,
+        place,
+        `${prefix}${placeName(place)}で、まず5の珠を入れます。`
+      );
+
+      const rest =
+        amount - 5;
+
       if (rest > 0) {
-        pushHintMove(steps, state, rest * place, place,
-          `一珠を${rest}個入れる。`);
+        pushHintMove(
+          steps,
+          state,
+          rest * place,
+          place,
+          `${placeName(place)}で、残りの${rest}を足します。`
+        );
       }
+
       return;
     }
 
-    // 5の補数：例 2＋4 は −1、＋5。
-    if (digit < 5 && amount < 5 && digit + amount >= 5) {
-      const complement = 5 - amount;
-      pushHintMove(steps, state, -complement * place, place,
-        `5の補数：${amount}＋${complement}＝5。\n一珠を${complement}個取る。`);
-      pushHintMove(steps, state, 5 * place, place, "五珠を入れる。");
+    // 5をまたぐ足し算。
+    // 例: 2+4 → 先に-1、そのあと+5。
+    if (
+      digit < 5 &&
+      amount < 5 &&
+      digit + amount >= 5
+    ) {
+      const complement =
+        5 - amount;
+
+      pushHintExplain(
+        steps,
+        state,
+        place,
+        `${placeName(place)}で5をまたぎます。${amount}を足すには、5の補数は${complement}です。先に${complement}を引きます。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        -complement * place,
+        place,
+        `先に${complement}を引きます。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        5 * place,
+        place,
+        `次に5の珠を入れます。${complement}を引いて5を足すと、合わせて${amount}を足したことになります。`
+      );
+
       return;
     }
 
-    pushHintMove(steps, state, amount * place, place,
-      `一珠を${amount}個入れる。`);
+    pushHintMove(
+      steps,
+      state,
+      amount * place,
+      place,
+      `${prefix}${placeName(place)}で${amount}をそのまま足します。`
+    );
   }
 
-  function subtractWithinDigitHint(steps, state, place, amount) {
-    if (amount <= 0) return;
-    const digit = hintDigitAt(state.value, place);
+  function subtractWithinDigitHint(
+    steps,
+    state,
+    place,
+    amount,
+    context = ""
+  ) {
+    if (amount <= 0) {
+      return;
+    }
 
-    if (digit >= 5 && amount >= 5) {
-      pushHintMove(steps, state, -5 * place, place, "五珠を取る。");
-      const rest = amount - 5;
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
+
+    const prefix =
+      context
+        ? `${context} `
+        : "";
+
+    if (
+      digit >= 5 &&
+      amount >= 5
+    ) {
+      pushHintMove(
+        steps,
+        state,
+        -5 * place,
+        place,
+        `${prefix}${placeName(place)}で、まず5の珠を外します。`
+      );
+
+      const rest =
+        amount - 5;
+
       if (rest > 0) {
-        pushHintMove(steps, state, -rest * place, place,
-          `一珠を${rest}個取る。`);
+        pushHintMove(
+          steps,
+          state,
+          -rest * place,
+          place,
+          `${placeName(place)}で、残りの${rest}を引きます。`
+        );
       }
+
       return;
     }
 
-    // 5の補数：例 7−4 は −5、＋1。
-    if (digit >= 5 && amount < 5 && digit - 5 < amount) {
-      const complement = 5 - amount;
-      pushHintMove(steps, state, -5 * place, place,
-        `5の補数：${amount}＋${complement}＝5。\n五珠を取る。`);
-      pushHintMove(steps, state, complement * place, place,
-        `一珠を${complement}個入れる。`);
+    // 5をまたぐ引き算。
+    // 例: 7-4 → -5、そのあと+1。
+    if (
+      digit >= 5 &&
+      amount < 5 &&
+      digit - 5 < amount
+    ) {
+      const complement =
+        5 - amount;
+
+      pushHintExplain(
+        steps,
+        state,
+        place,
+        `${placeName(place)}で5をまたぎます。${amount}を引くには、5の補数は${complement}です。先に5の珠を外します。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        -5 * place,
+        place,
+        `先に5を引きます。`
+      );
+
+      pushHintMove(
+        steps,
+        state,
+        complement * place,
+        place,
+        `次に${complement}を足します。5を引いて${complement}を戻すと、合わせて${amount}を引いたことになります。`
+      );
+
       return;
     }
 
-    pushHintMove(steps, state, -amount * place, place,
-      `一珠を${amount}個取る。`);
+    pushHintMove(
+      steps,
+      state,
+      -amount * place,
+      place,
+      `${prefix}${placeName(place)}で${amount}をそのまま引きます。`
+    );
   }
 
-  function addDigitWithCarryHint(steps, state, place, amount) {
-    if (amount <= 0) return;
-    const digit = hintDigitAt(state.value, place);
-
-    if (digit + amount <= 9) {
-      addWithinDigitHint(steps, state, place, amount);
+  function addDigitWithCarryHint(
+    steps,
+    state,
+    place,
+    amount,
+    carryContext = false
+  ) {
+    if (amount <= 0) {
       return;
     }
 
-    // 10の補数：例 8＋7 は −3、＋10。
-    const complement = 10 - amount;
-    const start = steps.length;
-    subtractWithinDigitHint(steps, state, place, complement);
-    attachComplementReason(steps, start, amount, complement, 10);
-    // 9の位ならさらに上へ繰り上げる（再帰）。
-    addDigitWithCarryHint(steps, state, place * 10, 1);
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
+
+    if (
+      digit + amount <= 9
+    ) {
+      addWithinDigitHint(
+        steps,
+        state,
+        place,
+        amount,
+        carryContext
+          ? "くり上がりです。"
+          : ""
+      );
+      return;
+    }
+
+    const complement =
+      10 - amount;
+
+    pushHintExplain(
+      steps,
+      state,
+      place,
+      `${placeName(place)}で10をまたぎます。${amount}を足すときの10の補数は${complement}です。先に${complement}を引いてから、1つ上の位へ1を足します。`
+    );
+
+    // ユーザー指定どおり、先にマイナス側の珠を動かす。
+    subtractWithinDigitHint(
+      steps,
+      state,
+      place,
+      complement,
+      "10をまたぐので、"
+    );
+
+    addDigitWithCarryHint(
+      steps,
+      state,
+      place * 10,
+      1,
+      true
+    );
   }
 
-  function subtractDigitWithBorrowHint(steps, state, place, amount) {
-    if (amount <= 0) return;
-    const digit = hintDigitAt(state.value, place);
-
-    if (digit >= amount) {
-      subtractWithinDigitHint(steps, state, place, amount);
+  function subtractDigitWithBorrowHint(
+    steps,
+    state,
+    place,
+    amount,
+    borrowContext = false
+  ) {
+    if (amount <= 0) {
       return;
     }
 
-    // 10の補数：例 12−7 は −10、＋3。
-    const complement = 10 - amount;
-    const borrowedStart = steps.length;
-    subtractDigitWithBorrowHint(steps, state, place * 10, 1);
-    const restoreStart = steps.length;
-    addWithinDigitHint(steps, state, place, complement);
+    const digit =
+      hintDigitAt(
+        state.value,
+        place
+      );
 
-    // 上の位から借りる操作がすでに10の補数を説明している場合、
-    // 次の操作へ理由を移し、同じステップで繰り返さない。
-    const firstBorrow = steps[borrowedStart];
-    const reasonStart = firstBorrow && firstBorrow.text.includes("10の補数：")
-      ? restoreStart
-      : borrowedStart;
-    attachComplementReason(steps, reasonStart, amount, complement, 10);
+    if (
+      digit >= amount
+    ) {
+      subtractWithinDigitHint(
+        steps,
+        state,
+        place,
+        amount,
+        borrowContext
+          ? "くり下がりです。"
+          : ""
+      );
+      return;
+    }
+
+    const complement =
+      10 - amount;
+
+    pushHintExplain(
+      steps,
+      state,
+      place,
+      `${placeName(place)}だけでは${amount}を引けません。10の補数は${complement}です。先に1つ上の位から1を引き、そのあと${placeName(place)}へ${complement}を足します。`
+    );
+
+    // 先に上の位を1つ引く。これが繰り下がり。
+    subtractDigitWithBorrowHint(
+      steps,
+      state,
+      place * 10,
+      1,
+      true
+    );
+
+    addWithinDigitHint(
+      steps,
+      state,
+      place,
+      complement,
+      "10から借りた分を使って、"
+    );
   }
 
   function buildAddSubHintSteps(q) {
-    const steps = [{
-      value: q.a,
-      activePlace: null,
-      text: `${q.a}を置く。`
-    }];
-    const state = { value: q.a };
+    const steps = [
+      {
+        value: q.a,
+        activePlace: null,
+        text:
+          `まず、${q.a}をそろばんに置きます。黄色く光る位を見ながら、ゆっくり動かします。`
+      }
+    ];
 
-    // 大きい位から順に珠を操作する。
-    decomposeByPlace(q.b).forEach((part) => {
+    const state = {
+      value: q.a
+    };
+
+    const parts =
+      decomposeByPlace(
+        q.b
+      );
+
+    parts.forEach((part) => {
+      pushHintExplain(
+        steps,
+        state,
+        part.place,
+        `${placeName(part.place)}の${part.digit}を${q.op === "＋" ? "足します" : "引きます"}。`
+      );
+
       if (q.op === "＋") {
-        addDigitWithCarryHint(steps, state, part.place, part.digit);
+        addDigitWithCarryHint(
+          steps,
+          state,
+          part.place,
+          part.digit
+        );
       } else {
-        subtractDigitWithBorrowHint(steps, state, part.place, part.digit);
+        subtractDigitWithBorrowHint(
+          steps,
+          state,
+          part.place,
+          part.digit
+        );
       }
     });
 
     steps.push({
       value: q.answer,
       activePlace: null,
-      text: `答えは${q.answer}。`
+      text:
+        `できました。答えは${q.answer}です。もう一度見るときは、先に動く珠と、あとから動く珠を見てみよう。`
     });
+
     return steps;
   }
 
   function buildResultPlacementSteps(q) {
-    // 掛け算・割り算では計算過程を再現せず、答えの珠の形を確認する。
     const answer = Math.max(0, Math.floor(q.answer));
     const parts = decomposeByPlace(answer);
-    const steps = [{
-      value: 0,
-      activePlace: null,
-      text: "計算した答えを、珠の形で確認する。"
-    }];
-    const state = { value: 0 };
+
+    const steps = [
+      {
+        value: 0,
+        activePlace: null,
+        text:
+          q.op === "×"
+            ? "掛け算では、答えの珠の置き方を位ごとに見てみます。"
+            : "割り算では、答えの珠の置き方を位ごとに見てみます。"
+      }
+    ];
+
+    let current = 0;
+
     parts.forEach((part) => {
-      pushHintMove(steps, state, part.amount, part.place,
-        `${part.digit}を表す珠を入れる。`);
+      current += part.amount;
+
+      steps.push({
+        value: current,
+        activePlace: part.place,
+        text:
+          `${placeName(part.place)}に ${part.digit} を置きます。`
+      });
     });
+
     steps.push({
       value: answer,
       activePlace: null,
-      text: `答えは${answer}。`
+      text: "この珠の形で完成です。"
     });
+
     return steps;
   }
 
@@ -7478,6 +8052,7 @@ HTML = r"""
     if (q.op === "＋" || q.op === "－") {
       return buildAddSubHintSteps(q);
     }
+
     return buildResultPlacementSteps(q);
   }
 
@@ -7618,7 +8193,7 @@ HTML = r"""
       step.text;
 
     hintStepCounter.textContent =
-      `${hintManualIndex + 1} / ${hintManualSteps.length}`;
+      `STEP ${hintManualIndex + 1} / ${hintManualSteps.length}`;
 
     hintPrevBtn.disabled =
       hintManualIndex <= 0;
@@ -7630,8 +8205,8 @@ HTML = r"""
     hintNextBtn.textContent =
       hintManualIndex >=
         hintManualSteps.length - 1
-        ? "できた！"
-        : "つぎ →";
+        ? "ここで完成"
+        : "進む →";
 
     if (speak) {
       speakHintNarration(
@@ -11400,7 +11975,7 @@ HTML = r"""
         "recording-disabled"
       );
       hintBtn.textContent =
-        "珠ヒントを見る";
+        "珠ヒントを見る（手動＋音声）";
     }
   }
 
@@ -12816,7 +13391,7 @@ HTML = r"""
     hintBtn.textContent =
       sessionVideoActive
         ? "撮影中：終了後に復習"
-        : "珠ヒントを見る";
+        : "珠ヒントを見る（手動＋音声）";
 
     voiceAnswerEnabled =
       preferredVoiceAnswerEnabled;
