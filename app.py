@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V84-BORROW-FOCUS-EARLY-MIC"
+APP_VERSION = "CLEAN-V87-BORROW-MOVE-WORDING"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8265,10 +8265,10 @@ HTML = r"""
       `${digit}に${amount}を足すと${localSum}になります。答えが10をこえるので、${amount}は、10から補数を引くと考えます。${amount}を足すときに使う、10の補数はいくつですか？`;
 
     const voicePromptLead =
-      `${digit}に${amount}を足すと${localSum}になります。答えが10をこえるので、${amount}は、10から補数を引くと考えます。`;
+      `${digit}に${amount}を足すと${localSum}になります。答えが10をこえるので、${amount}は、10から補数を引くと考えます。${amount}を足すときに使う、`;
 
     const voicePromptTail =
-      `使う10の補数はいくつですか？ マイクで答えてね。`;
+      `10の補数はいくつですか？ マイクで答えてね。`;
 
     steps.push({
       value: state.value,
@@ -8355,9 +8355,9 @@ HTML = r"""
       narrationText:
         `${placeName(place)}だけでは${amount}を引けません。${amount}を引くときに使う、10の補数はいくつですか？`,
       voicePromptLead:
-        `${placeName(place)}だけでは${amount}を引けません。`,
+        `${placeName(place)}だけでは${amount}を引けません。${amount}を引くときに使う、`,
       voicePromptTail:
-        `使う10の補数はいくつですか？ マイクで答えてね。`,
+        `10の補数はいくつですか？ マイクで答えてね。`,
       kind: "borrow-complement-question",
       expectedAnswer: complement,
       amount,
@@ -8365,7 +8365,7 @@ HTML = r"""
       highlightUsed: true,
       resolved: false,
       resolvedText:
-        `正解。${amount}を引くときに使う「10の補数」は${complement}です。まず、${placeName(place * 10)}の1に注目します。`
+        `正解。${amount}を引くときに使う「10の補数」は${complement}です。${amount}を引くときは、まず${placeName(place * 10)}から1を引いて、そのあと${placeName(place)}に${complement}を足します。まず、10の位を動かしましょう。`
     });
 
     // 先に1つ上の位から1を引く。これが繰り下がり。
@@ -9580,7 +9580,7 @@ HTML = r"""
 
                 speakHintNarration(
                   step.voicePromptTail ||
-                  "使う10の補数はいくつですか？ マイクで答えてね。"
+                  "10の補数はいくつですか？ マイクで答えてね。"
                 );
               }
             );
