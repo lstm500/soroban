@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V71-SHORT-CARRY-AUTO-HINT-MIC-2026-10-13
+# VERSION: CLEAN-V72-HINT-MIC-INSTRUCTION-2026-10-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V71-SHORT-CARRY-AUTO-HINT-MIC"
+APP_VERSION = "CLEAN-V73-COMPLEMENT-WORDING-NARRATION"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8256,10 +8256,10 @@ HTML = r"""
       );
 
     const questionText =
-      `${digit}に${amount}を足すと${localSum}になります。\n10をこえるので、${amount}は「10から補数を引く」と考えます。\n${amount}といくつで10になる？`;
+      `${digit}に${amount}を足すと${localSum}になります。\n答えが10をこえるので、${amount}は「10から補数を引く」と考えます。\n${amount}を足すときに使う「10の補数」はいくつですか？`;
 
     const narrationText =
-      `${digit}に${amount}を足すと${localSum}になります。10をこえるので、${amount}は、10から補数を引くと考えます。${amount}といくつで10になる？`;
+      `${digit}に${amount}を足すと${localSum}になります。答えが10をこえるので、${amount}は、10から補数を引くと考えます。${amount}を足すときに使う、10の補数はいくつですか？`;
 
     steps.push({
       value: state.value,
@@ -8585,6 +8585,7 @@ HTML = r"""
 
     if (hintMicAnswerBtn) {
       hintMicAnswerBtn.disabled = false;
+      hintMicAnswerBtn.style.display = "";
       hintMicAnswerBtn.classList.remove(
         "listening"
       );
@@ -8648,7 +8649,7 @@ HTML = r"""
     }
 
     setHintVoiceStatus(
-      `ちがいます。${step.amount}といくつで10になるか考えてみよう。`,
+      `ちがいます。${step.amount}を足すときに使う「10の補数」を考えてみよう。`,
       "wrong"
     );
 
@@ -8715,23 +8716,6 @@ HTML = r"""
     const narrationToken =
       ++hintNarrationToken;
 
-    const utterance =
-      new SpeechSynthesisUtterance(
-        message
-      );
-
-    utterance.lang = "ja-JP";
-    utterance.rate = 0.72;
-    utterance.pitch = 1.04;
-    utterance.volume = 1.0;
-
-    const voice =
-      getJapaneseVoice();
-
-    if (voice) {
-      utterance.voice = voice;
-    }
-
     let finished = false;
 
     const done = () => {
@@ -8750,12 +8734,46 @@ HTML = r"""
       }
     };
 
-    utterance.onend = done;
-    utterance.onerror = done;
+    const speakNow = (voice) => {
+      if (
+        narrationToken !==
+          hintNarrationToken ||
+        !hintNarrationActive
+      ) {
+        return;
+      }
 
-    window.speechSynthesis.speak(
-      utterance
-    );
+      const utterance =
+        new SpeechSynthesisUtterance(
+          message
+        );
+
+      utterance.lang = "ja-JP";
+      utterance.rate = 0.72;
+      utterance.pitch = 1.02;
+      utterance.volume = 1.0;
+
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      utterance.onend = done;
+      utterance.onerror = done;
+
+      window.speechSynthesis.speak(
+        utterance
+      );
+    };
+
+    // Android Chrome では voices の準備が遅れることがあるため、
+    // 日本語音声が準備できてから珠ヒントを読み上げる。
+    waitForJapaneseVoice(
+      1400
+    ).then((voice) => {
+      speakNow(voice);
+    }).catch(() => {
+      speakNow(null);
+    });
   }
 
   function scheduleHintQuestionRetry(
@@ -8843,7 +8861,7 @@ HTML = r"""
       }
 
       setHintVoiceStatus(
-        `🎤 ${step.amount}といくつで10になる？`,
+        `🎤 ${step.amount}を足すときに使う「10の補数」はいくつですか？`,
         "listening"
       );
     };
@@ -9020,13 +9038,11 @@ HTML = r"""
 
         hintPrevBtn.disabled =
           hintManualIndex <= 0;
-        hintNextBtn.disabled =
-          hintManualIndex >=
-          hintManualSteps.length - 1;
+        hintNextBtn.disabled = false;
         hintNextBtn.textContent =
           hintManualIndex >=
             hintManualSteps.length - 1
-            ? "ここで完成"
+            ? "もう一度見る"
             : "進む →";
         return;
       }
@@ -9113,18 +9129,26 @@ HTML = r"""
       }
     );
 
+    const isCarryQuestion =
+      step.kind ===
+      "carry-complement-question";
+
+    const hintAnswerInstruction =
+      voiceAnswerEnabled
+        ? "マイクで答えてね。"
+        : "数字をタップしてね。";
+
     hintStep.textContent =
-      step.text;
+      isCarryQuestion &&
+      !step.resolved
+        ? `${step.text}\n${hintAnswerInstruction}`
+        : step.text;
 
     hintStepCounter.textContent =
       `STEP ${hintManualIndex + 1} / ${hintManualSteps.length}`;
 
     hintPrevBtn.disabled =
       hintManualIndex <= 0;
-
-    const isCarryQuestion =
-      step.kind ===
-      "carry-complement-question";
 
     if (
       isCarryQuestion &&
@@ -9137,14 +9161,25 @@ HTML = r"""
 
       showHintAnswerControls();
 
+      if (hintMicAnswerBtn) {
+        hintMicAnswerBtn.style.display =
+          voiceAnswerEnabled
+            ? ""
+            : "none";
+      }
+
       setHintVoiceStatus(
-        `${step.amount}といくつで10になる？ 声か数字で答えてね。`
+        voiceAnswerEnabled
+          ? "🎤 マイクで答えてね。"
+          : "数字をタップしてね。"
       );
+
+      const questionNarration =
+        `${step.narrationText || step.text} ${hintAnswerInstruction}`;
 
       if (speak) {
         speakHintNarration(
-          step.narrationText ||
-            step.text,
+          questionNarration,
           () => {
             // チャレンジの音声回答がONなら、珠ヒントの補数問題も
             // 読み上げ終了後に自動でマイクを開始する。
@@ -9180,14 +9215,12 @@ HTML = r"""
 
     hideHintAnswerControls();
 
-    hintNextBtn.disabled =
-      hintManualIndex >=
-      hintManualSteps.length - 1;
+    hintNextBtn.disabled = false;
 
     hintNextBtn.textContent =
       hintManualIndex >=
         hintManualSteps.length - 1
-        ? "ここで完成"
+        ? "もう一度見る"
         : "進む →";
 
     if (
@@ -9243,6 +9276,18 @@ HTML = r"""
     const nextIndex =
       hintManualIndex +
       direction;
+
+    if (
+      direction > 0 &&
+      nextIndex >=
+        hintManualSteps.length
+    ) {
+      renderManualHintStep(
+        0,
+        true
+      );
+      return;
+    }
 
     if (
       nextIndex < 0 ||
