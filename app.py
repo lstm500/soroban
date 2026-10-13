@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V89-SEQUENCE-WORDING-CONSISTENCY"
+APP_VERSION = "CLEAN-V90-HINT-MIC-CANCEL-TTS-ON-SPEECH"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8877,6 +8877,20 @@ HTML = r"""
     });
   }
 
+  function stopHintNarrationForUserSpeech() {
+    // 子どもの発話を検知したら、珠ヒントの読み上げを即停止する。
+    // hintNarrationActive は維持し、次の説明は通常どおり読み上げられるようにする。
+    hintNarrationToken += 1;
+
+    if (
+      "speechSynthesis" in window
+    ) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (error) {}
+    }
+  }
+
   function scheduleHintQuestionRetry(
     step,
     delay = 500
@@ -9029,6 +9043,10 @@ HTML = r"""
     recognition.onspeechstart = () => {
       hintQuestionSpeechDetected =
         true;
+
+      // 子どもが話し始めた瞬間に、アプリ側の読み上げを止める。
+      // マイクは止めず、そのまま回答を聞き取る。
+      stopHintNarrationForUserSpeech();
       refreshBgmVolume();
 
       setHintVoiceStatus(
