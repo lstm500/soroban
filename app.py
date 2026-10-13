@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V88-CONSISTENT-ADD-SUB-WORDING"
+APP_VERSION = "CLEAN-V89-SEQUENCE-WORDING-CONSISTENCY"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -7972,12 +7972,17 @@ HTML = r"""
       amount >= 5 &&
       digit < 5
     ) {
+      const firstFiveAddText =
+        context
+          ? `${prefix}次に、${placeName(place)}で5を足します。`
+          : `${placeName(place)}で、まず5を足します。`;
+
       pushHintMove(
         steps,
         state,
         5 * place,
         place,
-        `${prefix}${placeName(place)}で、まず5を足します。`
+        firstFiveAddText
       );
 
       const rest =
@@ -8061,12 +8066,17 @@ HTML = r"""
       digit >= 5 &&
       amount >= 5
     ) {
+      const firstFiveSubtractText =
+        context
+          ? `${prefix}次に、${placeName(place)}で5を引きます。`
+          : `${placeName(place)}で、まず5を引きます。`;
+
       pushHintMove(
         steps,
         state,
         -5 * place,
         place,
-        `${prefix}${placeName(place)}で、まず5を引きます。`
+        firstFiveSubtractText
       );
 
       const rest =
