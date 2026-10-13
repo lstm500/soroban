@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V76-CARRY-BRIDGE-5-COMPLEMENT-2026-10-13
+# VERSION: CLEAN-V78-CARRY-INSTANT-FIRST-MOVE-BACKTRACK-2026-10-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V76-CARRY-BRIDGE-5-COMPLEMENT"
+APP_VERSION = "CLEAN-V78-CARRY-INSTANT-FIRST-MOVE-BACKTRACK"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -4563,6 +4563,8 @@ HTML = r"""
   let hintNarrationToken = 0;
   let hintQuestionRecognition = null;
   let hintQuestionListening = false;
+  let hintQuestionListeningStartedAt = 0;
+  let hintQuestionSpeechDetected = false;
   let hintQuestionRetryTimer = null;
   let hintAutoAnimating = false;
 
@@ -8290,7 +8292,8 @@ HTML = r"""
       moveCursor: 0,
       displayValue: state.value,
       displayActivePlace: place,
-      lastMoveText: ""
+      lastMoveText: "",
+      lastDisplayText: ""
     });
 
     // 自動アニメーションで最終的にこの値になる。
@@ -8648,34 +8651,27 @@ HTML = r"""
     ) {
       step.resolved = true;
 
-      // 「正解。Xです。」はここだけに表示し、ここだけで読み上げる。
-      // 上下2か所に同じ文を重複表示しない。
       setHintVoiceStatus("");
       hideHintAnswerControls();
       stopHintQuestionRecognition();
 
-      step.moveCursor =
-        Number.isInteger(step.moveCursor)
-          ? step.moveCursor
-          : 0;
-      step.animationDone =
-        step.moveCursor >=
-        step.autoMoves.length;
+      step.moveCursor = 0;
+      step.animationDone = false;
       step.displayValue =
-        Number.isFinite(step.displayValue)
-          ? step.displayValue
-          : step.value;
+        step.value;
       step.displayActivePlace =
         step.activePlace;
+      step.lastMoveText = "";
 
-      hintStep.textContent =
-        `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`;
-      hintNextBtn.disabled = false;
-      hintNextBtn.textContent =
-        "進む →";
+      const correctLead =
+        `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。`;
 
-      speakHintNarration(
-        `正解。${step.amount}を足すときに使う10の補数は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`
+      // 「3から2を引きます」と説明したあとに同じ内容を
+      // もう一度「進む」で出さない。
+      // 正解したこの画面で、最初の珠操作まで実行する。
+      playHintCarryAnimation(
+        step,
+        correctLead
       );
 
       return;
@@ -8689,6 +8685,7 @@ HTML = r"""
     showHintAnswerControls();
   }
 
+  
   function clearHintQuestionRetryTimer() {
     if (!hintQuestionRetryTimer) {
       return;
@@ -8704,6 +8701,8 @@ HTML = r"""
   function stopHintQuestionRecognition() {
     clearHintQuestionRetryTimer();
     hintQuestionListening = false;
+    hintQuestionListeningStartedAt = 0;
+    hintQuestionSpeechDetected = false;
 
     if (
       hintQuestionRecognition
@@ -8893,11 +8892,36 @@ HTML = r"""
     recognition.interimResults =
       false;
     recognition.maxAlternatives =
-      5;
+      8;
+
+    if (isComplement) {
+      try {
+        const GrammarList =
+          window.SpeechGrammarList ||
+          window.webkitSpeechGrammarList;
+
+        if (GrammarList) {
+          const grammars =
+            new GrammarList();
+
+          grammars.addFromString(
+            "#JSGF V1.0; grammar digit; public <digit> = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 一 | 二 | 三 | 四 | 五 | 六 | 七 | 八 | 九;",
+            1
+          );
+
+          recognition.grammars =
+            grammars;
+        }
+      } catch (error) {}
+    }
 
     recognition.onstart = () => {
       hintQuestionListening =
         true;
+      hintQuestionListeningStartedAt =
+        Date.now();
+      hintQuestionSpeechDetected =
+        false;
       refreshBgmVolume();
 
       if (hintMicAnswerBtn) {
@@ -8916,16 +8940,56 @@ HTML = r"""
       );
     };
 
+    recognition.onspeechstart = () => {
+      hintQuestionSpeechDetected =
+        true;
+      refreshBgmVolume();
+
+      setHintVoiceStatus(
+        "🎤 聞いています…",
+        "listening"
+      );
+    };
+
+    recognition.onspeechend = () => {
+      setHintVoiceStatus(
+        "🎤 確認中…",
+        "listening"
+      );
+    };
+
     recognition.onresult = (
       event
     ) => {
       const result =
         event.results?.[0];
 
-      const selected =
-        selectBestNumericSpeech(
-          result
+      if (
+        hintQuestionListeningStartedAt > 0 &&
+        Date.now() -
+          hintQuestionListeningStartedAt <
+          MIC_RESULT_GUARD_MS
+      ) {
+        setHintVoiceStatus(
+          "🎤 もう一度答えてね。",
+          "listening"
         );
+
+        try {
+          recognition.abort();
+        } catch (error) {}
+
+        return;
+      }
+
+      const selected =
+        isComplement
+          ? selectBestHintSingleDigitSpeech(
+              result
+            )
+          : selectBestNumericSpeech(
+              result
+            );
 
       if (!selected) {
         setHintVoiceStatus(
@@ -8997,6 +9061,10 @@ HTML = r"""
     recognition.onend = () => {
       hintQuestionListening =
         false;
+      hintQuestionListeningStartedAt =
+        0;
+      hintQuestionSpeechDetected =
+        false;
       hintQuestionRecognition =
         null;
       refreshBgmVolume();
@@ -9036,6 +9104,10 @@ HTML = r"""
         null;
       hintQuestionListening =
         false;
+      hintQuestionListeningStartedAt =
+        0;
+      hintQuestionSpeechDetected =
+        false;
       refreshBgmVolume();
 
       setHintVoiceStatus(
@@ -9057,7 +9129,8 @@ HTML = r"""
   }
 
   function playHintCarryAnimation(
-    step
+    step,
+    leadText = ""
   ) {
     if (
       !step ||
@@ -9111,8 +9184,13 @@ HTML = r"""
       "slow-hint-motion"
     );
 
+    const displayText =
+      leadText
+        ? `${leadText}\n${move.text}`
+        : move.text;
+
     hintStep.textContent =
-      move.text;
+      displayText;
 
     showSorobanNumber(
       move.value,
@@ -9128,14 +9206,16 @@ HTML = r"""
       move.activePlace;
     step.lastMoveText =
       move.text;
+    step.lastDisplayText =
+      displayText;
 
     speakHintNarration(
-      move.text,
+      displayText,
       () => {
-        // 次の珠の動きへ自動では進まない。
-        // 次の「進む」を押した時だけ、次のautoMoveを実行する。
+        // 1回のアニメーションで進む珠操作は1つだけ。
         step.moveCursor =
           moveIndex + 1;
+
         step.animationDone =
           step.moveCursor >=
           step.autoMoves.length;
@@ -9145,19 +9225,25 @@ HTML = r"""
           "slow-hint-motion"
         );
 
+        // 最初の珠操作が終わった後も「戻る」を有効にする。
+        // 同じcarry step内の1つ前の珠状態へ戻れる。
         hintPrevBtn.disabled =
-          hintManualIndex <= 0;
+          false;
+
         hintNextBtn.disabled = false;
         hintNextBtn.textContent =
-          "進む →";
+          step.animationDone &&
+          hintManualIndex >=
+            hintManualSteps.length - 1
+            ? "もう一度見る"
+            : "進む →";
 
-        // 説明はhintStepの1か所に集約する。
-        // 下に別のステータス文を増やして、そろばんを押し下げない。
         setHintVoiceStatus("");
       }
     );
   }
 
+  
   function renderManualHintStep(
     stepIndex,
     speak = true
@@ -9281,7 +9367,7 @@ HTML = r"""
             ) {
               scheduleHintQuestionRetry(
                 step,
-                280
+                MIC_PRE_SILENCE_MS
               );
             }
           }
@@ -9291,7 +9377,7 @@ HTML = r"""
       ) {
         scheduleHintQuestionRetry(
           step,
-          280
+          MIC_PRE_SILENCE_MS
         );
       }
 
@@ -9304,8 +9390,9 @@ HTML = r"""
         ? `${step.text}\n${hintAnswerInstruction}`
         : isCarryQuestion &&
           step.resolved
-          ? step.lastMoveText ||
-            `${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`
+          ? step.lastDisplayText ||
+            step.lastMoveText ||
+            `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`
           : step.text;
 
     hintStepCounter.textContent =
@@ -9359,7 +9446,7 @@ HTML = r"""
             ) {
               scheduleHintQuestionRetry(
                 step,
-                280
+                MIC_PRE_SILENCE_MS
               );
             }
           }
@@ -9369,7 +9456,7 @@ HTML = r"""
       ) {
         scheduleHintQuestionRetry(
           step,
-          280
+          MIC_PRE_SILENCE_MS
         );
       }
 
@@ -9393,8 +9480,9 @@ HTML = r"""
         step.resolved
       ) {
         const resolvedNarration =
+          step.lastDisplayText ||
           step.lastMoveText ||
-          `${step.amount}を足すときに使う10の補数は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`;
+          `正解。${step.amount}を足すときに使う10の補数は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`;
         speakHintNarration(
           resolvedNarration
         );
@@ -9408,6 +9496,105 @@ HTML = r"""
   }
 
   
+  function restoreCarryMoveState(
+    step,
+    cursor,
+    speak = true
+  ) {
+    if (
+      !step ||
+      step.kind !==
+        "carry-complement-question"
+    ) {
+      return;
+    }
+
+    const safeCursor =
+      Math.max(
+        0,
+        Math.min(
+          step.autoMoves.length,
+          Number(cursor) || 0
+        )
+      );
+
+    step.moveCursor =
+      safeCursor;
+
+    step.animationDone =
+      safeCursor >=
+      step.autoMoves.length;
+
+    let textToShow = "";
+    let value =
+      step.value;
+    let activePlace =
+      step.activePlace;
+
+    if (safeCursor > 0) {
+      const move =
+        step.autoMoves[
+          safeCursor - 1
+        ];
+
+      value =
+        move.value;
+      activePlace =
+        move.activePlace;
+      step.lastMoveText =
+        move.text;
+
+      textToShow =
+        move.text;
+    } else {
+      step.lastMoveText = "";
+
+      textToShow =
+        `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`;
+    }
+
+    step.displayValue =
+      value;
+    step.displayActivePlace =
+      activePlace;
+    step.lastDisplayText =
+      textToShow;
+
+    showSorobanNumber(
+      value,
+      activePlace,
+      {
+        highlightChanged:
+          safeCursor > 0
+      }
+    );
+
+    hintStep.textContent =
+      textToShow;
+
+    hideHintAnswerControls();
+    setHintVoiceStatus("");
+
+    hintPrevBtn.disabled =
+      safeCursor === 0 &&
+      hintManualIndex <= 0;
+
+    hintNextBtn.disabled =
+      false;
+
+    hintNextBtn.textContent =
+      "進む →";
+
+    if (
+      speak &&
+      textToShow
+    ) {
+      speakHintNarration(
+        textToShow
+      );
+    }
+  }
+
   function moveManualHint(
     direction
   ) {
@@ -9422,6 +9609,22 @@ HTML = r"""
       hintManualSteps[
         hintManualIndex
       ];
+
+    // Carry step内では、「戻る」も珠操作1回単位で戻す。
+    if (
+      direction < 0 &&
+      currentStep?.kind ===
+        "carry-complement-question" &&
+      currentStep.resolved &&
+      Number(currentStep.moveCursor) > 0
+    ) {
+      restoreCarryMoveState(
+        currentStep,
+        currentStep.moveCursor - 1,
+        true
+      );
+      return;
+    }
 
     if (
       direction > 0 &&
@@ -9479,6 +9682,7 @@ HTML = r"""
           step.displayActivePlace =
             step.activePlace;
           step.lastMoveText = "";
+          step.lastDisplayText = "";
         }
       );
 
@@ -9503,6 +9707,7 @@ HTML = r"""
     );
   }
 
+  
   function runSorobanHint() {
     if (sessionVideoActive) {
       feedback.textContent =
@@ -10088,6 +10293,102 @@ HTML = r"""
         digitOnlyBonus -
         Math.min(
           0.12,
+          transcript.length *
+            0.002
+        );
+
+      if (
+        !best ||
+        score > best.score
+      ) {
+        best = {
+          value,
+          transcript,
+          confidence,
+          score
+        };
+      }
+    }
+
+    return best;
+  }
+
+
+  function selectBestHintSingleDigitSpeech(
+    result
+  ) {
+    if (!result) {
+      return null;
+    }
+
+    let best = null;
+
+    for (
+      let i = 0;
+      i < result.length;
+      i += 1
+    ) {
+      const alternative =
+        result[i];
+
+      const transcript =
+        String(
+          alternative?.transcript || ""
+        ).trim();
+
+      if (!transcript) {
+        continue;
+      }
+
+      const normalized =
+        normalizeNumericSpeechText(
+          transcript
+        );
+
+      if (
+        !(
+          /^[1-9]$/.test(normalized) ||
+          /^[一二三四五六七八九]$/.test(normalized)
+        )
+      ) {
+        continue;
+      }
+
+      const value =
+        japaneseIntegerToNumber(
+          transcript
+        );
+
+      if (
+        !Number.isInteger(value) ||
+        value < 1 ||
+        value > 9
+      ) {
+        continue;
+      }
+
+      const rawConfidence =
+        Number(
+          alternative?.confidence
+        );
+
+      const confidence =
+        Number.isFinite(
+          rawConfidence
+        )
+          ? rawConfidence
+          : 0;
+
+      const directDigitBonus =
+        /^[1-9]$/.test(normalized)
+          ? 0.24
+          : 0.18;
+
+      const score =
+        confidence +
+        directDigitBonus -
+        Math.min(
+          0.08,
           transcript.length *
             0.002
         );
