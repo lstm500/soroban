@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V72-HINT-MIC-INSTRUCTION-2026-10-13
+# VERSION: CLEAN-V74-MANUAL-HINT-MOVES-SCROLL-TOP-2026-10-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V73-COMPLEMENT-WORDING-NARRATION"
+APP_VERSION = "CLEAN-V74-MANUAL-HINT-MOVES-SCROLL-TOP"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8278,7 +8278,11 @@ HTML = r"""
       autoMoves,
       highlightUsed: true,
       resolved: false,
-      animationDone: false
+      animationDone: false,
+      moveCursor: 0,
+      displayValue: state.value,
+      displayActivePlace: place,
+      lastMoveText: ""
     });
 
     // 自動アニメーションで最終的にこの値になる。
@@ -8639,11 +8643,27 @@ HTML = r"""
       hideHintAnswerControls();
       stopHintQuestionRecognition();
 
-      setTimeout(() => {
-        playHintCarryAnimation(
-          step
-        );
-      }, 350);
+      // 正解後は自動で珠を連続移動しない。
+      // 「進む」を1回押すごとに、珠の動きを1つだけ実行する。
+      step.moveCursor =
+        Number.isInteger(step.moveCursor)
+          ? step.moveCursor
+          : 0;
+      step.animationDone =
+        step.moveCursor >=
+        step.autoMoves.length;
+      step.displayValue =
+        Number.isFinite(step.displayValue)
+          ? step.displayValue
+          : step.value;
+      step.displayActivePlace =
+        step.activePlace;
+
+      hintStep.textContent =
+        `正解。${step.expectedAnswer}です。\n「進む」を押して、珠を1つずつ動かしましょう。`;
+      hintNextBtn.disabled = false;
+      hintNextBtn.textContent =
+        "進む →";
 
       return;
     }
@@ -8982,12 +9002,42 @@ HTML = r"""
       !Array.isArray(
         step.autoMoves
       ) ||
-      !step.autoMoves.length
+      !step.autoMoves.length ||
+      !step.resolved
     ) {
       return;
     }
 
     stopHintQuestionRecognition();
+
+    const moveIndex =
+      Math.max(
+        0,
+        Number.isInteger(
+          step.moveCursor
+        )
+          ? step.moveCursor
+          : 0
+      );
+
+    if (
+      moveIndex >=
+      step.autoMoves.length
+    ) {
+      step.animationDone = true;
+      hintNextBtn.disabled = false;
+      hintNextBtn.textContent =
+        hintManualIndex >=
+          hintManualSteps.length - 1
+          ? "もう一度見る"
+          : "進む →";
+      return;
+    }
+
+    const move =
+      step.autoMoves[
+        moveIndex
+      ];
 
     hintAutoAnimating = true;
     hintPrevBtn.disabled = true;
@@ -8999,82 +9049,60 @@ HTML = r"""
       "slow-hint-motion"
     );
 
-    let moveIndex = 0;
+    hintStep.textContent =
+      move.text;
 
-    const runMove = () => {
-      if (
-        !abacusHint.classList.contains(
-          "show"
-        ) ||
-        hintManualSteps[
-          hintManualIndex
-        ] !== step
-      ) {
-        hintAutoAnimating = false;
-        sorobanBoard.classList.remove(
-          "slow-hint-motion"
-        );
-        return;
+    showSorobanNumber(
+      move.value,
+      move.activePlace,
+      {
+        highlightChanged: true
       }
+    );
 
-      if (
-        moveIndex >=
-        step.autoMoves.length
-      ) {
+    step.displayValue =
+      move.value;
+    step.displayActivePlace =
+      move.activePlace;
+    step.lastMoveText =
+      move.text;
+
+    speakHintNarration(
+      move.text,
+      () => {
+        // 次の珠の動きへ自動では進まない。
+        // 次の「進む」を押した時だけ、次のautoMoveを実行する。
+        step.moveCursor =
+          moveIndex + 1;
+        step.animationDone =
+          step.moveCursor >=
+          step.autoMoves.length;
+
         hintAutoAnimating = false;
-        step.animationDone = true;
-
         sorobanBoard.classList.remove(
           "slow-hint-motion"
-        );
-
-        hintStep.textContent =
-          `${step.complement}を引いて、${placeName(step.activePlace * 10)}に1を足しました。\n${step.localDigit}＋${step.amount}＝${step.localDigit + step.amount}です。`;
-
-        setHintVoiceStatus(
-          "✓ できました。",
-          "correct"
         );
 
         hintPrevBtn.disabled =
           hintManualIndex <= 0;
         hintNextBtn.disabled = false;
         hintNextBtn.textContent =
-          hintManualIndex >=
-            hintManualSteps.length - 1
-            ? "もう一度見る"
-            : "進む →";
-        return;
+          "進む →";
+
+        if (
+          step.animationDone
+        ) {
+          setHintVoiceStatus(
+            "✓ 珠の動きが終わりました。",
+            "correct"
+          );
+        } else {
+          setHintVoiceStatus(
+            `珠の動き ${step.moveCursor} / ${step.autoMoves.length}。次も「進む」を押してね。`
+          );
+        }
       }
-
-      const move =
-        step.autoMoves[
-          moveIndex
-        ];
-
-      hintStep.textContent =
-        move.text;
-
-      showSorobanNumber(
-        move.value,
-        move.activePlace,
-        {
-          highlightChanged: true
-        }
-      );
-
-      speakHintNarration(
-        move.text,
-        () => {
-          setTimeout(() => {
-            moveIndex += 1;
-            runMove();
-          }, 650);
-        }
-      );
-    };
-
-    runMove();
+    );
   }
 
   function renderManualHintStep(
@@ -9114,9 +9142,20 @@ HTML = r"""
         hintManualIndex
       ];
 
+    const displayValue =
+      Number.isFinite(
+        step.displayValue
+      )
+        ? step.displayValue
+        : step.value;
+
+    const displayActivePlace =
+      step.displayActivePlace ??
+      step.activePlace;
+
     showSorobanNumber(
-      step.value,
-      step.activePlace,
+      displayValue,
+      displayActivePlace,
       {
         highlightUsed:
           Boolean(
@@ -9142,7 +9181,11 @@ HTML = r"""
       isCarryQuestion &&
       !step.resolved
         ? `${step.text}\n${hintAnswerInstruction}`
-        : step.text;
+        : isCarryQuestion &&
+          step.resolved
+          ? step.lastMoveText ||
+            `正解。${step.expectedAnswer}です。\n「進む」を押して、珠を1つずつ動かしましょう。`
+          : step.text;
 
     hintStepCounter.textContent =
       `STEP ${hintManualIndex + 1} / ${hintManualSteps.length}`;
@@ -9234,10 +9277,22 @@ HTML = r"""
     }
 
     if (speak) {
-      speakHintNarration(
-        step.narrationText ||
-          step.text
-      );
+      if (
+        isCarryQuestion &&
+        step.resolved
+      ) {
+        const resolvedNarration =
+          step.lastMoveText ||
+          `正解。${step.expectedAnswer}です。進むを押して、珠を1つずつ動かしましょう。`;
+        speakHintNarration(
+          resolvedNarration
+        );
+      } else {
+        speakHintNarration(
+          step.narrationText ||
+            step.text
+        );
+      }
     }
   }
 
@@ -9259,18 +9314,22 @@ HTML = r"""
     if (
       direction > 0 &&
       currentStep?.kind ===
-        "carry-complement-question" &&
-      !currentStep.resolved
+        "carry-complement-question"
     ) {
       if (
-        currentStep.manualFallback
+        !currentStep.resolved
       ) {
-        currentStep.resolved = true;
+        return;
+      }
+
+      if (
+        !currentStep.animationDone
+      ) {
         playHintCarryAnimation(
           currentStep
         );
+        return;
       }
-      return;
     }
 
     const nextIndex =
@@ -9282,6 +9341,26 @@ HTML = r"""
       nextIndex >=
         hintManualSteps.length
     ) {
+      hintManualSteps.forEach(
+        (step) => {
+          if (
+            step?.kind !==
+            "carry-complement-question"
+          ) {
+            return;
+          }
+
+          step.resolved = false;
+          step.animationDone = false;
+          step.moveCursor = 0;
+          step.displayValue =
+            step.value;
+          step.displayActivePlace =
+            step.activePlace;
+          step.lastMoveText = "";
+        }
+      );
+
       renderManualHintStep(
         0,
         true
@@ -14369,6 +14448,61 @@ HTML = r"""
     updateTimeLimitUi();
   }
 
+  function resetChallengeScrollPosition() {
+    const reset = () => {
+      try {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "auto"
+        });
+      } catch (error) {
+        try {
+          window.scrollTo(0, 0);
+        } catch (innerError) {}
+      }
+
+      try {
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      } catch (error) {}
+
+      // Streamlit側を操作できる環境では外側の位置も戻す。
+      try {
+        if (
+          window.parent &&
+          window.parent !== window
+        ) {
+          window.parent.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: "auto"
+          });
+        }
+      } catch (error) {}
+
+      try {
+        workspace.scrollIntoView({
+          block: "start",
+          inline: "nearest",
+          behavior: "auto"
+        });
+      } catch (error) {}
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(
+        reset
+      );
+    });
+
+    // 表示切替で高さが確定した後にも合わせる。
+    setTimeout(
+      reset,
+      120
+    );
+  }
+
   function startMode(
     mode,
     options = {}
@@ -14429,6 +14563,7 @@ HTML = r"""
     settingsView.classList.remove("show");
     menuView.classList.add("hidden");
     workspace.classList.add("show");
+    resetChallengeScrollPosition();
     questionCard.classList.remove(
       "hidden",
       "voice-waiting"
@@ -14495,6 +14630,7 @@ HTML = r"""
 
     playBgmForStreak(0, true);
     renderQuestion();
+    resetChallengeScrollPosition();
   }
 
   function renderQuestion(voiceReady = false) {
