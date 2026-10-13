@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V82-NO-DUPLICATE-FIRST-MOVE"
+APP_VERSION = "CLEAN-V83-BORROW-COMPLEMENT-QUESTION"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8331,14 +8331,24 @@ HTML = r"""
     const complement =
       10 - amount;
 
-    pushHintExplain(
-      steps,
-      state,
+    steps.push({
+      value: state.value,
+      activePlace: place,
+      text:
+        `${placeName(place)}だけでは${amount}を引けません。\n${amount}を引くときに使う「10の補数」はいくつですか？`,
+      narrationText:
+        `${placeName(place)}だけでは${amount}を引けません。${amount}を引くときに使う、10の補数はいくつですか？`,
+      kind: "borrow-complement-question",
+      expectedAnswer: complement,
+      amount,
       place,
-      `${placeName(place)}だけでは${amount}を引けません。10の補数は${complement}です。先に1つ上の位から1を引き、そのあと${placeName(place)}へ${complement}を足します。`
-    );
+      highlightUsed: true,
+      resolved: false,
+      resolvedText:
+        `正解。${amount}を引くときに使う「10の補数」は${complement}です。まず、${placeName(place * 10)}から1を引きます。`
+    });
 
-    // 先に上の位を1つ引く。これが繰り下がり。
+    // 先に1つ上の位から1を引く。これが繰り下がり。
     subtractDigitWithBorrowHint(
       steps,
       state,
@@ -8352,7 +8362,7 @@ HTML = r"""
       state,
       place,
       complement,
-      "10から借りた分を使って、"
+      `${amount}の「10の補数」${complement}を使って、`
     );
   }
 
@@ -8622,10 +8632,17 @@ HTML = r"""
     value,
     source = "button"
   ) {
+    const isCarry =
+      step?.kind ===
+      "carry-complement-question";
+
+    const isBorrow =
+      step?.kind ===
+      "borrow-complement-question";
+
     if (
       !step ||
-      step.kind !==
-        "carry-complement-question" ||
+      (!isCarry && !isBorrow) ||
       step.resolved ||
       hintAutoAnimating ||
       hintManualSteps[
@@ -8648,6 +8665,24 @@ HTML = r"""
       hideHintAnswerControls();
       stopHintQuestionRecognition();
 
+      if (isBorrow) {
+        hintStep.textContent =
+          step.resolvedText ||
+          `正解。${step.expectedAnswer}です。`;
+
+        hintNextBtn.disabled = false;
+        hintNextBtn.textContent =
+          "進む →";
+
+        speakHintNarration(
+          step.resolvedText ||
+          `正解。${step.expectedAnswer}です。`
+        );
+
+        return;
+      }
+
+      // 繰り上がり側は、正解した画面で最初の珠操作まで実行する。
       step.moveCursor = 0;
       step.animationDone = false;
       step.displayValue =
@@ -8659,9 +8694,6 @@ HTML = r"""
       const correctLead =
         `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。`;
 
-      // 「3から2を引きます」と説明したあとに同じ内容を
-      // もう一度「進む」で出さない。
-      // 正解したこの画面で、最初の珠操作まで実行する。
       playHintCarryAnimation(
         step,
         correctLead
@@ -8671,7 +8703,9 @@ HTML = r"""
     }
 
     setHintVoiceStatus(
-      `ちがいます。${step.amount}を足すときに使う「10の補数」を考えてみよう。`,
+      isBorrow
+        ? `ちがいます。${step.amount}を引くときに使う「10の補数」を考えてみよう。`
+        : `ちがいます。${step.amount}を足すときに使う「10の補数」を考えてみよう。`,
       "wrong"
     );
 
@@ -8820,6 +8854,7 @@ HTML = r"""
           !hintAutoAnimating &&
           (
             step.kind === "carry-complement-question" ||
+            step.kind === "borrow-complement-question" ||
             step.kind === "final-answer-question"
           )
         ) {
@@ -8835,7 +8870,9 @@ HTML = r"""
   ) {
     const isComplement =
       step?.kind ===
-      "carry-complement-question";
+        "carry-complement-question" ||
+      step?.kind ===
+        "borrow-complement-question";
 
     const isFinalAnswer =
       step?.kind ===
@@ -9313,6 +9350,14 @@ HTML = r"""
       step.kind ===
       "carry-complement-question";
 
+    const isBorrowQuestion =
+      step.kind ===
+      "borrow-complement-question";
+
+    const isComplementQuestion =
+      isCarryQuestion ||
+      isBorrowQuestion;
+
     const isFinalAnswer =
       step.kind ===
       "final-answer-question";
@@ -9387,15 +9432,19 @@ HTML = r"""
     }
 
     hintStep.textContent =
-      isCarryQuestion &&
+      isComplementQuestion &&
       !step.resolved
         ? `${step.text}\n${hintAnswerInstruction}`
-        : isCarryQuestion &&
+        : isBorrowQuestion &&
           step.resolved
-          ? step.lastDisplayText ||
-            step.lastMoveText ||
-            `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`
-          : step.text;
+          ? step.resolvedText ||
+            `正解。${step.expectedAnswer}です。`
+          : isCarryQuestion &&
+            step.resolved
+            ? step.lastDisplayText ||
+              step.lastMoveText ||
+              `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`
+            : step.text;
 
     hintStepCounter.textContent =
       `STEP ${hintManualIndex + 1} / ${hintManualSteps.length}`;
@@ -9404,7 +9453,7 @@ HTML = r"""
       hintManualIndex <= 0;
 
     if (
-      isCarryQuestion &&
+      isComplementQuestion &&
       !step.resolved
     ) {
       hintNextBtn.disabled =
@@ -9478,6 +9527,14 @@ HTML = r"""
 
     if (speak) {
       if (
+        isBorrowQuestion &&
+        step.resolved
+      ) {
+        speakHintNarration(
+          step.resolvedText ||
+          `正解。${step.expectedAnswer}です。`
+        );
+      } else if (
         isCarryQuestion &&
         step.resolved
       ) {
@@ -9671,20 +9728,28 @@ HTML = r"""
         (step) => {
           if (
             step?.kind !==
-            "carry-complement-question"
+              "carry-complement-question" &&
+            step?.kind !==
+              "borrow-complement-question"
           ) {
             return;
           }
 
           step.resolved = false;
-          step.animationDone = false;
-          step.moveCursor = 0;
-          step.displayValue =
-            step.value;
-          step.displayActivePlace =
-            step.activePlace;
-          step.lastMoveText = "";
-          step.lastDisplayText = "";
+
+          if (
+            step.kind ===
+            "carry-complement-question"
+          ) {
+            step.animationDone = false;
+            step.moveCursor = 0;
+            step.displayValue =
+              step.value;
+            step.displayActivePlace =
+              step.activePlace;
+            step.lastMoveText = "";
+            step.lastDisplayText = "";
+          }
         }
       );
 
