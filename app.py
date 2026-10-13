@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V74-MANUAL-HINT-MOVES-SCROLL-TOP-2026-10-13
+# VERSION: CLEAN-V75-STABLE-HINT-BOARD-SINGLE-FEEDBACK-FINAL-ANSWER-2026-10-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V74-MANUAL-HINT-MOVES-SCROLL-TOP"
+APP_VERSION = "CLEAN-V75-STABLE-HINT-BOARD-SINGLE-FEEDBACK-FINAL-ANSWER"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1532,13 +1532,17 @@ HTML = r"""
     cursor: default;
   }
 
+  .hint-lower-panel {
+    padding-top: 4px;
+  }
+
   .hint-step {
-    min-height: 42px;
-    margin: 8px 0 10px;
+    min-height: 34px;
+    margin: 5px 0 7px;
     text-align: center;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 900;
-    line-height: 1.55;
+    line-height: 1.42;
     color: #4c473e;
     white-space: pre-line;
   }
@@ -1546,8 +1550,8 @@ HTML = r"""
   .hint-voice-status {
     display: none;
     width: min(560px, 100%);
-    margin: 0 auto 10px;
-    padding: 9px 12px;
+    margin: 0 auto 6px;
+    padding: 7px 10px;
     border: 1px solid #d7cfbf;
     border-radius: 12px;
     background: #f6f1e8;
@@ -1583,7 +1587,7 @@ HTML = r"""
   .hint-answer-controls {
     display: none;
     width: min(560px, 100%);
-    margin: 0 auto 10px;
+    margin: 0 auto 6px;
   }
 
   .hint-answer-controls.show {
@@ -1643,7 +1647,8 @@ HTML = r"""
 
   .soroban-scroll {
     overflow-x: auto;
-    padding: 4px 2px 8px;
+    padding: 2px 2px 4px;
+    margin: 0;
   }
 
   .soroban-board {
@@ -1778,7 +1783,7 @@ HTML = r"""
   }
 
   .hint-legend {
-    margin-top: 8px;
+    margin-top: 4px;
     text-align: center;
     font-size: 11px;
     line-height: 1.5;
@@ -3609,35 +3614,38 @@ HTML = r"""
         </div>
       </div>
 
-      <div id="hintStep" class="hint-step"></div>
-      <div id="hintVoiceStatus" class="hint-voice-status"></div>
-      <div id="hintAnswerControls" class="hint-answer-controls">
-        <button type="button" id="hintMicAnswerBtn" class="hint-mic-answer-btn">🎤 声で答える</button>
-        <div id="hintNumberGrid" class="hint-number-grid">
-          <button type="button" class="hint-number-btn" data-hint-number="1">1</button>
-          <button type="button" class="hint-number-btn" data-hint-number="2">2</button>
-          <button type="button" class="hint-number-btn" data-hint-number="3">3</button>
-          <button type="button" class="hint-number-btn" data-hint-number="4">4</button>
-          <button type="button" class="hint-number-btn" data-hint-number="5">5</button>
-          <button type="button" class="hint-number-btn" data-hint-number="6">6</button>
-          <button type="button" class="hint-number-btn" data-hint-number="7">7</button>
-          <button type="button" class="hint-number-btn" data-hint-number="8">8</button>
-          <button type="button" class="hint-number-btn" data-hint-number="9">9</button>
-        </div>
-      </div>
-
-      <div class="hint-manual-nav">
-        <button type="button" id="hintPrevBtn">← 戻る</button>
-        <div id="hintStepCounter" class="hint-manual-counter">STEP 1 / 1</div>
-        <button type="button" id="hintNextBtn" class="primary">進む →</button>
-      </div>
-
       <div class="soroban-scroll">
         <div id="sorobanBoard" class="soroban-board"></div>
       </div>
 
       <div class="hint-legend">
-        「進む」で1つずつ確認します。薄い黄色に光る珠が、いま使っている・動かしている珠です。
+        薄い黄色に光る珠が、いま使っている・動かしている珠です。
+      </div>
+
+      <div class="hint-lower-panel">
+        <div id="hintStep" class="hint-step"></div>
+        <div id="hintVoiceStatus" class="hint-voice-status"></div>
+
+        <div id="hintAnswerControls" class="hint-answer-controls">
+          <button type="button" id="hintMicAnswerBtn" class="hint-mic-answer-btn">🎤 声で答える</button>
+          <div id="hintNumberGrid" class="hint-number-grid">
+            <button type="button" class="hint-number-btn" data-hint-number="1">1</button>
+            <button type="button" class="hint-number-btn" data-hint-number="2">2</button>
+            <button type="button" class="hint-number-btn" data-hint-number="3">3</button>
+            <button type="button" class="hint-number-btn" data-hint-number="4">4</button>
+            <button type="button" class="hint-number-btn" data-hint-number="5">5</button>
+            <button type="button" class="hint-number-btn" data-hint-number="6">6</button>
+            <button type="button" class="hint-number-btn" data-hint-number="7">7</button>
+            <button type="button" class="hint-number-btn" data-hint-number="8">8</button>
+            <button type="button" class="hint-number-btn" data-hint-number="9">9</button>
+          </div>
+        </div>
+
+        <div class="hint-manual-nav">
+          <button type="button" id="hintPrevBtn">← 戻る</button>
+          <div id="hintStepCounter" class="hint-manual-counter">STEP 1 / 1</div>
+          <button type="button" id="hintNextBtn" class="primary">進む →</button>
+        </div>
       </div>
     </div>
 
@@ -8158,7 +8166,7 @@ HTML = r"""
     ) {
       addMove(
         current - 5 * place,
-        `正解、${complement}です。まず、${placeLabel}の5の珠を外します。`
+        `まず、${placeLabel}の5の珠を外します。`
       );
 
       const rest =
@@ -8180,7 +8188,7 @@ HTML = r"""
 
       addMove(
         current - 5 * place,
-        `正解、${complement}です。まず、${placeLabel}の5の珠を外します。`
+        `まず、${placeLabel}の5の珠を外します。`
       );
 
       addMove(
@@ -8190,7 +8198,7 @@ HTML = r"""
     } else {
       addMove(
         current - complement * place,
-        `正解、${complement}です。${placeLabel}から${complement}を引きます。`
+        `${placeLabel}から${complement}を引きます。`
       );
     }
 
@@ -8439,13 +8447,12 @@ HTML = r"""
       value: q.answer,
       activePlace: null,
       text:
-        q.op === "＋"
-          ? `できました。答えは${q.answer}です。`
-          : `できました。答えは${q.answer}です。もう一度見るときは、先に動く珠と、あとから動く珠を見てみよう。`,
+        "できました。答えはいくつになっていますか？",
       narrationText:
-        q.op === "＋"
-          ? `できました。答えは${q.answer}です。`
-          : `できました。答えは${q.answer}です。`
+        "できました。答えはいくつになっていますか？",
+      kind: "final-answer-question",
+      expectedAnswer: q.answer,
+      resolved: false
     });
 
     return steps;
@@ -8482,7 +8489,13 @@ HTML = r"""
     steps.push({
       value: answer,
       activePlace: null,
-      text: "この珠の形で完成です。"
+      text:
+        "できました。答えはいくつになっていますか？",
+      narrationText:
+        "できました。答えはいくつになっていますか？",
+      kind: "final-answer-question",
+      expectedAnswer: answer,
+      resolved: false
     });
 
     return steps;
@@ -8635,16 +8648,12 @@ HTML = r"""
     ) {
       step.resolved = true;
 
-      setHintVoiceStatus(
-        `✓ 正解。${step.expectedAnswer}です。`,
-        "correct"
-      );
-
+      // 「正解。Xです。」はここだけに表示し、ここだけで読み上げる。
+      // 上下2か所に同じ文を重複表示しない。
+      setHintVoiceStatus("");
       hideHintAnswerControls();
       stopHintQuestionRecognition();
 
-      // 正解後は自動で珠を連続移動しない。
-      // 「進む」を1回押すごとに、珠の動きを1つだけ実行する。
       step.moveCursor =
         Number.isInteger(step.moveCursor)
           ? step.moveCursor
@@ -8660,10 +8669,14 @@ HTML = r"""
         step.activePlace;
 
       hintStep.textContent =
-        `正解。${step.expectedAnswer}です。\n「進む」を押して、珠を1つずつ動かしましょう。`;
+        `正解。${step.expectedAnswer}です。 「進む」で珠を1つ動かします。`;
       hintNextBtn.disabled = false;
       hintNextBtn.textContent =
         "進む →";
+
+      speakHintNarration(
+        `正解。${step.expectedAnswer}です。`
+      );
 
       return;
     }
@@ -8812,7 +8825,11 @@ HTML = r"""
             hintManualIndex
           ] === step &&
           !step.resolved &&
-          !hintAutoAnimating
+          !hintAutoAnimating &&
+          (
+            step.kind === "carry-complement-question" ||
+            step.kind === "final-answer-question"
+          )
         ) {
           startHintQuestionRecognition(
             step
@@ -8824,10 +8841,17 @@ HTML = r"""
   function startHintQuestionRecognition(
     step
   ) {
+    const isComplement =
+      step?.kind ===
+      "carry-complement-question";
+
+    const isFinalAnswer =
+      step?.kind ===
+      "final-answer-question";
+
     if (
       !step ||
-      step.kind !==
-        "carry-complement-question" ||
+      (!isComplement && !isFinalAnswer) ||
       step.resolved ||
       hintAutoAnimating ||
       hintManualSteps[
@@ -8842,10 +8866,15 @@ HTML = r"""
 
     if (!Recognition) {
       setHintVoiceStatus(
-        "この端末では音声認識を使えません。数字ボタンで答えてね。",
+        isFinalAnswer
+          ? "この端末では音声認識を使えません。手元で答えを入力してね。"
+          : "この端末では音声認識を使えません。数字をタップしてね。",
         "wrong"
       );
-      showHintAnswerControls();
+
+      if (isComplement) {
+        showHintAnswerControls();
+      }
       return;
     }
 
@@ -8880,8 +8909,9 @@ HTML = r"""
           "🎤 聞いています…";
       }
 
+      // 質問文はhintStepに1回だけ表示する。
       setHintVoiceStatus(
-        `🎤 ${step.amount}を足すときに使う「10の補数」はいくつですか？`,
+        "🎤 聞いています…",
         "listening"
       );
     };
@@ -8897,20 +8927,47 @@ HTML = r"""
           result
         );
 
-      if (selected) {
-        submitHintComplementAnswer(
-          step,
-          selected.value,
-          "voice"
-        );
-      } else {
+      if (!selected) {
         setHintVoiceStatus(
           voiceAnswerEnabled
-          ? "数字を聞き取れませんでした。もう一度聞きます。数字ボタンでも答えられます。"
-          : "数字を聞き取れませんでした。もう一度マイクを押すか、数字ボタンで答えてね。",
+            ? "数字を聞き取れませんでした。もう一度聞きます。"
+            : "数字を聞き取れませんでした。",
           "wrong"
         );
+        return;
       }
+
+      if (isFinalAnswer) {
+        if (
+          Number(selected.value) ===
+          Number(step.expectedAnswer)
+        ) {
+          step.resolved = true;
+          stopHintQuestionRecognition();
+          setHintVoiceStatus("");
+
+          // 珠ヒントの最後の答えを、そのままチャレンジの回答として採用する。
+          answerInput.value =
+            String(selected.value);
+
+          hintNarrationActive = false;
+          refreshBgmVolume();
+
+          submitAnswer();
+        } else {
+          setHintVoiceStatus(
+            "ちがいます。そろばんを見て、もう一度答えてね。",
+            "wrong"
+          );
+        }
+        return;
+      }
+
+      submitHintComplementAnswer(
+        step,
+        selected.value,
+        "voice"
+      );
     };
 
     recognition.onerror = (
@@ -8922,10 +8979,14 @@ HTML = r"""
       const message =
         code === "not-allowed" ||
         code === "service-not-allowed"
-          ? "マイクが許可されていません。ブラウザのマイクを許可するか、数字ボタンで答えてね。"
+          ? (
+              isFinalAnswer
+                ? "マイクが許可されていません。手元で答えを入力してね。"
+                : "マイクが許可されていません。数字をタップしてね。"
+            )
           : voiceAnswerEnabled
-            ? "マイクで聞き取れませんでした。もう一度聞きます。数字ボタンでも答えられます。"
-            : "マイクで聞き取れませんでした。もう一度マイクを押すか、数字ボタンで答えてね。";
+            ? "マイクで聞き取れませんでした。もう一度聞きます。"
+            : "マイクで聞き取れませんでした。";
 
       setHintVoiceStatus(
         message,
@@ -8949,8 +9010,7 @@ HTML = r"""
           "🎤 声で答える";
       }
 
-      // 音声回答ONなら、無音や一時的な認識終了でも
-      // ゴワサン等を言い直さず、珠ヒントのマイクだけ静かに再開する。
+      // マイクモードONなら、未回答の質問は静かに聞き直す。
       if (
         voiceAnswerEnabled &&
         abacusHint.classList.contains(
@@ -8979,7 +9039,9 @@ HTML = r"""
       refreshBgmVolume();
 
       setHintVoiceStatus(
-        "マイクを開始できませんでした。数字ボタンでも答えられます。",
+        isFinalAnswer
+          ? "マイクを開始できませんでした。手元で答えを入力してね。"
+          : "マイクを開始できませんでした。数字をタップしてね。",
         "wrong"
       );
 
@@ -9089,18 +9151,9 @@ HTML = r"""
         hintNextBtn.textContent =
           "進む →";
 
-        if (
-          step.animationDone
-        ) {
-          setHintVoiceStatus(
-            "✓ 珠の動きが終わりました。",
-            "correct"
-          );
-        } else {
-          setHintVoiceStatus(
-            `珠の動き ${step.moveCursor} / ${step.autoMoves.length}。次も「進む」を押してね。`
-          );
-        }
+        // 説明はhintStepの1か所に集約する。
+        // 下に別のステータス文を増やして、そろばんを押し下げない。
+        setHintVoiceStatus("");
       }
     );
   }
@@ -9172,10 +9225,78 @@ HTML = r"""
       step.kind ===
       "carry-complement-question";
 
+    const isFinalAnswer =
+      step.kind ===
+      "final-answer-question";
+
     const hintAnswerInstruction =
       voiceAnswerEnabled
         ? "マイクで答えてね。"
         : "数字をタップしてね。";
+
+    if (
+      isFinalAnswer &&
+      !step.resolved
+    ) {
+      hideHintAnswerControls();
+
+      const finalInstruction =
+        voiceAnswerEnabled
+          ? "マイクで答えてね。"
+          : "手元で答えを入力してね。";
+
+      hintStep.textContent =
+        `${step.text}\n${finalInstruction}`;
+
+      hintStepCounter.textContent =
+        `STEP ${hintManualIndex + 1} / ${hintManualSteps.length}`;
+
+      hintPrevBtn.disabled =
+        hintManualIndex <= 0;
+
+      hintNextBtn.disabled =
+        true;
+      hintNextBtn.textContent =
+        voiceAnswerEnabled
+          ? "マイクで答えてね"
+          : "答えを入力してね";
+
+      const finalNarration =
+        `${step.narrationText || step.text} ${finalInstruction}`;
+
+      if (speak) {
+        speakHintNarration(
+          finalNarration,
+          () => {
+            if (
+              voiceAnswerEnabled &&
+              hintManualSteps[
+                hintManualIndex
+              ] === step &&
+              !step.resolved &&
+              !hintAutoAnimating &&
+              abacusHint.classList.contains(
+                "show"
+              )
+            ) {
+              scheduleHintQuestionRetry(
+                step,
+                280
+              );
+            }
+          }
+        );
+      } else if (
+        voiceAnswerEnabled
+      ) {
+        scheduleHintQuestionRetry(
+          step,
+          280
+        );
+      }
+
+      return;
+    }
 
     hintStep.textContent =
       isCarryQuestion &&
@@ -9184,7 +9305,7 @@ HTML = r"""
         : isCarryQuestion &&
           step.resolved
           ? step.lastMoveText ||
-            `正解。${step.expectedAnswer}です。\n「進む」を押して、珠を1つずつ動かしましょう。`
+            "「進む」で珠を1つ動かします。"
           : step.text;
 
     hintStepCounter.textContent =
@@ -9211,10 +9332,11 @@ HTML = r"""
             : "none";
       }
 
+      // 質問文の重複を避け、状態だけ短く出す。
       setHintVoiceStatus(
         voiceAnswerEnabled
-          ? "🎤 マイクで答えてね。"
-          : "数字をタップしてね。"
+          ? ""
+          : ""
       );
 
       const questionNarration =
@@ -9224,8 +9346,6 @@ HTML = r"""
         speakHintNarration(
           questionNarration,
           () => {
-            // チャレンジの音声回答がONなら、珠ヒントの補数問題も
-            // 読み上げ終了後に自動でマイクを開始する。
             if (
               voiceAnswerEnabled &&
               hintManualSteps[
@@ -9257,6 +9377,7 @@ HTML = r"""
     }
 
     hideHintAnswerControls();
+    setHintVoiceStatus("");
 
     hintNextBtn.disabled = false;
 
@@ -9266,16 +9387,6 @@ HTML = r"""
         ? "もう一度見る"
         : "進む →";
 
-    if (
-      isCarryQuestion &&
-      step.resolved
-    ) {
-      setHintVoiceStatus(
-        `✓ 正解。${step.expectedAnswer}です。`,
-        "correct"
-      );
-    }
-
     if (speak) {
       if (
         isCarryQuestion &&
@@ -9283,7 +9394,7 @@ HTML = r"""
       ) {
         const resolvedNarration =
           step.lastMoveText ||
-          `正解。${step.expectedAnswer}です。進むを押して、珠を1つずつ動かしましょう。`;
+          "進むを押して、珠を1つ動かします。";
         speakHintNarration(
           resolvedNarration
         );
@@ -9296,6 +9407,7 @@ HTML = r"""
     }
   }
 
+  
   function moveManualHint(
     direction
   ) {
@@ -9310,6 +9422,15 @@ HTML = r"""
       hintManualSteps[
         hintManualIndex
       ];
+
+    if (
+      direction > 0 &&
+      currentStep?.kind ===
+        "final-answer-question" &&
+      !currentStep.resolved
+    ) {
+      return;
+    }
 
     if (
       direction > 0 &&
