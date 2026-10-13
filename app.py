@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V78-CARRY-INSTANT-FIRST-MOVE-BACKTRACK-2026-10-13
+# VERSION: CLEAN-V80-CARRY-WORDING-CONTINUITY-2026-10-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V78-CARRY-INSTANT-FIRST-MOVE-BACKTRACK"
+APP_VERSION = "CLEAN-V82-NO-DUPLICATE-FIRST-MOVE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -4572,6 +4572,8 @@ HTML = r"""
   // 問題を解いている間はBGMを止めない。
   const MIC_PRE_SILENCE_MS = 450;
   const MIC_RESULT_GUARD_MS = 350;
+  const HINT_MIC_AFTER_TTS_MS = 70;
+  const HINT_MIC_RETRY_MS = 180;
 
   const BGM_VOLUME_NORMAL = 0.18;
   const BGM_VOLUME_APP_SPEECH = 0.03;
@@ -7921,6 +7923,7 @@ HTML = r"""
       value: state.value,
       activePlace,
       text,
+      highlightChanged: true,
       ...extra
     });
   }
@@ -7936,6 +7939,8 @@ HTML = r"""
       value: state.value,
       activePlace,
       text,
+      highlightUsed:
+        activePlace !== null,
       ...extra
     });
   }
@@ -7993,6 +7998,7 @@ HTML = r"""
 
     // 5をまたぐ足し算。
     // 例: 2+4 → 先に-1、そのあと+5。
+    // 説明だけのSTEPを挟まず、最初の珠移動と説明を1つにまとめる。
     if (
       digit < 5 &&
       amount < 5 &&
@@ -8001,19 +8007,12 @@ HTML = r"""
       const complement =
         5 - amount;
 
-      pushHintExplain(
-        steps,
-        state,
-        place,
-        `${placeName(place)}で5をまたぎます。${amount}を足すには、5の補数は${complement}です。先に${complement}を引きます。`
-      );
-
       pushHintMove(
         steps,
         state,
         -complement * place,
         place,
-        `先に${complement}を引きます。`
+        `${placeName(place)}で5をまたぎます。${amount}を足すときに使う「5の補数」は${complement}です。先に${complement}を引きます。`
       );
 
       pushHintMove(
@@ -8088,6 +8087,7 @@ HTML = r"""
 
     // 5をまたぐ引き算。
     // 例: 7-4 → -5、そのあと+1。
+    // 説明だけのSTEPを挟まず、最初の珠移動と説明を1つにまとめる。
     if (
       digit >= 5 &&
       amount < 5 &&
@@ -8096,19 +8096,12 @@ HTML = r"""
       const complement =
         5 - amount;
 
-      pushHintExplain(
-        steps,
-        state,
-        place,
-        `${placeName(place)}で5をまたぎます。${amount}を引くには、5の補数は${complement}です。先に5の珠を外します。`
-      );
-
       pushHintMove(
         steps,
         state,
         -5 * place,
         place,
-        `先に5を引きます。`
+        `${placeName(place)}で5をまたぎます。${amount}を引くときに使う「5の補数」は${complement}です。先に5の珠を外します。`
       );
 
       pushHintMove(
@@ -8116,7 +8109,7 @@ HTML = r"""
         state,
         complement * place,
         place,
-        `次に${complement}を足します。5を引いて${complement}を戻すと、合わせて${amount}を引いたことになります。`
+        `次に${complement}を足します。5を引いて${complement}を足すと、合わせて${amount}を引いたことになります。`
       );
 
       return;
@@ -8190,12 +8183,12 @@ HTML = r"""
 
       addMove(
         current - 5 * place,
-        `${digit}から${complement}を引きます。${complement}を引くときに使う「5の補数」は${back}です。まず、${placeLabel}の5の珠を外します。`
+        `${digit}から${complement}を引くときに使う「5の補数」は${back}です。まず、${placeLabel}の5の珠を外します。`
       );
 
       addMove(
         current + back * place,
-        `${back}を戻します。5を引いて${back}を戻すと、${complement}を引いたことになります。`
+        `${back}を足します。5を引いて${back}を足すと、${complement}を引いたことになります。`
       );
     } else {
       addMove(
@@ -8964,24 +8957,6 @@ HTML = r"""
       const result =
         event.results?.[0];
 
-      if (
-        hintQuestionListeningStartedAt > 0 &&
-        Date.now() -
-          hintQuestionListeningStartedAt <
-          MIC_RESULT_GUARD_MS
-      ) {
-        setHintVoiceStatus(
-          "🎤 もう一度答えてね。",
-          "listening"
-        );
-
-        try {
-          recognition.abort();
-        } catch (error) {}
-
-        return;
-      }
-
       const selected =
         isComplement
           ? selectBestHintSingleDigitSpeech(
@@ -9092,10 +9067,33 @@ HTML = r"""
       ) {
         scheduleHintQuestionRetry(
           step,
-          520
+          HINT_MIC_RETRY_MS
         );
       }
     };
+
+    // 読み上げが終わったら、子どもが話し始める前にマイクを開く。
+    // onstartを待ってから表示を変えると、話し始めの数字を取りこぼすため、
+    // start()の直前から「聞いています」にしてBGMも消す。
+    hintQuestionListening =
+      true;
+    hintQuestionSpeechDetected =
+      false;
+    refreshBgmVolume();
+
+    if (hintMicAnswerBtn) {
+      hintMicAnswerBtn.disabled = true;
+      hintMicAnswerBtn.classList.add(
+        "listening"
+      );
+      hintMicAnswerBtn.textContent =
+        "🎤 聞いています…";
+    }
+
+    setHintVoiceStatus(
+      "🎤 聞いています…",
+      "listening"
+    );
 
     try {
       recognition.start();
@@ -9303,6 +9301,10 @@ HTML = r"""
         highlightAllUsed:
           Boolean(
             step.highlightAllUsed
+          ),
+        highlightChanged:
+          Boolean(
+            step.highlightChanged
           )
       }
     );
@@ -9367,7 +9369,7 @@ HTML = r"""
             ) {
               scheduleHintQuestionRetry(
                 step,
-                MIC_PRE_SILENCE_MS
+                HINT_MIC_AFTER_TTS_MS
               );
             }
           }
@@ -9377,7 +9379,7 @@ HTML = r"""
       ) {
         scheduleHintQuestionRetry(
           step,
-          MIC_PRE_SILENCE_MS
+          HINT_MIC_AFTER_TTS_MS
         );
       }
 
@@ -9446,7 +9448,7 @@ HTML = r"""
             ) {
               scheduleHintQuestionRetry(
                 step,
-                MIC_PRE_SILENCE_MS
+                HINT_MIC_AFTER_TTS_MS
               );
             }
           }
@@ -9456,7 +9458,7 @@ HTML = r"""
       ) {
         scheduleHintQuestionRetry(
           step,
-          MIC_PRE_SILENCE_MS
+          HINT_MIC_AFTER_TTS_MS
         );
       }
 
