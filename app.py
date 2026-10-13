@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V75-STABLE-HINT-BOARD-SINGLE-FEEDBACK-FINAL-ANSWER-2026-10-13
+# VERSION: CLEAN-V76-CARRY-BRIDGE-5-COMPLEMENT-2026-10-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V75-STABLE-HINT-BOARD-SINGLE-FEEDBACK-FINAL-ANSWER"
+APP_VERSION = "CLEAN-V76-CARRY-BRIDGE-5-COMPLEMENT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8166,7 +8166,7 @@ HTML = r"""
     ) {
       addMove(
         current - 5 * place,
-        `まず、${placeLabel}の5の珠を外します。`
+        `${digit}から${complement}を引きます。まず、${placeLabel}の5の珠を外します。`
       );
 
       const rest =
@@ -8188,17 +8188,17 @@ HTML = r"""
 
       addMove(
         current - 5 * place,
-        `まず、${placeLabel}の5の珠を外します。`
+        `${digit}から${complement}を引きます。${complement}を引くときに使う「5の補数」は${back}です。まず、${placeLabel}の5の珠を外します。`
       );
 
       addMove(
         current + back * place,
-        `${back}を戻します。これで${placeLabel}から${complement}を引けました。`
+        `${back}を戻します。5を引いて${back}を戻すと、${complement}を引いたことになります。`
       );
     } else {
       addMove(
         current - complement * place,
-        `${placeLabel}から${complement}を引きます。`
+        `${digit}から${complement}を引きます。`
       );
     }
 
@@ -8669,13 +8669,13 @@ HTML = r"""
         step.activePlace;
 
       hintStep.textContent =
-        `正解。${step.expectedAnswer}です。 「進む」で珠を1つ動かします。`;
+        `正解。${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`;
       hintNextBtn.disabled = false;
       hintNextBtn.textContent =
         "進む →";
 
       speakHintNarration(
-        `正解。${step.expectedAnswer}です。`
+        `正解。${step.amount}を足すときに使う10の補数は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`
       );
 
       return;
@@ -9305,7 +9305,7 @@ HTML = r"""
         : isCarryQuestion &&
           step.resolved
           ? step.lastMoveText ||
-            "「進む」で珠を1つ動かします。"
+            `${step.amount}を足すときに使う「10の補数」は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`
           : step.text;
 
     hintStepCounter.textContent =
@@ -9394,7 +9394,7 @@ HTML = r"""
       ) {
         const resolvedNarration =
           step.lastMoveText ||
-          "進むを押して、珠を1つ動かします。";
+          `${step.amount}を足すときに使う10の補数は${step.expectedAnswer}です。まず、${step.localDigit}から${step.expectedAnswer}を引きます。`;
         speakHintNarration(
           resolvedNarration
         );
