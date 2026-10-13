@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V87-BORROW-MOVE-WORDING"
+APP_VERSION = "CLEAN-V88-CONSISTENT-ADD-SUB-WORDING"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -4049,7 +4049,7 @@ HTML = r"""
           example: "2 ＋ 4 ＝ ?",
           title: "5の補数で足す",
           desc: "一珠が足りないときに『＋5 − 補数』を使う。",
-          basic: "同じ位で一珠が足りないときは、先に5の補数を引いてから五珠を入れます。2＋4なら、4の5に対する補数は1なので『−1 → ＋5』です。",
+          basic: "同じ位で一珠が足りないときは、先に5の補数を引いてから5を足します。2＋4なら、4の5に対する補数は1なので『−1 → ＋5』です。",
           trouble: "『何を引くか』を毎回数えないこと。1と4、2と3を5の組として覚えます。",
           rule: "＋4 は「−1 → ＋5」／ ＋3 は「−2 → ＋5」の順。",
           frames: [
@@ -7977,7 +7977,7 @@ HTML = r"""
         state,
         5 * place,
         place,
-        `${prefix}${placeName(place)}で、まず5の珠を入れます。`
+        `${prefix}${placeName(place)}で、まず5を足します。`
       );
 
       const rest =
@@ -8020,7 +8020,7 @@ HTML = r"""
         state,
         5 * place,
         place,
-        `次に5の珠を入れます。${complement}を引いて5を足すと、合わせて${amount}を足したことになります。`
+        `次に5を足します。${complement}を引いて5を足すと、合わせて${amount}を足したことになります。`
       );
 
       return;
@@ -8066,7 +8066,7 @@ HTML = r"""
         state,
         -5 * place,
         place,
-        `${prefix}${placeName(place)}で、まず5の珠を外します。`
+        `${prefix}${placeName(place)}で、まず5を引きます。`
       );
 
       const rest =
@@ -8101,7 +8101,7 @@ HTML = r"""
         state,
         -5 * place,
         place,
-        `${placeName(place)}で5をまたぎます。${amount}を引くときに使う「5の補数」は${complement}です。先に5の珠を外します。`
+        `${placeName(place)}で5をまたぎます。${amount}を引くときに使う「5の補数」は${complement}です。先に5を引きます。`
       );
 
       pushHintMove(
@@ -8161,7 +8161,7 @@ HTML = r"""
     ) {
       addMove(
         current - 5 * place,
-        `${digit}から${complement}を引きます。まず、${placeLabel}の5の珠を外します。`
+        `${digit}から${complement}を引きます。まず、${placeLabel}で5を引きます。`
       );
 
       const rest =
@@ -8183,7 +8183,7 @@ HTML = r"""
 
       addMove(
         current - 5 * place,
-        `${digit}から${complement}を引くときに使う「5の補数」は${back}です。まず、${placeLabel}の5の珠を外します。`
+        `${digit}から${complement}を引くときに使う「5の補数」は${back}です。まず、${placeLabel}で5を引きます。`
       );
 
       addMove(
