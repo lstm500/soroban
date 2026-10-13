@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V69-INTERACTIVE-COMPLEMENT-HINT-2026-10-13
+# VERSION: CLEAN-V71-SHORT-CARRY-AUTO-HINT-MIC-2026-10-13
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V65-RUNTIME-NAV-FIX"
+APP_VERSION = "CLEAN-V71-SHORT-CARRY-AUTO-HINT-MIC"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1580,6 +1580,55 @@ HTML = r"""
     color: #7a3b2e;
   }
 
+  .hint-answer-controls {
+    display: none;
+    width: min(560px, 100%);
+    margin: 0 auto 10px;
+  }
+
+  .hint-answer-controls.show {
+    display: block;
+  }
+
+  .hint-mic-answer-btn {
+    width: 100%;
+    min-height: 44px;
+    margin-bottom: 8px;
+    border-color: #9cbca7;
+    background: #e9f4ec;
+    color: #315f40;
+    font-weight: 950;
+  }
+
+  .hint-mic-answer-btn.listening {
+    background: #d8ecde;
+    border-color: #6f9e7d;
+  }
+
+  .hint-number-grid {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .hint-number-btn {
+    min-height: 38px;
+    padding: 5px 2px;
+    font-size: 15px;
+    font-weight: 950;
+  }
+
+  @media (max-width: 640px) {
+    .hint-number-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .hint-number-btn {
+      min-height: 42px;
+    }
+  }
+
   .hint-actions {
     display: flex;
     gap: 6px;
@@ -1685,19 +1734,19 @@ HTML = r"""
   }
 
   .soroban-bead.used-glow {
-    border-color: #b58b2d;
+    border-color: #d2bd69;
     background:
       linear-gradient(
         180deg,
-        #fff6bd 0%,
-        #f4de8d 54%,
-        #d7b85b 100%
+        #fff9d8 0%,
+        #f8ecad 54%,
+        #e8d790 100%
       );
     box-shadow:
-      0 0 10px rgba(255, 231, 128, .95),
-      0 0 22px rgba(255, 224, 92, .58),
-      inset 0 1px 1px rgba(255,255,255,.72);
-    filter: brightness(1.08) saturate(.82);
+      0 0 8px rgba(255, 235, 150, .58),
+      0 0 17px rgba(255, 226, 112, .28),
+      inset 0 1px 1px rgba(255,255,255,.68);
+    filter: brightness(1.04) saturate(.70);
   }
 
   .soroban-board.slow-hint-motion .soroban-bead {
@@ -3562,6 +3611,20 @@ HTML = r"""
 
       <div id="hintStep" class="hint-step"></div>
       <div id="hintVoiceStatus" class="hint-voice-status"></div>
+      <div id="hintAnswerControls" class="hint-answer-controls">
+        <button type="button" id="hintMicAnswerBtn" class="hint-mic-answer-btn">🎤 声で答える</button>
+        <div id="hintNumberGrid" class="hint-number-grid">
+          <button type="button" class="hint-number-btn" data-hint-number="1">1</button>
+          <button type="button" class="hint-number-btn" data-hint-number="2">2</button>
+          <button type="button" class="hint-number-btn" data-hint-number="3">3</button>
+          <button type="button" class="hint-number-btn" data-hint-number="4">4</button>
+          <button type="button" class="hint-number-btn" data-hint-number="5">5</button>
+          <button type="button" class="hint-number-btn" data-hint-number="6">6</button>
+          <button type="button" class="hint-number-btn" data-hint-number="7">7</button>
+          <button type="button" class="hint-number-btn" data-hint-number="8">8</button>
+          <button type="button" class="hint-number-btn" data-hint-number="9">9</button>
+        </div>
+      </div>
 
       <div class="hint-manual-nav">
         <button type="button" id="hintPrevBtn">← 戻る</button>
@@ -3902,6 +3965,9 @@ HTML = r"""
   const abacusHint = $("#abacusHint");
   const hintStep = $("#hintStep");
   const hintVoiceStatus = $("#hintVoiceStatus");
+  const hintAnswerControls = $("#hintAnswerControls");
+  const hintMicAnswerBtn = $("#hintMicAnswerBtn");
+  const hintNumberGrid = $("#hintNumberGrid");
   const sorobanBoard = $("#sorobanBoard");
 
   // TOPの4ボタンは、メダル・ログ・カメラなどの初期化より先に独立して登録する。
@@ -8092,7 +8158,7 @@ HTML = r"""
     ) {
       addMove(
         current - 5 * place,
-        `正解。10の補数は${complement}です。まず、${placeLabel}から5を引きます。5の珠を梁から離します。`
+        `正解、${complement}です。まず、${placeLabel}の5の珠を外します。`
       );
 
       const rest =
@@ -8101,7 +8167,7 @@ HTML = r"""
       if (rest > 0) {
         addMove(
           current - rest * place,
-          `つぎに、残りの${rest}を引きます。これで${placeLabel}から${complement}を引けました。`
+          `あと${rest}を引きます。これで${placeLabel}から${complement}を引けました。`
         );
       }
     } else if (
@@ -8114,29 +8180,26 @@ HTML = r"""
 
       addMove(
         current - 5 * place,
-        `${placeLabel}から${complement}を引くために、まず5の珠を梁から離します。`
+        `正解、${complement}です。まず、${placeLabel}の5の珠を外します。`
       );
 
       addMove(
         current + back * place,
-        `つぎに${back}を戻します。5を引いて${back}を戻すと、${complement}を引いたことになります。`
+        `${back}を戻します。これで${placeLabel}から${complement}を引けました。`
       );
     } else {
       addMove(
         current - complement * place,
-        `正解。10の補数は${complement}です。${placeLabel}から${complement}を引きます。`
+        `正解、${complement}です。${placeLabel}から${complement}を引きます。`
       );
     }
 
     const upperPlace =
       place * 10;
 
-    const beforeTen =
-      current;
-
     addMove(
       current + 10 * place,
-      `${placeName(upperPlace)}に1を足しましょう。これは${10 * place}を1つ足すことです。${beforeTen}に${10 * place}を足して${beforeTen + 10 * place}になります。`,
+      `${placeName(upperPlace)}に1を足しましょう。これは10を1つ足すことです。`,
       upperPlace
     );
 
@@ -8192,16 +8255,11 @@ HTML = r"""
         amount
       );
 
-    const displayFormula =
-      place === 1
-        ? `${digit}＋${amount} ＝ ${digit}＋（10－${complement}） ＝ ${digit}＋（－${complement}＋10）`
-        : `${placeName(place)}では、＋${amount}を「＋10－${complement}」に変えて考えます。`;
-
     const questionText =
-      `${placeName(place)}の${digit}に${amount}をそのまま足すと${localSum}になります。${placeName(place)}は0から9までなので、このままでは1つ上の位へくり上がります。\nそこで、${amount}を「10－${complement}」に変えて考えます。\n${displayFormula}\n${amount}といくつで10になりますか？ その数が10の補数です。${amount}を足すときの10の補数はいくつですか？`;
+      `${digit}に${amount}を足すと${localSum}になります。\n10をこえるので、${amount}は「10から補数を引く」と考えます。\n${amount}といくつで10になる？`;
 
     const narrationText =
-      `${placeName(place)}の${digit}に${amount}をそのまま足すと${localSum}になります。${placeName(place)}は0から9までなので、このままでは1つ上の位へくり上がります。そこで、${amount}を、10から${complement}を引く形に変えて考えます。${amount}といくつで10になりますか。その数が10の補数です。${amount}を足すときの10の補数はいくつですか？`;
+      `${digit}に${amount}を足すと${localSum}になります。10をこえるので、${amount}は、10から補数を引くと考えます。${amount}といくつで10になる？`;
 
     steps.push({
       value: state.value,
@@ -8378,11 +8436,11 @@ HTML = r"""
       activePlace: null,
       text:
         q.op === "＋"
-          ? `できました。${q.a}＋${q.b}＝${q.answer}です。10をまたぐときは、足す数を「10－補数」に変えると、そろばんで動かしやすくなります。`
+          ? `できました。答えは${q.answer}です。`
           : `できました。答えは${q.answer}です。もう一度見るときは、先に動く珠と、あとから動く珠を見てみよう。`,
       narrationText:
         q.op === "＋"
-          ? `できました。${q.a}たす${q.b}は${q.answer}です。10をまたぐときは、足す数を10から補数を引く形に変えて考えます。`
+          ? `できました。答えは${q.answer}です。`
           : `できました。答えは${q.answer}です。`
     });
 
@@ -8464,6 +8522,7 @@ HTML = r"""
     hintAutoAnimating = false;
     stopHintQuestionRecognition();
     setHintVoiceStatus("");
+    hideHintAnswerControls();
     refreshBgmVolume();
 
     abacusHint.classList.remove("show");
@@ -8513,6 +8572,87 @@ HTML = r"""
         state
       );
     }
+  }
+
+  function hideHintAnswerControls() {
+    if (!hintAnswerControls) {
+      return;
+    }
+
+    hintAnswerControls.classList.remove(
+      "show"
+    );
+
+    if (hintMicAnswerBtn) {
+      hintMicAnswerBtn.disabled = false;
+      hintMicAnswerBtn.classList.remove(
+        "listening"
+      );
+      hintMicAnswerBtn.textContent =
+        "🎤 声で答える";
+    }
+  }
+
+  function showHintAnswerControls() {
+    if (!hintAnswerControls) {
+      return;
+    }
+
+    hintAnswerControls.classList.add(
+      "show"
+    );
+  }
+
+  function submitHintComplementAnswer(
+    step,
+    value,
+    source = "button"
+  ) {
+    if (
+      !step ||
+      step.kind !==
+        "carry-complement-question" ||
+      step.resolved ||
+      hintAutoAnimating ||
+      hintManualSteps[
+        hintManualIndex
+      ] !== step
+    ) {
+      return;
+    }
+
+    const numericValue =
+      Number(value);
+
+    if (
+      numericValue ===
+      step.expectedAnswer
+    ) {
+      step.resolved = true;
+
+      setHintVoiceStatus(
+        `✓ 正解。${step.expectedAnswer}です。`,
+        "correct"
+      );
+
+      hideHintAnswerControls();
+      stopHintQuestionRecognition();
+
+      setTimeout(() => {
+        playHintCarryAnimation(
+          step
+        );
+      }, 350);
+
+      return;
+    }
+
+    setHintVoiceStatus(
+      `ちがいます。${step.amount}といくつで10になるか考えてみよう。`,
+      "wrong"
+    );
+
+    showHintAnswerControls();
   }
 
   function clearHintQuestionRetryTimer() {
@@ -8664,15 +8804,10 @@ HTML = r"""
 
     if (!Recognition) {
       setHintVoiceStatus(
-        "この端末では音声認識を使えません。『進む』で動きを確認できます。",
+        "この端末では音声認識を使えません。数字ボタンで答えてね。",
         "wrong"
       );
-
-      hintNextBtn.disabled =
-        false;
-      hintNextBtn.textContent =
-        "動きを見る →";
-      step.manualFallback = true;
+      showHintAnswerControls();
       return;
     }
 
@@ -8698,8 +8833,17 @@ HTML = r"""
         true;
       refreshBgmVolume();
 
+      if (hintMicAnswerBtn) {
+        hintMicAnswerBtn.disabled = true;
+        hintMicAnswerBtn.classList.add(
+          "listening"
+        );
+        hintMicAnswerBtn.textContent =
+          "🎤 聞いています…";
+      }
+
       setHintVoiceStatus(
-        `🎤 ${step.amount}を足すときの10の補数を答えてね`,
+        `🎤 ${step.amount}といくつで10になる？`,
         "listening"
       );
     };
@@ -8715,54 +8859,38 @@ HTML = r"""
           result
         );
 
-      if (
-        selected &&
-        selected.value ===
-          step.expectedAnswer
-      ) {
-        step.resolved = true;
-
-        setHintVoiceStatus(
-          `✓ 正解。10の補数は${step.expectedAnswer}です。`,
-          "correct"
+      if (selected) {
+        submitHintComplementAnswer(
+          step,
+          selected.value,
+          "voice"
         );
-
-        hintQuestionListening =
-          false;
-        refreshBgmVolume();
-
-        try {
-          recognition.onend =
-            null;
-          recognition.stop();
-        } catch (error) {}
-
-        hintQuestionRecognition =
-          null;
-
-        setTimeout(() => {
-          playHintCarryAnimation(
-            step
-          );
-        }, 450);
-
-        return;
+      } else {
+        setHintVoiceStatus(
+          voiceAnswerEnabled
+          ? "数字を聞き取れませんでした。もう一度聞きます。数字ボタンでも答えられます。"
+          : "数字を聞き取れませんでした。もう一度マイクを押すか、数字ボタンで答えてね。",
+          "wrong"
+        );
       }
-
-      const heard =
-        selected
-          ? `「${selected.transcript}」`
-          : "うまく聞き取れませんでした";
-
-      setHintVoiceStatus(
-        `${heard}。もう一度、${step.amount}を足すときの10の補数を答えてね。`,
-        "wrong"
-      );
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (
+      event
+    ) => {
+      const code =
+        event?.error || "";
+
+      const message =
+        code === "not-allowed" ||
+        code === "service-not-allowed"
+          ? "マイクが許可されていません。ブラウザのマイクを許可するか、数字ボタンで答えてね。"
+          : voiceAnswerEnabled
+            ? "マイクで聞き取れませんでした。もう一度聞きます。数字ボタンでも答えられます。"
+            : "マイクで聞き取れませんでした。もう一度マイクを押すか、数字ボタンで答えてね。";
+
       setHintVoiceStatus(
-        `もう一度、${step.amount}を足すときの10の補数を答えてね。`,
+        message,
         "wrong"
       );
     };
@@ -8774,10 +8902,31 @@ HTML = r"""
         null;
       refreshBgmVolume();
 
-      if (!step.resolved) {
+      if (hintMicAnswerBtn) {
+        hintMicAnswerBtn.disabled = false;
+        hintMicAnswerBtn.classList.remove(
+          "listening"
+        );
+        hintMicAnswerBtn.textContent =
+          "🎤 声で答える";
+      }
+
+      // 音声回答ONなら、無音や一時的な認識終了でも
+      // ゴワサン等を言い直さず、珠ヒントのマイクだけ静かに再開する。
+      if (
+        voiceAnswerEnabled &&
+        abacusHint.classList.contains(
+          "show"
+        ) &&
+        hintManualSteps[
+          hintManualIndex
+        ] === step &&
+        !step.resolved &&
+        !hintAutoAnimating
+      ) {
         scheduleHintQuestionRetry(
           step,
-          650
+          520
         );
       }
     };
@@ -8785,10 +8934,25 @@ HTML = r"""
     try {
       recognition.start();
     } catch (error) {
-      scheduleHintQuestionRetry(
-        step,
-        700
+      hintQuestionRecognition =
+        null;
+      hintQuestionListening =
+        false;
+      refreshBgmVolume();
+
+      setHintVoiceStatus(
+        "マイクを開始できませんでした。数字ボタンでも答えられます。",
+        "wrong"
       );
+
+      if (hintMicAnswerBtn) {
+        hintMicAnswerBtn.disabled = false;
+        hintMicAnswerBtn.classList.remove(
+          "listening"
+        );
+        hintMicAnswerBtn.textContent =
+          "🎤 声で答える";
+      }
     }
   }
 
@@ -8850,7 +9014,7 @@ HTML = r"""
           `${step.complement}を引いて、${placeName(step.activePlace * 10)}に1を足しました。\n${step.localDigit}＋${step.amount}＝${step.localDigit + step.amount}です。`;
 
         setHintVoiceStatus(
-          `✓ ${step.amount}を「10－${step.complement}」に変えて計算できました。`,
+          "✓ できました。",
           "correct"
         );
 
@@ -8969,30 +9133,52 @@ HTML = r"""
       hintNextBtn.disabled =
         true;
       hintNextBtn.textContent =
-        "声で答えてね";
+        "答えてから進む";
+
+      showHintAnswerControls();
+
+      setHintVoiceStatus(
+        `${step.amount}といくつで10になる？ 声か数字で答えてね。`
+      );
 
       if (speak) {
-        setHintVoiceStatus(
-          "説明を聞いてから、声で答えてね。"
-        );
-
         speakHintNarration(
           step.narrationText ||
             step.text,
           () => {
-            startHintQuestionRecognition(
-              step
-            );
+            // チャレンジの音声回答がONなら、珠ヒントの補数問題も
+            // 読み上げ終了後に自動でマイクを開始する。
+            if (
+              voiceAnswerEnabled &&
+              hintManualSteps[
+                hintManualIndex
+              ] === step &&
+              !step.resolved &&
+              !hintAutoAnimating &&
+              abacusHint.classList.contains(
+                "show"
+              )
+            ) {
+              scheduleHintQuestionRetry(
+                step,
+                280
+              );
+            }
           }
         );
-      } else {
-        startHintQuestionRecognition(
-          step
+      } else if (
+        voiceAnswerEnabled
+      ) {
+        scheduleHintQuestionRetry(
+          step,
+          280
         );
       }
 
       return;
     }
+
+    hideHintAnswerControls();
 
     hintNextBtn.disabled =
       hintManualIndex >=
@@ -9009,7 +9195,7 @@ HTML = r"""
       step.resolved
     ) {
       setHintVoiceStatus(
-        `✓ 正解済み。10の補数は${step.expectedAnswer}です。`,
+        `✓ 正解。${step.expectedAnswer}です。`,
         "correct"
       );
     }
@@ -15666,6 +15852,41 @@ HTML = r"""
 
   hintNextBtn.addEventListener("click", () => {
     moveManualHint(1);
+  });
+
+  hintMicAnswerBtn.addEventListener("click", () => {
+    const step =
+      hintManualSteps[
+        hintManualIndex
+      ];
+
+    startHintQuestionRecognition(
+      step
+    );
+  });
+
+  hintNumberGrid.addEventListener("click", (event) => {
+    const button =
+      event.target.closest(
+        "[data-hint-number]"
+      );
+
+    if (!button) {
+      return;
+    }
+
+    const step =
+      hintManualSteps[
+        hintManualIndex
+      ];
+
+    submitHintComplementAnswer(
+      step,
+      Number(
+        button.dataset.hintNumber
+      ),
+      "button"
+    );
   });
 
   $("#hintCloseBtn").addEventListener("click", () => {
