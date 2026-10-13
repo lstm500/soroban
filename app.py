@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V68-CARRY-BORROW-SPLIT-2026-10-12
+# VERSION: CLEAN-V69-INTERACTIVE-COMPLEMENT-HINT-2026-10-13
 
 import json
 
@@ -1540,6 +1540,44 @@ HTML = r"""
     font-weight: 900;
     line-height: 1.55;
     color: #4c473e;
+    white-space: pre-line;
+  }
+
+  .hint-voice-status {
+    display: none;
+    width: min(560px, 100%);
+    margin: 0 auto 10px;
+    padding: 9px 12px;
+    border: 1px solid #d7cfbf;
+    border-radius: 12px;
+    background: #f6f1e8;
+    color: #5f584e;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.5;
+  }
+
+  .hint-voice-status.show {
+    display: block;
+  }
+
+  .hint-voice-status.listening {
+    border-color: #9cbca7;
+    background: #e9f4ec;
+    color: #315f40;
+  }
+
+  .hint-voice-status.correct {
+    border-color: #d4b95d;
+    background: #fff7d8;
+    color: #6d5715;
+  }
+
+  .hint-voice-status.wrong {
+    border-color: #d5aaa0;
+    background: #fff0ec;
+    color: #7a3b2e;
   }
 
   .hint-actions {
@@ -1643,7 +1681,32 @@ HTML = r"""
   }
 
   .soroban-rod.active .soroban-bead {
-    filter: saturate(1.14) brightness(1.04);
+    filter: saturate(1.08) brightness(1.04);
+  }
+
+  .soroban-bead.used-glow {
+    border-color: #b58b2d;
+    background:
+      linear-gradient(
+        180deg,
+        #fff6bd 0%,
+        #f4de8d 54%,
+        #d7b85b 100%
+      );
+    box-shadow:
+      0 0 10px rgba(255, 231, 128, .95),
+      0 0 22px rgba(255, 224, 92, .58),
+      inset 0 1px 1px rgba(255,255,255,.72);
+    filter: brightness(1.08) saturate(.82);
+  }
+
+  .soroban-board.slow-hint-motion .soroban-bead {
+    transition:
+      top 1.35s cubic-bezier(.22,.8,.24,1),
+      filter .35s ease,
+      background .35s ease,
+      box-shadow .35s ease,
+      transform .35s ease;
   }
 
   .upper-bead {
@@ -3498,6 +3561,7 @@ HTML = r"""
       </div>
 
       <div id="hintStep" class="hint-step"></div>
+      <div id="hintVoiceStatus" class="hint-voice-status"></div>
 
       <div class="hint-manual-nav">
         <button type="button" id="hintPrevBtn">← 戻る</button>
@@ -3510,7 +3574,7 @@ HTML = r"""
       </div>
 
       <div class="hint-legend">
-        「進む」を押すと次の珠の状態へ進みます。黄色い位が、いま考えているところです。
+        「進む」で1つずつ確認します。薄い黄色に光る珠が、いま使っている・動かしている珠です。
       </div>
     </div>
 
@@ -3837,6 +3901,7 @@ HTML = r"""
   const hintStepCounter = $("#hintStepCounter");
   const abacusHint = $("#abacusHint");
   const hintStep = $("#hintStep");
+  const hintVoiceStatus = $("#hintVoiceStatus");
   const sorobanBoard = $("#sorobanBoard");
 
   // TOPの4ボタンは、メダル・ログ・カメラなどの初期化より先に独立して登録する。
@@ -4422,6 +4487,10 @@ HTML = r"""
   // 珠ヒントの音声解説中は、回答用マイクを止める。
   let hintNarrationActive = false;
   let hintNarrationToken = 0;
+  let hintQuestionRecognition = null;
+  let hintQuestionListening = false;
+  let hintQuestionRetryTimer = null;
+  let hintAutoAnimating = false;
 
   // 「ゴワサン！」の直後だけ短く余韻を待つ。
   // 問題を解いている間はBGMを止めない。
@@ -7541,7 +7610,8 @@ HTML = r"""
         rod,
         place,
         upper,
-        lowers
+        lowers,
+        currentDigit: 0
       });
     }
   }
@@ -7561,9 +7631,108 @@ HTML = r"""
 
       bead.style.top = `${top}px`;
     });
+
+    rodInfo.currentDigit = safeDigit;
   }
 
-  function showSorobanNumber(value, activePlace = null) {
+  function clearSorobanBeadGlow() {
+    hintRods.forEach((rodInfo) => {
+      rodInfo.upper.classList.remove(
+        "used-glow"
+      );
+
+      rodInfo.lowers.forEach((bead) => {
+        bead.classList.remove(
+          "used-glow"
+        );
+      });
+    });
+  }
+
+  function glowUsedBeads(
+    rodInfo,
+    digit
+  ) {
+    const safeDigit =
+      Math.max(
+        0,
+        Math.min(
+          9,
+          Number(digit) || 0
+        )
+      );
+
+    if (safeDigit >= 5) {
+      rodInfo.upper.classList.add(
+        "used-glow"
+      );
+    }
+
+    const lowerCount =
+      safeDigit % 5;
+
+    rodInfo.lowers.forEach(
+      (bead, index) => {
+        if (index < lowerCount) {
+          bead.classList.add(
+            "used-glow"
+          );
+        }
+      }
+    );
+  }
+
+  function glowChangedBeads(
+    rodInfo,
+    beforeDigit,
+    afterDigit
+  ) {
+    const beforeUpper =
+      beforeDigit >= 5;
+
+    const afterUpper =
+      afterDigit >= 5;
+
+    if (
+      beforeUpper !==
+      afterUpper
+    ) {
+      rodInfo.upper.classList.add(
+        "used-glow"
+      );
+    }
+
+    const beforeLower =
+      beforeDigit % 5;
+
+    const afterLower =
+      afterDigit % 5;
+
+    rodInfo.lowers.forEach(
+      (bead, index) => {
+        const beforeOn =
+          index < beforeLower;
+
+        const afterOn =
+          index < afterLower;
+
+        if (
+          beforeOn !==
+          afterOn
+        ) {
+          bead.classList.add(
+            "used-glow"
+          );
+        }
+      }
+    );
+  }
+
+  function showSorobanNumber(
+    value,
+    activePlace = null,
+    options = {}
+  ) {
     const safeValue = Math.max(
       0,
       Math.floor(Math.abs(Number(value) || 0))
@@ -7575,14 +7744,59 @@ HTML = r"""
       .split("")
       .map(Number);
 
+    const beforeDigits =
+      hintRods.map(
+        (rodInfo) =>
+          Number(
+            rodInfo.currentDigit
+          ) || 0
+      );
+
+    clearSorobanBeadGlow();
+
     hintRods.forEach((rodInfo, index) => {
-      setRodDigit(rodInfo, digits[index]);
+      const nextDigit =
+        digits[index];
+
+      setRodDigit(
+        rodInfo,
+        nextDigit
+      );
 
       rodInfo.rod.classList.toggle(
         "active",
         activePlace !== null &&
         rodInfo.place === activePlace
       );
+
+      if (
+        options.highlightAllUsed &&
+        nextDigit > 0
+      ) {
+        glowUsedBeads(
+          rodInfo,
+          nextDigit
+        );
+      } else if (
+        options.highlightUsed &&
+        activePlace !== null &&
+        rodInfo.place === activePlace
+      ) {
+        glowUsedBeads(
+          rodInfo,
+          nextDigit
+        );
+      } else if (
+        options.highlightChanged &&
+        activePlace !== null &&
+        rodInfo.place === activePlace
+      ) {
+        glowChangedBeads(
+          rodInfo,
+          beforeDigits[index],
+          nextDigit
+        );
+      }
     });
   }
 
@@ -7622,14 +7836,16 @@ HTML = r"""
     state,
     delta,
     activePlace,
-    text
+    text,
+    extra = {}
   ) {
     state.value += delta;
 
     steps.push({
       value: state.value,
       activePlace,
-      text
+      text,
+      ...extra
     });
   }
 
@@ -7637,12 +7853,14 @@ HTML = r"""
     steps,
     state,
     activePlace,
-    text
+    text,
+    extra = {}
   ) {
     steps.push({
       value: state.value,
       activePlace,
-      text
+      text,
+      ...extra
     });
   }
 
@@ -7837,6 +8055,94 @@ HTML = r"""
     );
   }
 
+  function buildCarryComplementMoves(
+    startValue,
+    place,
+    complement,
+    amount
+  ) {
+    const moves = [];
+    let current = startValue;
+    const digit =
+      hintDigitAt(
+        current,
+        place
+      );
+
+    const placeLabel =
+      placeName(place);
+
+    const addMove = (
+      nextValue,
+      text,
+      activePlace = place
+    ) => {
+      moves.push({
+        value: nextValue,
+        activePlace,
+        text
+      });
+
+      current = nextValue;
+    };
+
+    if (
+      digit >= 5 &&
+      complement >= 5
+    ) {
+      addMove(
+        current - 5 * place,
+        `正解。10の補数は${complement}です。まず、${placeLabel}から5を引きます。5の珠を梁から離します。`
+      );
+
+      const rest =
+        complement - 5;
+
+      if (rest > 0) {
+        addMove(
+          current - rest * place,
+          `つぎに、残りの${rest}を引きます。これで${placeLabel}から${complement}を引けました。`
+        );
+      }
+    } else if (
+      digit >= 5 &&
+      complement < 5 &&
+      digit - 5 < complement
+    ) {
+      const back =
+        5 - complement;
+
+      addMove(
+        current - 5 * place,
+        `${placeLabel}から${complement}を引くために、まず5の珠を梁から離します。`
+      );
+
+      addMove(
+        current + back * place,
+        `つぎに${back}を戻します。5を引いて${back}を戻すと、${complement}を引いたことになります。`
+      );
+    } else {
+      addMove(
+        current - complement * place,
+        `正解。10の補数は${complement}です。${placeLabel}から${complement}を引きます。`
+      );
+    }
+
+    const upperPlace =
+      place * 10;
+
+    const beforeTen =
+      current;
+
+    addMove(
+      current + 10 * place,
+      `${placeName(upperPlace)}に1を足しましょう。これは${10 * place}を1つ足すことです。${beforeTen}に${10 * place}を足して${beforeTen + 10 * place}になります。`,
+      upperPlace
+    );
+
+    return moves;
+  }
+
   function addDigitWithCarryHint(
     steps,
     state,
@@ -7872,29 +8178,56 @@ HTML = r"""
     const complement =
       10 - amount;
 
-    pushHintExplain(
-      steps,
-      state,
-      place,
-      `${placeName(place)}で10をまたぎます。${amount}を足すときの10の補数は${complement}です。先に${complement}を引いてから、1つ上の位へ1を足します。`
-    );
+    const startValue =
+      state.value;
 
-    // ユーザー指定どおり、先にマイナス側の珠を動かす。
-    subtractWithinDigitHint(
-      steps,
-      state,
-      place,
+    const localSum =
+      digit + amount;
+
+    const autoMoves =
+      buildCarryComplementMoves(
+        startValue,
+        place,
+        complement,
+        amount
+      );
+
+    const displayFormula =
+      place === 1
+        ? `${digit}＋${amount} ＝ ${digit}＋（10－${complement}） ＝ ${digit}＋（－${complement}＋10）`
+        : `${placeName(place)}では、＋${amount}を「＋10－${complement}」に変えて考えます。`;
+
+    const questionText =
+      `${placeName(place)}の${digit}に${amount}をそのまま足すと${localSum}になります。${placeName(place)}は0から9までなので、このままでは1つ上の位へくり上がります。\nそこで、${amount}を「10－${complement}」に変えて考えます。\n${displayFormula}\n${amount}といくつで10になりますか？ その数が10の補数です。${amount}を足すときの10の補数はいくつですか？`;
+
+    const narrationText =
+      `${placeName(place)}の${digit}に${amount}をそのまま足すと${localSum}になります。${placeName(place)}は0から9までなので、このままでは1つ上の位へくり上がります。そこで、${amount}を、10から${complement}を引く形に変えて考えます。${amount}といくつで10になりますか。その数が10の補数です。${amount}を足すときの10の補数はいくつですか？`;
+
+    steps.push({
+      value: state.value,
+      activePlace: place,
+      text: questionText,
+      narrationText,
+      kind: "carry-complement-question",
+      expectedAnswer: complement,
       complement,
-      "10をまたぐので、"
-    );
+      amount,
+      localDigit: digit,
+      startValue,
+      finalValue:
+        startValue +
+        amount * place,
+      autoMoves,
+      highlightUsed: true,
+      resolved: false,
+      animationDone: false
+    });
 
-    addDigitWithCarryHint(
-      steps,
-      state,
-      place * 10,
-      1,
-      true
-    );
+    // 自動アニメーションで最終的にこの値になる。
+    // 後続のヒント生成では完成後の値として扱う。
+    state.value =
+      startValue +
+      amount * place;
   }
 
   function subtractDigitWithBorrowHint(
@@ -7963,7 +8296,22 @@ HTML = r"""
         value: q.a,
         activePlace: null,
         text:
-          `まず、${q.a}をそろばんに置きます。黄色く光る位を見ながら、ゆっくり動かします。`
+          `まず、${q.a}をそろばんに置きます。使っている珠が薄い黄色に光ります。`,
+        narrationText:
+          `まず、${q.a}をそろばんに置きます。`,
+        highlightAllUsed: true
+      },
+      {
+        value: q.a,
+        activePlace: null,
+        text:
+          q.op === "＋"
+            ? `${q.a}に${q.b}を足していきます。`
+            : `${q.a}から${q.b}を引いていきます。`,
+        narrationText:
+          q.op === "＋"
+            ? `${q.a}に${q.b}を足していきます。`
+            : `${q.a}から${q.b}を引いていきます。`
       }
     ];
 
@@ -7977,21 +8325,45 @@ HTML = r"""
       );
 
     parts.forEach((part) => {
-      pushHintExplain(
-        steps,
-        state,
-        part.place,
-        `${placeName(part.place)}の${part.digit}を${q.op === "＋" ? "足します" : "引きます"}。`
-      );
-
       if (q.op === "＋") {
-        addDigitWithCarryHint(
+        const digit =
+          hintDigitAt(
+            state.value,
+            part.place
+          );
+
+        if (
+          digit + part.digit > 9
+        ) {
+          addDigitWithCarryHint(
+            steps,
+            state,
+            part.place,
+            part.digit
+          );
+        } else {
+          pushHintExplain(
+            steps,
+            state,
+            part.place,
+            `${placeName(part.place)}に${part.digit}をそのまま足します。`
+          );
+
+          addDigitWithCarryHint(
+            steps,
+            state,
+            part.place,
+            part.digit
+          );
+        }
+      } else {
+        pushHintExplain(
           steps,
           state,
           part.place,
-          part.digit
+          `${placeName(part.place)}から${part.digit}を引いていきます。`
         );
-      } else {
+
         subtractDigitWithBorrowHint(
           steps,
           state,
@@ -8005,7 +8377,13 @@ HTML = r"""
       value: q.answer,
       activePlace: null,
       text:
-        `できました。答えは${q.answer}です。もう一度見るときは、先に動く珠と、あとから動く珠を見てみよう。`
+        q.op === "＋"
+          ? `できました。${q.a}＋${q.b}＝${q.answer}です。10をまたぐときは、足す数を「10－補数」に変えると、そろばんで動かしやすくなります。`
+          : `できました。答えは${q.answer}です。もう一度見るときは、先に動く珠と、あとから動く珠を見てみよう。`,
+      narrationText:
+        q.op === "＋"
+          ? `できました。${q.a}たす${q.b}は${q.answer}です。10をまたぐときは、足す数を10から補数を引く形に変えて考えます。`
+          : `できました。答えは${q.answer}です。`
     });
 
     return steps;
@@ -8059,6 +8437,15 @@ HTML = r"""
   function stopSorobanHintAnimation() {
     hintRunToken += 1;
     hintNarrationToken += 1;
+    hintAutoAnimating = false;
+
+    stopHintQuestionRecognition();
+
+    if (sorobanBoard) {
+      sorobanBoard.classList.remove(
+        "slow-hint-motion"
+      );
+    }
 
     if (
       hintNarrationActive &&
@@ -8074,6 +8461,9 @@ HTML = r"""
     hintNarrationActive = false;
     hintManualSteps = [];
     hintManualIndex = 0;
+    hintAutoAnimating = false;
+    stopHintQuestionRecognition();
+    setHintVoiceStatus("");
     refreshBgmVolume();
 
     abacusHint.classList.remove("show");
@@ -8096,13 +8486,76 @@ HTML = r"""
     }
   }
 
+  function setHintVoiceStatus(
+    message = "",
+    state = ""
+  ) {
+    if (!hintVoiceStatus) {
+      return;
+    }
+
+    hintVoiceStatus.textContent =
+      message;
+
+    hintVoiceStatus.classList.toggle(
+      "show",
+      Boolean(message)
+    );
+
+    hintVoiceStatus.classList.remove(
+      "listening",
+      "correct",
+      "wrong"
+    );
+
+    if (state) {
+      hintVoiceStatus.classList.add(
+        state
+      );
+    }
+  }
+
+  function clearHintQuestionRetryTimer() {
+    if (!hintQuestionRetryTimer) {
+      return;
+    }
+
+    clearTimeout(
+      hintQuestionRetryTimer
+    );
+
+    hintQuestionRetryTimer = null;
+  }
+
+  function stopHintQuestionRecognition() {
+    clearHintQuestionRetryTimer();
+    hintQuestionListening = false;
+
+    if (
+      hintQuestionRecognition
+    ) {
+      try {
+        hintQuestionRecognition.onend =
+          null;
+        hintQuestionRecognition.stop();
+      } catch (error) {}
+    }
+
+    hintQuestionRecognition = null;
+    refreshBgmVolume();
+  }
+
   function speakHintNarration(
-    message
+    message,
+    onDone = null
   ) {
     if (
       !hintNarrationActive ||
       !message
     ) {
+      if (onDone) {
+        onDone();
+      }
       return;
     }
 
@@ -8111,6 +8564,9 @@ HTML = r"""
       typeof SpeechSynthesisUtterance ===
         "undefined"
     ) {
+      if (onDone) {
+        onDone();
+      }
       return;
     }
 
@@ -8136,21 +8592,309 @@ HTML = r"""
       utterance.voice = voice;
     }
 
-    utterance.onend = () => {
+    let finished = false;
+
+    const done = () => {
       if (
+        finished ||
         narrationToken !==
-        hintNarrationToken
+          hintNarrationToken
       ) {
         return;
       }
+
+      finished = true;
+
+      if (onDone) {
+        onDone();
+      }
     };
 
-    utterance.onerror =
-      utterance.onend;
+    utterance.onend = done;
+    utterance.onerror = done;
 
     window.speechSynthesis.speak(
       utterance
     );
+  }
+
+  function scheduleHintQuestionRetry(
+    step,
+    delay = 500
+  ) {
+    clearHintQuestionRetryTimer();
+
+    hintQuestionRetryTimer =
+      setTimeout(() => {
+        if (
+          abacusHint.classList.contains(
+            "show"
+          ) &&
+          hintManualSteps[
+            hintManualIndex
+          ] === step &&
+          !step.resolved &&
+          !hintAutoAnimating
+        ) {
+          startHintQuestionRecognition(
+            step
+          );
+        }
+      }, delay);
+  }
+
+  function startHintQuestionRecognition(
+    step
+  ) {
+    if (
+      !step ||
+      step.kind !==
+        "carry-complement-question" ||
+      step.resolved ||
+      hintAutoAnimating ||
+      hintManualSteps[
+        hintManualIndex
+      ] !== step
+    ) {
+      return;
+    }
+
+    const Recognition =
+      getSpeechRecognitionClass();
+
+    if (!Recognition) {
+      setHintVoiceStatus(
+        "この端末では音声認識を使えません。『進む』で動きを確認できます。",
+        "wrong"
+      );
+
+      hintNextBtn.disabled =
+        false;
+      hintNextBtn.textContent =
+        "動きを見る →";
+      step.manualFallback = true;
+      return;
+    }
+
+    stopHintQuestionRecognition();
+
+    const recognition =
+      new Recognition();
+
+    hintQuestionRecognition =
+      recognition;
+
+    recognition.lang =
+      "ja-JP";
+    recognition.continuous =
+      false;
+    recognition.interimResults =
+      false;
+    recognition.maxAlternatives =
+      5;
+
+    recognition.onstart = () => {
+      hintQuestionListening =
+        true;
+      refreshBgmVolume();
+
+      setHintVoiceStatus(
+        `🎤 ${step.amount}を足すときの10の補数を答えてね`,
+        "listening"
+      );
+    };
+
+    recognition.onresult = (
+      event
+    ) => {
+      const result =
+        event.results?.[0];
+
+      const selected =
+        selectBestNumericSpeech(
+          result
+        );
+
+      if (
+        selected &&
+        selected.value ===
+          step.expectedAnswer
+      ) {
+        step.resolved = true;
+
+        setHintVoiceStatus(
+          `✓ 正解。10の補数は${step.expectedAnswer}です。`,
+          "correct"
+        );
+
+        hintQuestionListening =
+          false;
+        refreshBgmVolume();
+
+        try {
+          recognition.onend =
+            null;
+          recognition.stop();
+        } catch (error) {}
+
+        hintQuestionRecognition =
+          null;
+
+        setTimeout(() => {
+          playHintCarryAnimation(
+            step
+          );
+        }, 450);
+
+        return;
+      }
+
+      const heard =
+        selected
+          ? `「${selected.transcript}」`
+          : "うまく聞き取れませんでした";
+
+      setHintVoiceStatus(
+        `${heard}。もう一度、${step.amount}を足すときの10の補数を答えてね。`,
+        "wrong"
+      );
+    };
+
+    recognition.onerror = () => {
+      setHintVoiceStatus(
+        `もう一度、${step.amount}を足すときの10の補数を答えてね。`,
+        "wrong"
+      );
+    };
+
+    recognition.onend = () => {
+      hintQuestionListening =
+        false;
+      hintQuestionRecognition =
+        null;
+      refreshBgmVolume();
+
+      if (!step.resolved) {
+        scheduleHintQuestionRetry(
+          step,
+          650
+        );
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (error) {
+      scheduleHintQuestionRetry(
+        step,
+        700
+      );
+    }
+  }
+
+  function playHintCarryAnimation(
+    step
+  ) {
+    if (
+      !step ||
+      !Array.isArray(
+        step.autoMoves
+      ) ||
+      !step.autoMoves.length
+    ) {
+      return;
+    }
+
+    stopHintQuestionRecognition();
+
+    hintAutoAnimating = true;
+    hintPrevBtn.disabled = true;
+    hintNextBtn.disabled = true;
+    hintNextBtn.textContent =
+      "珠を動かしています…";
+
+    sorobanBoard.classList.add(
+      "slow-hint-motion"
+    );
+
+    let moveIndex = 0;
+
+    const runMove = () => {
+      if (
+        !abacusHint.classList.contains(
+          "show"
+        ) ||
+        hintManualSteps[
+          hintManualIndex
+        ] !== step
+      ) {
+        hintAutoAnimating = false;
+        sorobanBoard.classList.remove(
+          "slow-hint-motion"
+        );
+        return;
+      }
+
+      if (
+        moveIndex >=
+        step.autoMoves.length
+      ) {
+        hintAutoAnimating = false;
+        step.animationDone = true;
+
+        sorobanBoard.classList.remove(
+          "slow-hint-motion"
+        );
+
+        hintStep.textContent =
+          `${step.complement}を引いて、${placeName(step.activePlace * 10)}に1を足しました。\n${step.localDigit}＋${step.amount}＝${step.localDigit + step.amount}です。`;
+
+        setHintVoiceStatus(
+          `✓ ${step.amount}を「10－${step.complement}」に変えて計算できました。`,
+          "correct"
+        );
+
+        hintPrevBtn.disabled =
+          hintManualIndex <= 0;
+        hintNextBtn.disabled =
+          hintManualIndex >=
+          hintManualSteps.length - 1;
+        hintNextBtn.textContent =
+          hintManualIndex >=
+            hintManualSteps.length - 1
+            ? "ここで完成"
+            : "進む →";
+        return;
+      }
+
+      const move =
+        step.autoMoves[
+          moveIndex
+        ];
+
+      hintStep.textContent =
+        move.text;
+
+      showSorobanNumber(
+        move.value,
+        move.activePlace,
+        {
+          highlightChanged: true
+        }
+      );
+
+      speakHintNarration(
+        move.text,
+        () => {
+          setTimeout(() => {
+            moveIndex += 1;
+            runMove();
+          }, 650);
+        }
+      );
+    };
+
+    runMove();
   }
 
   function renderManualHintStep(
@@ -8165,6 +8909,13 @@ HTML = r"""
     ) {
       return;
     }
+
+    stopHintQuestionRecognition();
+    hintAutoAnimating = false;
+    sorobanBoard.classList.remove(
+      "slow-hint-motion"
+    );
+    setHintVoiceStatus("");
 
     const safeIndex =
       Math.max(
@@ -8183,10 +8934,19 @@ HTML = r"""
         hintManualIndex
       ];
 
-    // 「進む」「戻る」を押した瞬間だけ珠の状態を変える。
     showSorobanNumber(
       step.value,
-      step.activePlace
+      step.activePlace,
+      {
+        highlightUsed:
+          Boolean(
+            step.highlightUsed
+          ),
+        highlightAllUsed:
+          Boolean(
+            step.highlightAllUsed
+          )
+      }
     );
 
     hintStep.textContent =
@@ -8198,6 +8958,42 @@ HTML = r"""
     hintPrevBtn.disabled =
       hintManualIndex <= 0;
 
+    const isCarryQuestion =
+      step.kind ===
+      "carry-complement-question";
+
+    if (
+      isCarryQuestion &&
+      !step.resolved
+    ) {
+      hintNextBtn.disabled =
+        true;
+      hintNextBtn.textContent =
+        "声で答えてね";
+
+      if (speak) {
+        setHintVoiceStatus(
+          "説明を聞いてから、声で答えてね。"
+        );
+
+        speakHintNarration(
+          step.narrationText ||
+            step.text,
+          () => {
+            startHintQuestionRecognition(
+              step
+            );
+          }
+        );
+      } else {
+        startHintQuestionRecognition(
+          step
+        );
+      }
+
+      return;
+    }
+
     hintNextBtn.disabled =
       hintManualIndex >=
       hintManualSteps.length - 1;
@@ -8208,9 +9004,20 @@ HTML = r"""
         ? "ここで完成"
         : "進む →";
 
+    if (
+      isCarryQuestion &&
+      step.resolved
+    ) {
+      setHintVoiceStatus(
+        `✓ 正解済み。10の補数は${step.expectedAnswer}です。`,
+        "correct"
+      );
+    }
+
     if (speak) {
       speakHintNarration(
-        step.text
+        step.narrationText ||
+          step.text
       );
     }
   }
@@ -8219,8 +9026,31 @@ HTML = r"""
     direction
   ) {
     if (
-      !hintManualSteps.length
+      !hintManualSteps.length ||
+      hintAutoAnimating
     ) {
+      return;
+    }
+
+    const currentStep =
+      hintManualSteps[
+        hintManualIndex
+      ];
+
+    if (
+      direction > 0 &&
+      currentStep?.kind ===
+        "carry-complement-question" &&
+      !currentStep.resolved
+    ) {
+      if (
+        currentStep.manualFallback
+      ) {
+        currentStep.resolved = true;
+        playHintCarryAnimation(
+          currentStep
+        );
+      }
       return;
     }
 
@@ -8325,7 +9155,8 @@ HTML = r"""
     // 実際の発話をSpeechRecognitionが検知した瞬間だけ0%へ下げる。
     if (
       voiceSpeechDetected ||
-      anzanSpeechDetected
+      anzanSpeechDetected ||
+      hintQuestionListening
     ) {
       return BGM_VOLUME_LISTENING;
     }
