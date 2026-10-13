@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V83-BORROW-COMPLEMENT-QUESTION"
+APP_VERSION = "CLEAN-V84-BORROW-FOCUS-EARLY-MIC"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8264,11 +8264,19 @@ HTML = r"""
     const narrationText =
       `${digit}に${amount}を足すと${localSum}になります。答えが10をこえるので、${amount}は、10から補数を引くと考えます。${amount}を足すときに使う、10の補数はいくつですか？`;
 
+    const voicePromptLead =
+      `${digit}に${amount}を足すと${localSum}になります。答えが10をこえるので、${amount}は、10から補数を引くと考えます。`;
+
+    const voicePromptTail =
+      `使う10の補数はいくつですか？ マイクで答えてね。`;
+
     steps.push({
       value: state.value,
       activePlace: place,
       text: questionText,
       narrationText,
+      voicePromptLead,
+      voicePromptTail,
       kind: "carry-complement-question",
       expectedAnswer: complement,
       complement,
@@ -8316,15 +8324,23 @@ HTML = r"""
     if (
       digit >= amount
     ) {
-      subtractWithinDigitHint(
-        steps,
-        state,
-        place,
-        amount,
-        borrowContext
-          ? "くり下がりです。"
-          : ""
-      );
+      if (borrowContext) {
+        pushHintMove(
+          steps,
+          state,
+          -amount * place,
+          place,
+          `${placeName(place)}から${amount}を引きます。`
+        );
+      } else {
+        subtractWithinDigitHint(
+          steps,
+          state,
+          place,
+          amount,
+          ""
+        );
+      }
       return;
     }
 
@@ -8338,6 +8354,10 @@ HTML = r"""
         `${placeName(place)}だけでは${amount}を引けません。\n${amount}を引くときに使う「10の補数」はいくつですか？`,
       narrationText:
         `${placeName(place)}だけでは${amount}を引けません。${amount}を引くときに使う、10の補数はいくつですか？`,
+      voicePromptLead:
+        `${placeName(place)}だけでは${amount}を引けません。`,
+      voicePromptTail:
+        `使う10の補数はいくつですか？ マイクで答えてね。`,
       kind: "borrow-complement-question",
       expectedAnswer: complement,
       amount,
@@ -8345,7 +8365,7 @@ HTML = r"""
       highlightUsed: true,
       resolved: false,
       resolvedText:
-        `正解。${amount}を引くときに使う「10の補数」は${complement}です。まず、${placeName(place * 10)}から1を引きます。`
+        `正解。${amount}を引くときに使う「10の補数」は${complement}です。まず、${placeName(place * 10)}の1に注目します。`
     });
 
     // 先に1つ上の位から1を引く。これが繰り下がり。
@@ -8666,6 +8686,18 @@ HTML = r"""
       stopHintQuestionRecognition();
 
       if (isBorrow) {
+        step.displayActivePlace =
+          step.place * 10;
+        step.highlightUsed = true;
+
+        showSorobanNumber(
+          step.value,
+          step.displayActivePlace,
+          {
+            highlightUsed: true
+          }
+        );
+
         hintStep.textContent =
           step.resolvedText ||
           `正解。${step.expectedAnswer}です。`;
@@ -8866,7 +8898,8 @@ HTML = r"""
   }
 
   function startHintQuestionRecognition(
-    step
+    step,
+    onReady = null
   ) {
     const isComplement =
       step?.kind ===
@@ -8968,6 +9001,19 @@ HTML = r"""
         "🎤 聞いています…",
         "listening"
       );
+
+      if (
+        typeof onReady ===
+        "function"
+      ) {
+        const ready =
+          onReady;
+        onReady = null;
+
+        try {
+          ready();
+        } catch (error) {}
+      }
     };
 
     recognition.onspeechstart = () => {
@@ -9397,34 +9443,53 @@ HTML = r"""
       const finalNarration =
         `${step.narrationText || step.text} ${finalInstruction}`;
 
-      if (speak) {
-        speakHintNarration(
-          finalNarration,
+      if (
+        voiceAnswerEnabled
+      ) {
+        const startFinalMic =
           () => {
             if (
-              voiceAnswerEnabled &&
               hintManualSteps[
                 hintManualIndex
-              ] === step &&
-              !step.resolved &&
-              !hintAutoAnimating &&
-              abacusHint.classList.contains(
+              ] !== step ||
+              step.resolved ||
+              !abacusHint.classList.contains(
                 "show"
               )
             ) {
-              scheduleHintQuestionRetry(
-                step,
-                HINT_MIC_AFTER_TTS_MS
-              );
+              return;
             }
-          }
-        );
-      } else if (
-        voiceAnswerEnabled
-      ) {
-        scheduleHintQuestionRetry(
-          step,
-          HINT_MIC_AFTER_TTS_MS
+
+            startHintQuestionRecognition(
+              step,
+              () => {
+                if (
+                  hintManualSteps[
+                    hintManualIndex
+                  ] !== step ||
+                  step.resolved
+                ) {
+                  return;
+                }
+
+                speakHintNarration(
+                  "答えはいくつになっていますか？ マイクで答えてね。"
+                );
+              }
+            );
+          };
+
+        if (speak) {
+          speakHintNarration(
+            "できました。",
+            startFinalMic
+          );
+        } else {
+          startFinalMic();
+        }
+      } else if (speak) {
+        speakHintNarration(
+          finalNarration
         );
       }
 
@@ -9480,34 +9545,61 @@ HTML = r"""
       const questionNarration =
         `${step.narrationText || step.text} ${hintAnswerInstruction}`;
 
-      if (speak) {
-        speakHintNarration(
-          questionNarration,
+      if (
+        voiceAnswerEnabled
+      ) {
+        const startMicAndQuestionTail =
           () => {
             if (
-              voiceAnswerEnabled &&
               hintManualSteps[
                 hintManualIndex
-              ] === step &&
-              !step.resolved &&
-              !hintAutoAnimating &&
-              abacusHint.classList.contains(
+              ] !== step ||
+              step.resolved ||
+              hintAutoAnimating ||
+              !abacusHint.classList.contains(
                 "show"
               )
             ) {
-              scheduleHintQuestionRetry(
-                step,
-                HINT_MIC_AFTER_TTS_MS
-              );
+              return;
             }
-          }
-        );
-      } else if (
-        voiceAnswerEnabled
-      ) {
-        scheduleHintQuestionRetry(
-          step,
-          HINT_MIC_AFTER_TTS_MS
+
+            startHintQuestionRecognition(
+              step,
+              () => {
+                if (
+                  hintManualSteps[
+                    hintManualIndex
+                  ] !== step ||
+                  step.resolved ||
+                  !abacusHint.classList.contains(
+                    "show"
+                  )
+                ) {
+                  return;
+                }
+
+                speakHintNarration(
+                  step.voicePromptTail ||
+                  "使う10の補数はいくつですか？ マイクで答えてね。"
+                );
+              }
+            );
+          };
+
+        if (
+          speak &&
+          step.voicePromptLead
+        ) {
+          speakHintNarration(
+            step.voicePromptLead,
+            startMicAndQuestionTail
+          );
+        } else {
+          startMicAndQuestionTail();
+        }
+      } else if (speak) {
+        speakHintNarration(
+          questionNarration
         );
       }
 
