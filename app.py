@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V91-PER-QUESTION-SCORE"
+APP_VERSION = "CLEAN-V92-FIVE-COMPLEMENT-EXPLANATION"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -8167,7 +8167,7 @@ HTML = r"""
         state,
         -5 * place,
         place,
-        `${placeName(place)}で5をまたぎます。${amount}を引くときに使う「5の補数」は${complement}です。先に5を引きます。`
+        `${digit}から${amount}を引きます。一の珠が${digit - 5}つしかないので、${amount}はそのまま引けません。${amount}の「5の補数」は${complement}です。5を引いて${complement}を足すと${amount}を引けます。まず5を引きます。`
       );
 
       pushHintMove(
@@ -8175,7 +8175,7 @@ HTML = r"""
         state,
         complement * place,
         place,
-        `次に${complement}を足します。5を引いて${complement}を足すと、合わせて${amount}を引いたことになります。`
+        `次に${complement}を足します。5を引いて${complement}を足すと、${amount}を引いたことになります。`
       );
 
       return;
@@ -8249,12 +8249,12 @@ HTML = r"""
 
       addMove(
         current - 5 * place,
-        `${digit}から${complement}を引くときに使う「5の補数」は${back}です。まず、${placeLabel}で5を引きます。`
+        `${digit}から${complement}を引きます。一の珠が${digit - 5}つしかないので、${complement}はそのまま引けません。${complement}の「5の補数」は${back}です。5を引いて${back}を足すと${complement}を引けます。まず、${placeLabel}で5を引きます。`
       );
 
       addMove(
         current + back * place,
-        `${back}を足します。5を引いて${back}を足すと、${complement}を引いたことになります。`
+        `次に${back}を足します。5を引いて${back}を足すと、${complement}を引いたことになります。`
       );
     } else {
       addMove(
