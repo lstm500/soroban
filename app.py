@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V90-HINT-MIC-CANCEL-TTS-ON-SPEECH"
+APP_VERSION = "CLEAN-V91-PER-QUESTION-SCORE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -4473,7 +4473,7 @@ HTML = r"""
   // 自動レベルアップ・苦手克服
   // =====================================================
   const LEARNING_STORAGE_KEY = "soroban_learning_stats_v1";
-  const RANKING_STORAGE_KEY = "soroban_score_rankings_v1";
+  const RANKING_STORAGE_KEY = "soroban_score_rankings_v2";
   const CHALLENGE_COUNT_STORAGE_KEY = "soroban_challenge_counts_v1";
   const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
   const RANK_CERTIFICATION_STORAGE_KEY = "soroban_rank_certification_v2";
@@ -7185,7 +7185,10 @@ HTML = r"""
       questionTimingLog[questionIndex] = {
         startPerf: null,
         responseMs: null,
-        hintCount: 0
+        hintCount: 0,
+        hintQuestionAttempts: 0,
+        hintQuestionCorrectCount: 0,
+        hintQuestionWrongCount: 0
       };
     }
 
@@ -7233,6 +7236,59 @@ HTML = r"""
       );
 
     timing.hintCount += 1;
+  }
+
+  function markHintQuestionResult(
+    questionIndex,
+    ok
+  ) {
+    const timing =
+      ensureQuestionTiming(
+        questionIndex
+      );
+
+    timing.hintQuestionAttempts += 1;
+
+    if (ok) {
+      timing.hintQuestionCorrectCount += 1;
+    } else {
+      timing.hintQuestionWrongCount += 1;
+    }
+  }
+
+  function questionPointsForAnswer(
+    entry,
+    questionIndex
+  ) {
+    if (!entry?.ok) {
+      return 0;
+    }
+
+    const timing =
+      questionTimingLog[
+        questionIndex
+      ] || {};
+
+    const hintUsed =
+      (Number(timing.hintCount) || 0) > 0;
+
+    // 珠ヒントなしで正解：5点
+    if (!hintUsed) {
+      return 5;
+    }
+
+    // 珠ヒント内の問いに1回でも間違えた後、最終回答が正解：3点
+    if (
+      (Number(
+        timing.hintQuestionWrongCount
+      ) || 0) > 0
+    ) {
+      return 3;
+    }
+
+    // 珠ヒントを使用し、問いで間違えず最終回答が正解：4点
+    // （補数問題がないヒントも「問いで間違いなし」として4点）
+    return 4;
   }
 
   function recordAnswer(mode, q, ok) {
@@ -8685,9 +8741,17 @@ HTML = r"""
     const numericValue =
       Number(value);
 
-    if (
+    const hintQuestionOk =
       numericValue ===
-      step.expectedAnswer
+      step.expectedAnswer;
+
+    markHintQuestionResult(
+      index,
+      hintQuestionOk
+    );
+
+    if (
+      hintQuestionOk
     ) {
       step.resolved = true;
 
@@ -14515,6 +14579,23 @@ HTML = r"""
             Math.max(
               Number(timing.hintCount) || 0,
               Number(videoMark.hintCount) || 0
+            ),
+          hintQuestionAttempts:
+            Number(
+              timing.hintQuestionAttempts
+            ) || 0,
+          hintQuestionCorrectCount:
+            Number(
+              timing.hintQuestionCorrectCount
+            ) || 0,
+          hintQuestionWrongCount:
+            Number(
+              timing.hintQuestionWrongCount
+            ) || 0,
+          points:
+            questionPointsForAnswer(
+              entry,
+              i
             )
         };
       });
@@ -15453,19 +15534,46 @@ HTML = r"""
         !entry.ok
     ).length;
 
-    // 得点計算では残り時間を秒まで反映する。
-    // 例：6分48秒 = 408秒 = 6.8分として計算。
     const remainingSeconds =
       Math.max(0, seconds);
 
     const remainingMinutes =
       remainingSeconds / 60;
 
-    const rawScore =
-      score *
-      maxCorrectStreak *
-      remainingMinutes /
-      (wrongCount + 1);
+    const questionPoints =
+      answers.map(
+        (entry, questionIndex) =>
+          questionPointsForAnswer(
+            entry,
+            questionIndex
+          )
+      );
+
+    const fivePointCorrect =
+      questionPoints.filter(
+        (points) => points === 5
+      ).length;
+
+    const fourPointCorrect =
+      questionPoints.filter(
+        (points) => points === 4
+      ).length;
+
+    const threePointCorrect =
+      questionPoints.filter(
+        (points) => points === 3
+      ).length;
+
+    // 正解した問題は、時間切れでも必ず3〜5点を獲得する。
+    // 5点：珠ヒントなしで正解
+    // 4点：珠ヒント使用・ヒント内の問いで間違いなし・最終回答正解
+    // 3点：珠ヒント内の問いで間違えた後、最終回答正解
+    const finalScore =
+      questionPoints.reduce(
+        (sum, points) =>
+          sum + points,
+        0
+      );
 
     return {
       correctCount: score,
@@ -15473,11 +15581,12 @@ HTML = r"""
       remainingSeconds,
       remainingMinutes,
       wrongCount,
-      rawScore,
-      finalScore: Math.max(
-        0,
-        Math.round(rawScore)
-      )
+      questionPoints,
+      fivePointCorrect,
+      fourPointCorrect,
+      threePointCorrect,
+      rawScore: finalScore,
+      finalScore
     };
   }
 
@@ -15878,19 +15987,10 @@ HTML = r"""
     resultScore.classList.remove("reveal");
     resultScore.classList.add("roulette");
 
-    const remainMin =
-      Math.floor(
-        scoreInfo.remainingSeconds / 60
-      );
-
-    const remainSec =
-      scoreInfo.remainingSeconds % 60;
-
     scoreFormula.textContent =
-      `${scoreInfo.correctCount}正解 × ` +
-      `最高${scoreInfo.maxStreak}問連続 × ` +
-      `残り${remainMin}分${remainSec}秒 ÷ ` +
-      `（${scoreInfo.wrongCount}回ミス＋1）`;
+      `ヒントなし ${scoreInfo.fivePointCorrect}問×5点 ＋ ` +
+      `珠ヒント使用・問いミスなし ${scoreInfo.fourPointCorrect}問×4点 ＋ ` +
+      `珠ヒント内の問いでミス後正解 ${scoreInfo.threePointCorrect}問×3点`;
 
     let tick = 0;
 
