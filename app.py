@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V92-FIVE-COMPLEMENT-EXPLANATION"
+APP_VERSION = "CLEAN-V93-MEDAL-RESET-CONDITIONS-AWARD"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2508,6 +2508,118 @@ HTML = r"""
     line-height: 1.35;
   }
 
+  .medal-conditions {
+    margin-top: 14px;
+    border: 1px solid #ded7cb;
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .medal-conditions summary {
+    cursor: pointer;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 950;
+    list-style: none;
+  }
+
+  .medal-conditions summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .medal-conditions summary::after {
+    content: "＋";
+    float: right;
+    color: #776e62;
+  }
+
+  .medal-conditions[open] summary::after {
+    content: "－";
+  }
+
+  .medal-condition-list {
+    display: grid;
+    gap: 7px;
+    padding: 0 12px 12px;
+  }
+
+  .medal-condition-row {
+    display: grid;
+    grid-template-columns: 58px 1fr auto;
+    gap: 9px;
+    align-items: center;
+    padding: 9px 10px;
+    border-radius: 11px;
+    background: #f8f5ef;
+  }
+
+  .medal-condition-rank {
+    font-size: 12px;
+    font-weight: 1000;
+  }
+
+  .medal-condition-text {
+    color: #665f56;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .medal-condition-status {
+    white-space: nowrap;
+    font-size: 9px;
+    font-weight: 950;
+    color: #7c7469;
+  }
+
+  .medal-condition-row.earned .medal-condition-status {
+    color: #496c4d;
+  }
+
+  .medal-reset-box {
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid #dfd5c8;
+    border-radius: 14px;
+    background: #faf7f2;
+  }
+
+  .medal-reset-title {
+    font-size: 12px;
+    font-weight: 1000;
+  }
+
+  .medal-reset-note {
+    margin-top: 4px;
+    color: #756c61;
+    font-size: 10px;
+    line-height: 1.55;
+  }
+
+  .medal-reset-btn {
+    width: 100%;
+    margin-top: 9px;
+    min-height: 42px;
+    border-color: #c9a9a0;
+    background: #fff8f5;
+    color: #74483d;
+    font-weight: 950;
+  }
+
+  .medal-reset-btn.armed {
+    border-color: #b87564;
+    background: #f8e5df;
+    color: #71382b;
+  }
+
+  .medal-reset-status {
+    min-height: 16px;
+    margin-top: 6px;
+    color: #756c61;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
   .rank-celebration {
     display: none;
     pointer-events: none;
@@ -3182,6 +3294,20 @@ HTML = r"""
       認定済みの階級メダルを保存します。上位階級を獲得すると、それまでの階級メダルもコレクションへ追加されます。
     </div>
     <div id="medalCollectionGrid" class="medal-grid"></div>
+
+    <details class="medal-conditions">
+      <summary>メダル獲得条件を見る</summary>
+      <div id="medalConditionList" class="medal-condition-list"></div>
+    </details>
+
+    <div class="medal-reset-box">
+      <div class="medal-reset-title">メダル獲得状況をリセット</div>
+      <div class="medal-reset-note">
+        メダルを最初から取り直せるよう、階級認定の進捗も同時にリセットします。チャレンジ履歴・得点ランキング・各種設定は残します。
+      </div>
+      <button type="button" id="medalResetBtn" class="medal-reset-btn">メダルをリセット</button>
+      <div id="medalResetStatus" class="medal-reset-status"></div>
+    </div>
   </div>
 
   <div class="settings-save-note">
@@ -3193,7 +3319,7 @@ HTML = r"""
   <div class="rank-burst"></div>
   <div id="rankConfettiLayer"></div>
   <div class="rank-celebration-card">
-    <div class="rank-celebration-kicker">NEW MEDAL</div>
+    <div class="rank-celebration-kicker">メダル獲得！</div>
     <div id="rankCelebrationMedal" class="rank-medal rank-celebration-medal">
       <span id="rankCelebrationMedalText" class="rank-medal-text">10級</span>
     </div>
@@ -3924,6 +4050,9 @@ HTML = r"""
   const homeRankName = $("#homeRankName");
   const homeRankNext = $("#homeRankNext");
   const medalCollectionGrid = $("#medalCollectionGrid");
+  const medalConditionList = $("#medalConditionList");
+  const medalResetBtn = $("#medalResetBtn");
+  const medalResetStatus = $("#medalResetStatus");
   const rankCelebration = $("#rankCelebration");
   const rankConfettiLayer = $("#rankConfettiLayer");
   const rankCelebrationMedal = $("#rankCelebrationMedal");
@@ -6253,6 +6382,7 @@ HTML = r"""
         return {
           bestByMode: {},
           medalAchievedAt: {},
+          resetAt: null,
           curriculumVersion: CHALLENGE_CURRICULUM_VERSION
         };
       }
@@ -6267,6 +6397,7 @@ HTML = r"""
         return {
           bestByMode: {},
           medalAchievedAt: {},
+          resetAt: null,
           curriculumVersion: CHALLENGE_CURRICULUM_VERSION
         };
       }
@@ -6313,7 +6444,8 @@ HTML = r"""
     } catch (error) {
       return {
         bestByMode: {},
-        medalAchievedAt: {}
+        medalAchievedAt: {},
+        resetAt: null
       };
     }
   }
@@ -6348,6 +6480,17 @@ HTML = r"""
   }
 
   if (
+    rankCertificationState.resetAt &&
+    Number.isNaN(
+      Date.parse(
+        rankCertificationState.resetAt
+      )
+    )
+  ) {
+    rankCertificationState.resetAt = null;
+  }
+
+  if (
     rankCertificationState.curriculumVersion !==
     CHALLENGE_CURRICULUM_VERSION
   ) {
@@ -6369,6 +6512,32 @@ HTML = r"""
   function updateRankCertificationState(
     record
   ) {
+    const resetTimestamp =
+      rankCertificationState.resetAt
+        ? Date.parse(
+            rankCertificationState.resetAt
+          )
+        : NaN;
+
+    if (
+      Number.isFinite(resetTimestamp)
+    ) {
+      const recordTimestamp =
+        record?.finishedAt
+          ? Date.parse(
+              record.finishedAt
+            )
+          : NaN;
+
+      // リセット以前の履歴は残すが、メダル再認定には使わない。
+      if (
+        !Number.isFinite(recordTimestamp) ||
+        recordTimestamp <= resetTimestamp
+      ) {
+        return;
+      }
+    }
+
     if (
       !record ||
       record.remedialSkillId ||
@@ -6845,6 +7014,182 @@ HTML = r"""
       });
   }
 
+  function renderMedalConditions() {
+    if (!medalConditionList) {
+      return;
+    }
+
+    medalConditionList.innerHTML =
+      "";
+
+    APP_RANK_CERTIFICATIONS
+      .forEach((rule) => {
+        const row =
+          document.createElement(
+            "div"
+          );
+
+        const earned =
+          isMedalEarned(
+            rule.name
+          );
+
+        row.className =
+          `medal-condition-row ${
+            earned
+              ? "earned"
+              : ""
+          }`;
+
+        const rank =
+          document.createElement(
+            "div"
+          );
+
+        rank.className =
+          "medal-condition-rank";
+        rank.textContent =
+          rule.name;
+
+        const condition =
+          document.createElement(
+            "div"
+          );
+
+        condition.className =
+          "medal-condition-text";
+        condition.textContent =
+          rule.requirement;
+
+        const status =
+          document.createElement(
+            "div"
+          );
+
+        status.className =
+          "medal-condition-status";
+        status.textContent =
+          earned
+            ? "獲得済み"
+            : `${Math.round(
+                certificationRuleProgress(
+                  rule
+                )
+              )}%`;
+
+        row.appendChild(rank);
+        row.appendChild(condition);
+        row.appendChild(status);
+
+        medalConditionList.appendChild(
+          row
+        );
+      });
+  }
+
+  let medalResetArmedUntil = 0;
+  let medalResetDisarmTimer = null;
+
+  function setMedalResetUi(
+    armed = false,
+    message = ""
+  ) {
+    if (medalResetBtn) {
+      medalResetBtn.classList.toggle(
+        "armed",
+        armed
+      );
+
+      medalResetBtn.textContent =
+        armed
+          ? "もう一度押してリセット"
+          : "メダルをリセット";
+    }
+
+    if (medalResetStatus) {
+      medalResetStatus.textContent =
+        message;
+    }
+  }
+
+  function disarmMedalReset() {
+    medalResetArmedUntil = 0;
+
+    if (medalResetDisarmTimer) {
+      clearTimeout(
+        medalResetDisarmTimer
+      );
+      medalResetDisarmTimer = null;
+    }
+
+    setMedalResetUi(
+      false,
+      ""
+    );
+  }
+
+  function resetMedalProgress() {
+    const stamp =
+      new Date().toISOString();
+
+    rankCertificationState = {
+      bestByMode: {},
+      medalAchievedAt: {},
+      resetAt: stamp,
+      curriculumVersion:
+        CHALLENGE_CURRICULUM_VERSION
+    };
+
+    saveRankCertificationState();
+    closeRankCelebration();
+    updateRankUi();
+
+    setMedalResetUi(
+      false,
+      "リセットしました。次のチャレンジからメダルを取り直せます。"
+    );
+
+    medalResetArmedUntil = 0;
+
+    if (medalResetDisarmTimer) {
+      clearTimeout(
+        medalResetDisarmTimer
+      );
+      medalResetDisarmTimer = null;
+    }
+  }
+
+  function handleMedalResetClick() {
+    const now =
+      Date.now();
+
+    if (
+      medalResetArmedUntil > now
+    ) {
+      resetMedalProgress();
+      return;
+    }
+
+    medalResetArmedUntil =
+      now + 6000;
+
+    setMedalResetUi(
+      true,
+      "誤操作防止のため、6秒以内にもう一度押してください。"
+    );
+
+    if (medalResetDisarmTimer) {
+      clearTimeout(
+        medalResetDisarmTimer
+      );
+    }
+
+    medalResetDisarmTimer =
+      setTimeout(() => {
+        disarmMedalReset();
+      }, 6200);
+  }
+
   function buildRankConfetti() {
     if (!rankConfettiLayer) {
       return;
@@ -6948,10 +7293,21 @@ HTML = r"""
     rankCelebrationTitle.textContent =
       `${rankName} 認定！`;
 
+    const earnedRule =
+      APP_RANK_CERTIFICATIONS.find(
+        (rule) =>
+          rule.name === rankName
+      );
+
+    const conditionText =
+      earnedRule?.requirement
+        ? `条件「${earnedRule.requirement}」を達成しました。`
+        : "";
+
     rankCelebrationSub.textContent =
       newlyEarned.length > 1
-        ? `一気に${newlyEarned.length}個のメダルを獲得しました。設定画面のメダル一覧に保存されています。`
-        : "新しいメダルを獲得しました。設定画面のメダル一覧に保存されています。";
+        ? `${conditionText} 一気に${newlyEarned.length}個のメダルを獲得しました。`
+        : `${conditionText} ${rankName}メダルを獲得しました。`;
 
     buildRankConfetti();
 
@@ -6972,7 +7328,7 @@ HTML = r"""
       try {
         const utterance =
           new SpeechSynthesisUtterance(
-            `${rankName}、認定！おめでとう！`
+            `メダル獲得！${rankName}、認定！おめでとう！`
           );
 
         utterance.lang =
@@ -7115,6 +7471,7 @@ HTML = r"""
     );
 
     renderMedalCollection();
+    renderMedalConditions();
 
     return rank;
   }
@@ -16466,6 +16823,13 @@ HTML = r"""
     );
   }
 
+  if (medalResetBtn) {
+    medalResetBtn.addEventListener(
+      "click",
+      handleMedalResetClick
+    );
+  }
+
   $("#learningStageBackBtn").addEventListener(
     "click",
     showLearningHome
@@ -16820,7 +17184,11 @@ HTML = r"""
       bestByMode:
         rankCertificationState?.bestByMode || {},
       medalAchievedAt:
-        rankCertificationState?.medalAchievedAt || {}
+        rankCertificationState?.medalAchievedAt || {},
+      resetAt:
+        rankCertificationState?.resetAt || null,
+      curriculumVersion:
+        CHALLENGE_CURRICULUM_VERSION
     };
   }
 
