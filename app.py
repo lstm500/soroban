@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V93-MEDAL-RESET-CONDITIONS-AWARD"
+APP_VERSION = "CLEAN-V94-HINT-VOICE-TOGGLE-SAFE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -9003,7 +9003,8 @@ HTML = r"""
       voiceAnswerEnabled &&
       !locked &&
       workspace.classList.contains("show") &&
-      !results.classList.contains("show")
+      !results.classList.contains("show") &&
+      currentMode
     ) {
       scheduleSilentVoiceRestart(
         420
@@ -11105,7 +11106,8 @@ HTML = r"""
       hintNarrationActive ||
       locked ||
       !workspace.classList.contains("show") ||
-      results.classList.contains("show")
+      results.classList.contains("show") ||
+      abacusHint.classList.contains("show")
     ) {
       return;
     }
@@ -11136,7 +11138,8 @@ HTML = r"""
       hintNarrationActive ||
       locked ||
       !workspace.classList.contains("show") ||
-      results.classList.contains("show")
+      results.classList.contains("show") ||
+      abacusHint.classList.contains("show")
     ) {
       return;
     }
@@ -11295,7 +11298,8 @@ HTML = r"""
         !voiceCalloutRunning &&
         !locked &&
         workspace.classList.contains("show") &&
-        !results.classList.contains("show")
+        !results.classList.contains("show") &&
+        !abacusHint.classList.contains("show")
       ) {
         // 無音タイムアウトでは「ゴワサン！」を言い直さない。
         // 同じ問題を表示したまま、マイクだけ静かに再開する。
@@ -11373,7 +11377,8 @@ HTML = r"""
       locked ||
       voiceRecognitionRunning ||
       results.classList.contains("show") ||
-      !workspace.classList.contains("show")
+      !workspace.classList.contains("show") ||
+      abacusHint.classList.contains("show")
     ) {
       return;
     }
@@ -11442,7 +11447,8 @@ HTML = r"""
       locked ||
       voiceRecognitionRunning ||
       results.classList.contains("show") ||
-      !workspace.classList.contains("show")
+      !workspace.classList.contains("show") ||
+      abacusHint.classList.contains("show")
     ) {
       return;
     }
@@ -11599,6 +11605,58 @@ HTML = r"""
     voiceAnswerEnabled =
       Boolean(enabled);
 
+    const hintIsOpen =
+      abacusHint.classList.contains(
+        "show"
+      );
+
+    // 珠ヒント表示中は、チャレンジ本体の音声回答フローへ切り替えない。
+    // ここで「ゴワサン」やrenderQuestion()を動かすと、
+    // ヒント画面が消えたり問題表示が空になったりするため、
+    // 珠ヒント専用マイクだけをON/OFFする。
+    if (hintIsOpen) {
+      clearVoiceRestartTimer();
+      voiceCalloutRunning = false;
+      voicePauseForFeedback = false;
+      stopVoiceRecognition();
+
+      if (voiceAnswerEnabled) {
+        bgmEngine.ensureContext();
+        bgmEngine.ensureRunning();
+        startBgmKeepAlive();
+
+        updateVoiceUi(
+          "音声回答：ON（珠ヒントで使います）"
+        );
+      } else {
+        stopHintQuestionRecognition();
+
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+
+        updateVoiceUi(
+          "音声回答：OFF"
+        );
+      }
+
+      // 現在の珠ヒントSTEPをそのまま保ち、
+      // マイクONなら補数質問・最終回答だけ自動聞き取りへ、
+      // OFFなら数字タップ/手元入力へ切り替える。
+      if (
+        hintManualSteps.length &&
+        !hintAutoAnimating
+      ) {
+        renderManualHintStep(
+          hintManualIndex,
+          false
+        );
+      }
+
+      refreshBgmVolume();
+      return;
+    }
+
     if (voiceAnswerEnabled) {
       bgmEngine.ensureContext();
       bgmEngine.ensureRunning();
@@ -11620,7 +11678,7 @@ HTML = r"""
         "音声回答：開始します…"
       );
 
-      // ボタンをONにした直後から問題を隠す。
+      // 通常のチャレンジ画面でだけ「ゴワサン」フローを使う。
       hideQuestionForVoiceCallout();
 
       startVoiceRecognition();
@@ -11639,7 +11697,8 @@ HTML = r"""
 
     refreshBgmVolume();
 
-    // チャレンジ画面を開いている時だけ問題表示を更新する。
+    // 珠ヒント表示中はこの分岐に来ない。
+    // 通常のチャレンジ画面だけ問題表示を更新する。
     if (
       workspace.classList.contains("show") &&
       currentMode
