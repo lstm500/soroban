@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V94-HINT-VOICE-TOGGLE-SAFE"
+APP_VERSION = "CLEAN-V95-RETRY-RESUME-WEAKNESS-RANK-GUIDE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1184,6 +1184,76 @@ HTML = r"""
     border: 1px solid #ddd7ca;
     border-radius: 18px;
     background: #fff;
+  }
+
+  .mode-card.rank-recommended {
+    border: 2px solid #c89a3d;
+    background: #fffaf0;
+    box-shadow: 0 0 0 3px rgba(200, 154, 61, .10);
+  }
+
+  .rank-recommend-chip {
+    background: #f5dfae !important;
+    color: #6d501c;
+  }
+
+  .next-rank-guide,
+  .challenge-resume-card,
+  .weakness-challenge-note {
+    margin: 12px 0 16px;
+    padding: 14px 16px;
+    border: 1px solid #d9d1c4;
+    border-radius: 16px;
+    background: #fffdf8;
+  }
+
+  .next-rank-guide {
+    border-width: 2px;
+    border-color: #d6b66d;
+    background: #fffaf0;
+  }
+
+  .next-rank-guide-title,
+  .challenge-resume-title {
+    font-size: 15px;
+    font-weight: 1000;
+    color: #4c463d;
+  }
+
+  .next-rank-guide-text,
+  .challenge-resume-text,
+  .weakness-challenge-note {
+    margin-top: 5px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #6d665d;
+  }
+
+  .challenge-resume-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .challenge-resume-actions button {
+    min-height: 40px;
+  }
+
+  .weakness-mode-card .mode-desc {
+    min-height: 42px;
+  }
+
+  .weakness-empty {
+    grid-column: 1 / -1;
+    padding: 16px;
+    border: 1px dashed #d4ccbf;
+    border-radius: 14px;
+    background: #faf8f4;
+    color: #7c746a;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.6;
   }
 
   .mode-no {
@@ -3363,6 +3433,26 @@ HTML = r"""
     </button>
   </div>
 
+  <div id="challengeResumeCard" class="challenge-resume-card hidden">
+    <div class="challenge-resume-title">前回のチャレンジがあります</div>
+    <div id="challengeResumeText" class="challenge-resume-text"></div>
+    <div class="challenge-resume-actions">
+      <button type="button" id="resumeChallengeBtn" class="primary">続きから再開</button>
+      <button type="button" id="discardResumeBtn">再開データを消す</button>
+    </div>
+  </div>
+
+  <div id="nextRankGuide" class="next-rank-guide">
+    <div id="nextRankGuideTitle" class="next-rank-guide-title">次の級・段まで</div>
+    <div id="nextRankGuideText" class="next-rank-guide-text"></div>
+  </div>
+
+  <div class="level-title">苦手克服チャレンジ</div>
+  <div class="weakness-challenge-note">
+    間違えた問題をレベル別に保存しています。未克服の問題があるレベルだけ選べます。正解した問題は苦手一覧から外れます。
+  </div>
+  <div id="weaknessChallengeGrid" class="mode-grid"></div>
+
   <div class="level-title">初級モード｜足し算のみ</div>
   <div class="mode-grid">
     <article class="mode-card">
@@ -3862,7 +3952,8 @@ HTML = r"""
 
     <div id="review" class="review"></div>
     <div class="actions">
-      <button type="button" id="retryBtn" class="primary">同じモードをもう一度</button>
+      <button type="button" id="retryBtn" class="primary">もう一回チャレンジ</button>
+      <button type="button" id="promoteBtn" class="hidden">次のレベルへ</button>
       <button type="button" id="menuBtn" data-app-nav="challenge-menu" onclick="window.__sorobanHardNav && window.__sorobanHardNav('challenge-menu'); return false;">モード選択へ</button>
       <button type="button" id="resultTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;">← TOPへ</button>
     </div>
@@ -3955,6 +4046,36 @@ HTML = r"""
 
     lastHardNavAt = now;
     lastHardNavTarget = target;
+
+    // TOP／モード選択へ明示的に戻った場合は、
+    // 「アプリを閉じた」ケースではないため再開データを残さない。
+    try {
+      const workspaceEl =
+        root.querySelector(
+          "#workspace"
+        );
+      const resultsEl =
+        root.querySelector(
+          "#results"
+        );
+
+      if (
+        (
+          target === "home" ||
+          target === "challenge-menu"
+        ) &&
+        workspaceEl?.classList.contains(
+          "show"
+        ) &&
+        !resultsEl?.classList.contains(
+          "show"
+        ) &&
+        typeof clearChallengeResumeState ===
+          "function"
+      ) {
+        clearChallengeResumeState();
+      }
+    } catch (error) {}
 
     hardSetView(target);
 
@@ -4070,6 +4191,15 @@ HTML = r"""
   const statusSub = $("#statusSub");
   const timeLimitBtn = $("#timeLimitBtn");
   const modeTimeBadge = $("#modeTimeBadge");
+  const challengeResumeCard = $("#challengeResumeCard");
+  const challengeResumeText = $("#challengeResumeText");
+  const resumeChallengeBtn = $("#resumeChallengeBtn");
+  const discardResumeBtn = $("#discardResumeBtn");
+  const nextRankGuide = $("#nextRankGuide");
+  const nextRankGuideTitle = $("#nextRankGuideTitle");
+  const nextRankGuideText = $("#nextRankGuideText");
+  const weaknessChallengeGrid = $("#weaknessChallengeGrid");
+  const promoteBtn = $("#promoteBtn");
   const analysisVideoToggle = $("#analysisVideoToggle");
   const cameraSetupModal = $("#cameraSetupModal");
   const analysisCameraPreview = $("#analysisCameraPreview");
@@ -4606,6 +4736,7 @@ HTML = r"""
   const CHALLENGE_COUNT_STORAGE_KEY = "soroban_challenge_counts_v1";
   const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
   const RANK_CERTIFICATION_STORAGE_KEY = "soroban_rank_certification_v2";
+  const CHALLENGE_RESUME_STORAGE_KEY = "soroban_challenge_resume_v1";
   const CHALLENGE_CURRICULUM_VERSION = "carry-borrow-split-v1";
   const MAX_SESSION_HISTORY = 200;
   const MAX_RANKING_ENTRIES_PER_MODE = 100;
@@ -4636,6 +4767,8 @@ HTML = r"""
   });
 
   let currentMode = null;
+  let sessionTotalQuestions = TOTAL_QUESTIONS;
+  let activeWeaknessChallengeMode = null;
   let questions = [];
   let index = 0;
   let score = 0;
@@ -6541,6 +6674,7 @@ HTML = r"""
     if (
       !record ||
       record.remedialSkillId ||
+      record.weaknessChallengeMode ||
       record.timeup ||
       !record.mode ||
       Number(record.totalQuestions) !==
@@ -7411,6 +7545,139 @@ HTML = r"""
     };
   }
 
+  function nextRankRule() {
+    const rank =
+      calculateAppRank();
+
+    return (
+      APP_RANK_CERTIFICATIONS[
+        rank.currentIndex + 1
+      ] || null
+    );
+  }
+
+  function refreshNextRankGuide() {
+    if (
+      !nextRankGuide ||
+      !nextRankGuideTitle ||
+      !nextRankGuideText
+    ) {
+      return;
+    }
+
+    root
+      .querySelectorAll(
+        ".mode-card.rank-recommended"
+      )
+      .forEach((card) => {
+        card.classList.remove(
+          "rank-recommended"
+        );
+      });
+
+    root
+      .querySelectorAll(
+        ".rank-recommend-chip"
+      )
+      .forEach((chip) => {
+        chip.remove();
+      });
+
+    const rule =
+      nextRankRule();
+
+    if (!rule) {
+      nextRankGuideTitle.textContent =
+        "最高称号を獲得しています";
+      nextRankGuideText.textContent =
+        "現在、次の級・段の条件はありません。";
+      return;
+    }
+
+    nextRankGuideTitle.textContent =
+      `次の${rule.name}まで`;
+
+    const outstanding =
+      rule.modes.filter(
+        (mode) =>
+          bestCorrectForMode(mode) <
+          rule.minCorrect
+      );
+
+    const progressText =
+      rule.modes
+        .map((mode) => {
+          const best =
+            bestCorrectForMode(mode);
+
+          const state =
+            best >= rule.minCorrect
+              ? "達成済み"
+              : `最高${best}/12 → ${rule.minCorrect}/12以上`;
+
+          return `${shortModeName(mode)}：${state}`;
+        })
+        .join(
+          rule.type === "all"
+            ? " ／ "
+            : " または "
+        );
+
+    nextRankGuideText.textContent =
+      `${rule.requirement}。${progressText}`;
+
+    const recommendModes =
+      outstanding.length
+        ? outstanding
+        : rule.modes;
+
+    recommendModes.forEach((mode) => {
+      const button =
+        root.querySelector(
+          `.start-mode[data-mode="${mode}"]`
+        );
+
+      const card =
+        button?.closest(
+          ".mode-card"
+        );
+
+      if (!card) {
+        return;
+      }
+
+      card.classList.add(
+        "rank-recommended"
+      );
+
+      const chips =
+        card.querySelector(
+          ".chips"
+        );
+
+      if (
+        chips &&
+        !chips.querySelector(
+          ".rank-recommend-chip"
+        )
+      ) {
+        const badge =
+          document.createElement(
+            "span"
+          );
+
+        badge.className =
+          "chip rank-recommend-chip";
+        badge.textContent =
+          `次の${rule.name}におすすめ`;
+
+        chips.appendChild(
+          badge
+        );
+      }
+    });
+  }
+
   function updateRankUi() {
     const rank =
       calculateAppRank();
@@ -7472,6 +7739,7 @@ HTML = r"""
 
     renderMedalCollection();
     renderMedalConditions();
+    refreshNextRankGuide();
 
     return rank;
   }
@@ -7698,6 +7966,344 @@ HTML = r"""
 
         return b.lastAt - a.lastAt;
       });
+  }
+
+  function loadChallengeResumeState() {
+    try {
+      const raw =
+        localStorage.getItem(
+          CHALLENGE_RESUME_STORAGE_KEY
+        );
+
+      if (!raw) {
+        return null;
+      }
+
+      const parsed =
+        JSON.parse(raw);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !modeInfo[parsed.currentMode] ||
+        !Number.isInteger(
+          Number(parsed.index)
+        )
+      ) {
+        return null;
+      }
+
+      const savedAt =
+        Date.parse(
+          parsed.savedAt || ""
+        );
+
+      if (
+        Number.isFinite(savedAt) &&
+        Date.now() - savedAt >
+          14 * 24 * 60 * 60 * 1000
+      ) {
+        localStorage.removeItem(
+          CHALLENGE_RESUME_STORAGE_KEY
+        );
+        return null;
+      }
+
+      return parsed;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function clearChallengeResumeState() {
+    try {
+      localStorage.removeItem(
+        CHALLENGE_RESUME_STORAGE_KEY
+      );
+    } catch (error) {}
+
+    renderChallengeResumeCard();
+  }
+
+  function saveChallengeResumeState(
+    nextIndexOverride = null
+  ) {
+    if (
+      !currentMode ||
+      activeRemedialSkillId ||
+      results.classList.contains(
+        "show"
+      ) ||
+      !workspace.classList.contains(
+        "show"
+      )
+    ) {
+      return;
+    }
+
+    const savedIndex =
+      nextIndexOverride === null
+        ? index
+        : Number(
+            nextIndexOverride
+          );
+
+    const safeTiming =
+      questionTimingLog.map(
+        (item) => {
+          if (!item) {
+            return item;
+          }
+
+          return {
+            ...item,
+            startPerf: null
+          };
+        }
+      );
+
+    const state = {
+      version: 1,
+      savedAt:
+        new Date().toISOString(),
+      currentMode,
+      activeWeaknessChallengeMode,
+      sessionTotalQuestions,
+      index:
+        Math.max(
+          0,
+          Math.min(
+            sessionTotalQuestions,
+            savedIndex
+          )
+        ),
+      score,
+      questions,
+      answers,
+      seconds,
+      timeLimitEnabled,
+      correctStreak,
+      maxCorrectStreak,
+      sessionWeakAsked,
+      sessionWeakCorrect,
+      questionTimingLog:
+        safeTiming,
+      voiceAnswerEnabled
+    };
+
+    try {
+      localStorage.setItem(
+        CHALLENGE_RESUME_STORAGE_KEY,
+        JSON.stringify(state)
+      );
+    } catch (error) {}
+
+    renderChallengeResumeCard();
+  }
+
+  function renderChallengeResumeCard() {
+    if (
+      !challengeResumeCard ||
+      !challengeResumeText
+    ) {
+      return;
+    }
+
+    const state =
+      loadChallengeResumeState();
+
+    if (!state) {
+      challengeResumeCard.classList.add(
+        "hidden"
+      );
+      return;
+    }
+
+    const total =
+      Math.max(
+        1,
+        Math.min(
+          TOTAL_QUESTIONS,
+          Number(
+            state.sessionTotalQuestions
+          ) || TOTAL_QUESTIONS
+        )
+      );
+
+    const nextQuestion =
+      Math.min(
+        total,
+        Number(state.index) + 1
+      );
+
+    const title =
+      state.activeWeaknessChallengeMode
+        ? `苦手克服｜${shortModeName(state.currentMode)}`
+        : modeInfo[state.currentMode]?.title ||
+          state.currentMode;
+
+    challengeResumeText.textContent =
+      `${title}｜${nextQuestion}/${total}問目から再開｜現在${Number(state.score) || 0}問正解`;
+
+    challengeResumeCard.classList.remove(
+      "hidden"
+    );
+  }
+
+  function resumeSavedChallenge() {
+    const state =
+      loadChallengeResumeState();
+
+    if (!state) {
+      renderChallengeResumeCard();
+      return;
+    }
+
+    resetSessionVideoData();
+
+    startMode(
+      state.currentMode,
+      {
+        resumeState: state
+      }
+    );
+  }
+
+  function renderWeaknessChallengeGrid() {
+    if (!weaknessChallengeGrid) {
+      return;
+    }
+
+    weaknessChallengeGrid.innerHTML =
+      "";
+
+    let available = 0;
+
+    Object.keys(modeInfo)
+      .forEach((mode) => {
+        const candidates =
+          getWeakCandidates(mode);
+
+        if (!candidates.length) {
+          return;
+        }
+
+        available += 1;
+
+        const card =
+          document.createElement(
+            "article"
+          );
+
+        card.className =
+          "mode-card weakness-mode-card";
+
+        const name =
+          shortModeName(mode);
+
+        const examples =
+          candidates
+            .slice(0, 3)
+            .map(
+              (stat) =>
+                `${stat.a}${stat.op}${stat.b}`
+            )
+            .join("、");
+
+        card.innerHTML = `
+          <div class="mode-no">苦手克服</div>
+          <div class="mode-name">${name}</div>
+          <div class="mode-desc">未克服 ${candidates.length}問${examples ? `｜${examples}` : ""}</div>
+          <div class="chips"><span class="chip">最大12問</span><span class="chip">時間制限なし</span></div>
+        `;
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+        button.className =
+          "primary";
+        button.textContent =
+          "苦手克服をはじめる";
+
+        button.addEventListener(
+          "click",
+          () => {
+            startWeaknessChallenge(
+              mode
+            );
+          }
+        );
+
+        card.appendChild(
+          button
+        );
+        weaknessChallengeGrid.appendChild(
+          card
+        );
+      });
+
+    if (available === 0) {
+      const empty =
+        document.createElement(
+          "div"
+        );
+
+      empty.className =
+        "weakness-empty";
+      empty.textContent =
+        "現在、未克服の間違い問題はありません。通常のチャレンジで間違えた問題がここに追加されます。";
+
+      weaknessChallengeGrid.appendChild(
+        empty
+      );
+    }
+  }
+
+  function startWeaknessChallenge(
+    mode
+  ) {
+    const candidates =
+      getWeakCandidates(mode)
+        .slice(
+          0,
+          TOTAL_QUESTIONS
+        );
+
+    if (!candidates.length) {
+      renderWeaknessChallengeGrid();
+      return;
+    }
+
+    const presetQuestions =
+      candidates.map(
+        (stat) =>
+          statToWeakQuestion(
+            stat
+          )
+      );
+
+    resetSessionVideoData();
+
+    startMode(
+      mode,
+      {
+        weaknessChallengeMode:
+          mode,
+        presetQuestions,
+        totalQuestions:
+          presetQuestions.length
+      }
+    );
+  }
+
+  function refreshChallengeMenuUi() {
+    renderChallengeResumeCard();
+    renderWeaknessChallengeGrid();
+    refreshNextRankGuide();
   }
 
   function statToWeakQuestion(stat) {
@@ -9099,6 +9705,22 @@ HTML = r"""
     const numericValue =
       Number(value);
 
+    if (
+      step.answerGateOpen ===
+        false
+    ) {
+      step.pendingHintAnswer = {
+        value: numericValue,
+        source
+      };
+
+      setHintVoiceStatus(
+        "解説を最後まで聞いてから判定します。",
+        "listening"
+      );
+      return;
+    }
+
     const hintQuestionOk =
       numericValue ===
       step.expectedAnswer;
@@ -9466,9 +10088,8 @@ HTML = r"""
       hintQuestionSpeechDetected =
         true;
 
-      // 子どもが話し始めた瞬間に、アプリ側の読み上げを止める。
-      // マイクは止めず、そのまま回答を聞き取る。
-      stopHintNarrationForUserSpeech();
+      // 子どもが話しても珠ヒントの解説は最後まで読み上げる。
+      // 回答は保持し、解説が終わってから判定する。
       refreshBgmVolume();
 
       setHintVoiceStatus(
@@ -9511,6 +10132,21 @@ HTML = r"""
 
       if (isFinalAnswer) {
         if (
+          step.answerGateOpen ===
+            false
+        ) {
+          step.pendingHintAnswer = {
+            value: selected.value,
+            source: "voice"
+          };
+          setHintVoiceStatus(
+            "解説を最後まで聞いてから判定します。",
+            "listening"
+          );
+          return;
+        }
+
+        if (
           Number(selected.value) ===
           Number(step.expectedAnswer)
         ) {
@@ -9518,7 +10154,6 @@ HTML = r"""
           stopHintQuestionRecognition();
           setHintVoiceStatus("");
 
-          // 珠ヒントの最後の答えを、そのままチャレンジの回答として採用する。
           answerInput.value =
             String(selected.value);
 
@@ -9775,6 +10410,61 @@ HTML = r"""
   }
 
   
+  function openHintAnswerGate(
+    step
+  ) {
+    if (!step) {
+      return;
+    }
+
+    step.answerGateOpen = true;
+
+    const pending =
+      step.pendingHintAnswer ||
+      null;
+
+    step.pendingHintAnswer =
+      null;
+
+    if (!pending) {
+      return;
+    }
+
+    if (
+      step.kind ===
+        "final-answer-question"
+    ) {
+      const value =
+        Number(pending.value);
+
+      if (
+        value ===
+        Number(step.expectedAnswer)
+      ) {
+        step.resolved = true;
+        stopHintQuestionRecognition();
+        setHintVoiceStatus("");
+        answerInput.value =
+          String(value);
+        hintNarrationActive = false;
+        refreshBgmVolume();
+        submitAnswer();
+      } else {
+        setHintVoiceStatus(
+          "ちがいます。そろばんを見て、もう一度答えてね。",
+          "wrong"
+        );
+      }
+      return;
+    }
+
+    submitHintComplementAnswer(
+      step,
+      pending.value,
+      pending.source || "voice"
+    );
+  }
+
   function renderManualHintStep(
     stepIndex,
     speak = true
@@ -9893,6 +10583,14 @@ HTML = r"""
       const finalNarration =
         `${step.narrationText || step.text} ${finalInstruction}`;
 
+      step.answerGateOpen =
+        !(
+          speak ||
+          voiceAnswerEnabled
+        );
+      step.pendingHintAnswer =
+        null;
+
       if (
         voiceAnswerEnabled
       ) {
@@ -9923,7 +10621,12 @@ HTML = r"""
                 }
 
                 speakHintNarration(
-                  "答えはいくつになっていますか？ マイクで答えてね。"
+                  "答えはいくつになっていますか？ マイクで答えてね。",
+                  () => {
+                    openHintAnswerGate(
+                      step
+                    );
+                  }
                 );
               }
             );
@@ -9939,7 +10642,16 @@ HTML = r"""
         }
       } else if (speak) {
         speakHintNarration(
-          finalNarration
+          finalNarration,
+          () => {
+            openHintAnswerGate(
+              step
+            );
+          }
+        );
+      } else {
+        openHintAnswerGate(
+          step
         );
       }
 
@@ -9995,6 +10707,14 @@ HTML = r"""
       const questionNarration =
         `${step.narrationText || step.text} ${hintAnswerInstruction}`;
 
+      step.answerGateOpen =
+        !(
+          speak ||
+          voiceAnswerEnabled
+        );
+      step.pendingHintAnswer =
+        null;
+
       if (
         voiceAnswerEnabled
       ) {
@@ -10030,7 +10750,12 @@ HTML = r"""
 
                 speakHintNarration(
                   step.voicePromptTail ||
-                  "10の補数はいくつですか？ マイクで答えてね。"
+                  "10の補数はいくつですか？ マイクで答えてね。",
+                  () => {
+                    openHintAnswerGate(
+                      step
+                    );
+                  }
                 );
               }
             );
@@ -10049,7 +10774,16 @@ HTML = r"""
         }
       } else if (speak) {
         speakHintNarration(
-          questionNarration
+          questionNarration,
+          () => {
+            openHintAnswerGate(
+              step
+            );
+          }
+        );
+      } else {
+        openHintAnswerGate(
+          step
         );
       }
 
@@ -10327,7 +11061,7 @@ HTML = r"""
     }
 
     if (
-      index >= TOTAL_QUESTIONS ||
+      index >= sessionTotalQuestions ||
       !questions[index]
     ) {
       return;
@@ -12234,6 +12968,19 @@ HTML = r"""
   }
 
   function showHome() {
+    const abandoningChallenge =
+      workspace.classList.contains(
+        "show"
+      ) &&
+      !results.classList.contains(
+        "show"
+      ) &&
+      Boolean(currentMode);
+
+    if (abandoningChallenge) {
+      clearChallengeResumeState();
+    }
+
     // First switch the view. Camera/audio cleanup happens afterwards.
     forceHomeView();
 
@@ -12253,6 +13000,7 @@ HTML = r"""
 
   function showChallengeMenu() {
     forceChallengeMenuView();
+    refreshChallengeMenuUi();
 
     runUiCleanup(stopLearningAnimation);
     runUiCleanup(stopAnzanSession);
@@ -15029,18 +15777,23 @@ HTML = r"""
       modeTitle:
         activeRemedialSkillId
           ? `補習｜${SKILL_DEFS[activeRemedialSkillId]?.title || ""}`
-          : modeInfo[currentMode]?.title,
+          : activeWeaknessChallengeMode
+            ? `苦手克服｜${shortModeName(currentMode)}`
+            : modeInfo[currentMode]?.title,
       remedialSkillId:
         activeRemedialSkillId,
+      weaknessChallengeMode:
+        activeWeaknessChallengeMode,
       timeup:
         Boolean(timeup),
       certificationEligible:
         !activeRemedialSkillId &&
+        !activeWeaknessChallengeMode &&
         !timeup,
       correctCount:
         Number(score) || 0,
       totalQuestions:
-        TOTAL_QUESTIONS,
+        sessionTotalQuestions,
       maxStreak:
         Number(maxCorrectStreak) || 0,
       finalScore:
@@ -15277,6 +16030,8 @@ HTML = r"""
 
     sessionHistorySaved = true;
     updateRankUi();
+    renderWeaknessChallengeGrid();
+    renderChallengeResumeCard();
 
     if (
       afterRank.currentIndex >
@@ -15615,18 +16370,73 @@ HTML = r"""
   ) {
     scoreAnimationToken += 1;
 
-    // 「はじめる」のクリック中にWebAudioを先に起動。
-    // 以後、マイク開始時も同じBGMノードを使い続ける。
+    const resumeState =
+      options.resumeState ||
+      null;
+
+    if (!resumeState) {
+      clearChallengeResumeState();
+    }
+
     bgmEngine.ensureContext();
     bgmEngine.ensureRunning();
 
     currentMode = mode;
     activeRemedialSkillId =
+      resumeState?.activeRemedialSkillId ||
       options.remedialSkillId ||
       null;
 
-    questions = [];
-    questionTimingLog = [];
+    activeWeaknessChallengeMode =
+      resumeState?.activeWeaknessChallengeMode ||
+      options.weaknessChallengeMode ||
+      null;
+
+    sessionTotalQuestions =
+      Math.max(
+        1,
+        Math.min(
+          TOTAL_QUESTIONS,
+          Number(
+            resumeState?.sessionTotalQuestions ??
+            options.totalQuestions ??
+            TOTAL_QUESTIONS
+          ) || TOTAL_QUESTIONS
+        )
+      );
+
+    questions =
+      resumeState
+        ? Array.isArray(
+            resumeState.questions
+          )
+          ? resumeState.questions
+          : []
+        : Array.isArray(
+            options.presetQuestions
+          )
+          ? options.presetQuestions.slice(
+              0,
+              sessionTotalQuestions
+            )
+          : [];
+
+    questionTimingLog =
+      resumeState &&
+      Array.isArray(
+        resumeState.questionTimingLog
+      )
+        ? resumeState.questionTimingLog.map(
+            (item) =>
+              item
+                ? {
+                    ...item,
+                    startPerf: null
+                  }
+                : item
+          )
+        : [];
+
     sessionHistorySaved = false;
 
     if (
@@ -15643,25 +16453,97 @@ HTML = r"""
       "hidden"
     );
 
-    index = 0;
+    index =
+      resumeState
+        ? Math.max(
+            0,
+            Math.min(
+              sessionTotalQuestions - 1,
+              Number(
+                resumeState.index
+              ) || 0
+            )
+          )
+        : 0;
+
     gowasanSpokenForIndex = -1;
-    score = 0;
-    answers = [];
-    seconds = 300;
+    score =
+      resumeState
+        ? Number(
+            resumeState.score
+          ) || 0
+        : 0;
+
+    answers =
+      resumeState &&
+      Array.isArray(
+        resumeState.answers
+      )
+        ? resumeState.answers
+        : [];
+
+    seconds =
+      resumeState
+        ? Math.max(
+            0,
+            Number(
+              resumeState.seconds
+            ) || 0
+          )
+        : 300;
+
+    if (resumeState) {
+      timeLimitEnabled =
+        Boolean(
+          resumeState.timeLimitEnabled
+        );
+    }
+
     locked = false;
-    correctStreak = 0;
-    maxCorrectStreak = 0;
+    correctStreak =
+      resumeState
+        ? Number(
+            resumeState.correctStreak
+          ) || 0
+        : 0;
+
+    maxCorrectStreak =
+      resumeState
+        ? Number(
+            resumeState.maxCorrectStreak
+          ) || 0
+        : 0;
+
     currentBgm = null;
     currentBgmGroupKey = null;
 
-    sessionWeakAsked = 0;
-    sessionWeakCorrect = 0;
+    sessionWeakAsked =
+      resumeState
+        ? Number(
+            resumeState.sessionWeakAsked
+          ) || 0
+        : 0;
+
+    sessionWeakCorrect =
+      resumeState
+        ? Number(
+            resumeState.sessionWeakCorrect
+          ) || 0
+        : 0;
+
     promotedMode = null;
     sessionRankingSaved = false;
     sessionChallengeRecorded = false;
     closeRankingModal();
 
-    $("#retryBtn").textContent = "同じモードをもう一度";
+    $("#retryBtn").textContent =
+      "もう一回チャレンジ";
+
+    if (promoteBtn) {
+      promoteBtn.classList.add(
+        "hidden"
+      );
+    }
 
     homeView.classList.add("hidden");
     learningView.classList.remove("show");
@@ -15679,9 +16561,12 @@ HTML = r"""
     $("#statusTitle").textContent =
       activeRemedialSkillId
         ? `補習｜${SKILL_DEFS[activeRemedialSkillId].title}`
-        : modeInfo[mode].title;
+        : activeWeaknessChallengeMode
+          ? `苦手克服｜${shortModeName(mode)}`
+          : modeInfo[mode].title;
 
-    $("#streak").textContent = "連続正解 0";
+    $("#streak").textContent =
+      `連続正解 ${correctStreak}`;
 
     hintBtn.disabled =
       sessionVideoActive;
@@ -15697,7 +16582,11 @@ HTML = r"""
         : "珠ヒントを見る（手動＋音声）";
 
     voiceAnswerEnabled =
-      preferredVoiceAnswerEnabled;
+      resumeState
+        ? Boolean(
+            resumeState.voiceAnswerEnabled
+          )
+        : preferredVoiceAnswerEnabled;
 
     updateVoiceUi(
       voiceAnswerEnabled
@@ -15708,19 +16597,31 @@ HTML = r"""
     feedback.textContent = "";
     feedback.className = "feedback";
 
-    updateStreakFrame(0);
+    updateStreakFrame(
+      correctStreak
+    );
 
     stopTimer();
     updateTimeLimitUi();
     updateTimer();
 
+    const specialPractice =
+      Boolean(
+        activeRemedialSkillId ||
+        activeWeaknessChallengeMode
+      );
+
     if (
       timeLimitEnabled &&
-      !activeRemedialSkillId
+      !specialPractice
     ) {
       timerHandle = setInterval(() => {
         seconds -= 1;
         updateTimer();
+
+        if (!locked) {
+          saveChallengeResumeState();
+        }
 
         if (seconds <= 0) {
           finish(true);
@@ -15731,12 +16632,23 @@ HTML = r"""
     if (activeRemedialSkillId) {
       timerEl.textContent = "補習";
       statusSub.textContent =
-        "補習問題12問・時間制限なし";
+        `補習問題${sessionTotalQuestions}問・時間制限なし`;
+    } else if (
+      activeWeaknessChallengeMode
+    ) {
+      timerEl.textContent =
+        "苦手克服";
+      statusSub.textContent =
+        `間違えた問題${sessionTotalQuestions}問・時間制限なし`;
     }
 
     playBgmForStreak(0, true);
     renderQuestion();
     resetChallengeScrollPosition();
+
+    if (resumeState) {
+      saveChallengeResumeState();
+    }
   }
 
   function renderQuestion(voiceReady = false) {
@@ -15757,7 +16669,7 @@ HTML = r"""
       feedback.className = "feedback";
 
       $("#qCount").textContent =
-        `${index + 1} / ${TOTAL_QUESTIONS}`;
+        `${index + 1} / ${sessionTotalQuestions}`;
       $("#score").textContent =
         `正解 ${score}`;
 
@@ -15766,7 +16678,7 @@ HTML = r"""
       );
 
       bar.style.width =
-        `${(index / TOTAL_QUESTIONS) * 100}%`;
+        `${(index / sessionTotalQuestions) * 100}%`;
 
       // 前問の判定後は locked=true なので、
       // 次のゴワサン→マイク開始へ進めるようここで解除する。
@@ -15798,7 +16710,7 @@ HTML = r"""
     }
 
     $("#qCount").textContent =
-      `${index + 1} / ${TOTAL_QUESTIONS}`;
+      `${index + 1} / ${sessionTotalQuestions}`;
 
     $("#score").textContent =
       `正解 ${score}`;
@@ -15809,7 +16721,7 @@ HTML = r"""
     );
 
     bar.style.width =
-      `${(index / TOTAL_QUESTIONS) * 100}%`;
+      `${(index / sessionTotalQuestions) * 100}%`;
 
     equation.textContent =
       `${q.a} ${q.op} ${q.b} ＝ ?`;
@@ -15835,11 +16747,13 @@ HTML = r"""
     // 10問連続正解以上では、
     // 問題が実際に表示された瞬間だけ発光。
     flashQuestionFrameIfNeeded();
+
+    saveChallengeResumeState();
   }
 
 
   function submitAnswer() {
-    if (locked || index >= TOTAL_QUESTIONS) return;
+    if (locked || index >= sessionTotalQuestions) return;
 
     const raw = String(answerInput.value || "").trim();
 
@@ -15896,13 +16810,22 @@ HTML = r"""
 
     answers.push({ q, user, ok });
 
+    if (
+      index + 1 <
+      sessionTotalQuestions
+    ) {
+      saveChallengeResumeState(
+        index + 1
+      );
+    }
+
     feedback.textContent = ok ? "お見事！" : `残念！ 答えは ${q.answer}`;
     feedback.className = `feedback ${ok ? "good" : "bad"}`;
 
     setTimeout(() => {
       index += 1;
 
-      if (index >= TOTAL_QUESTIONS) {
+      if (index >= sessionTotalQuestions) {
         finish(false);
       } else {
         renderQuestion();
@@ -15993,6 +16916,8 @@ HTML = r"""
 
     return {
       correctCount: score,
+      totalQuestions:
+        sessionTotalQuestions,
       maxStreak: maxCorrectStreak,
       remainingSeconds,
       remainingMinutes,
@@ -16176,13 +17101,13 @@ HTML = r"""
     let openingMessage = null;
 
     if (
-      scoreInfo.correctCount === TOTAL_QUESTIONS &&
+      scoreInfo.correctCount === scoreInfo.totalQuestions &&
       scoreInfo.wrongCount === 0
     ) {
       openingMessage =
         "お見事！パーフェクト！";
     } else if (
-      scoreInfo.correctCount === TOTAL_QUESTIONS - 1 &&
+      scoreInfo.correctCount === scoreInfo.totalQuestions - 1 &&
       scoreInfo.wrongCount === 1
     ) {
       openingMessage =
@@ -16315,14 +17240,14 @@ HTML = r"""
     const messages = [];
 
     if (
-      scoreInfo.correctCount === TOTAL_QUESTIONS &&
+      scoreInfo.correctCount === scoreInfo.totalQuestions &&
       scoreInfo.wrongCount === 0
     ) {
       messages.push(
         "お見事！パーフェクト！"
       );
     } else if (
-      scoreInfo.correctCount === TOTAL_QUESTIONS - 1 &&
+      scoreInfo.correctCount === scoreInfo.totalQuestions - 1 &&
       scoreInfo.wrongCount === 1
     ) {
       messages.push(
@@ -16466,6 +17391,7 @@ HTML = r"""
   }
 
   function finish(timeup) {
+    clearChallengeResumeState();
     finalizeVideoQuestionMarks();
 
     if (
@@ -16494,7 +17420,7 @@ HTML = r"""
     if (timeup) {
       for (
         let i = index;
-        i < TOTAL_QUESTIONS;
+        i < sessionTotalQuestions;
         i += 1
       ) {
         if (!questions[i]) {
@@ -16523,10 +17449,22 @@ HTML = r"""
 
     results.classList.add("show");
 
+    $("#retryBtn").textContent =
+      "もう一回チャレンジ";
+
+    if (promoteBtn) {
+      promoteBtn.classList.add(
+        "hidden"
+      );
+    }
+
     const challengeScore =
       calculateChallengeScore();
 
-    if (activeRemedialSkillId) {
+    if (
+      activeRemedialSkillId ||
+      activeWeaknessChallengeMode
+    ) {
       challengeScore.challengeCount =
         getChallengeCount(
           currentMode
@@ -16556,7 +17494,8 @@ HTML = r"""
 
     const timedResult =
       timeLimitEnabled &&
-      !activeRemedialSkillId;
+      !activeRemedialSkillId &&
+      !activeWeaknessChallengeMode;
 
     scoreStage.classList.toggle(
       "hidden",
@@ -16602,6 +17541,7 @@ HTML = r"""
 
     const canPromote =
       !activeRemedialSkillId &&
+      !activeWeaknessChallengeMode &&
       !timeup &&
       Boolean(
         NEXT_MODE[currentMode]
@@ -16620,19 +17560,30 @@ HTML = r"""
 
     if (activeRemedialSkillId) {
       resultMessage =
-        `補習12問終了。正解は${score}問です。`;
+        `補習${sessionTotalQuestions}問終了。正解は${score}問です。`;
+    } else if (activeWeaknessChallengeMode) {
+      const remainingWeak =
+        getWeakCandidates(
+          currentMode
+        ).length;
+
+      resultMessage =
+        `苦手克服${sessionTotalQuestions}問終了。正解は${score}問です。未克服は残り${remainingWeak}問です。`;
     } else if (timeup) {
       resultMessage =
         `5分になりました。正解は${score}問です。${weakSummary}`;
     } else if (timeLimitEnabled) {
       resultMessage =
-        `12問終了。残り時間は${timerEl.textContent}、正解は${score}問です。${weakSummary}`;
+        `${sessionTotalQuestions}問終了。残り時間は${timerEl.textContent}、正解は${score}問です。${weakSummary}`;
     } else {
       resultMessage =
-        `12問終了。正解は${score}問です。${weakSummary}`;
+        `${sessionTotalQuestions}問終了。正解は${score}問です。${weakSummary}`;
     }
 
-    if (!activeRemedialSkillId) {
+    if (
+      !activeRemedialSkillId &&
+      !activeWeaknessChallengeMode
+    ) {
       resultMessage +=
         ` 総チャレンジ回数は${challengeScore.challengeCount}回です。`;
     }
@@ -16641,8 +17592,13 @@ HTML = r"""
       resultMessage +=
         ` 苦手を克服できたので、次は「${modeInfo[promotedMode].title}」へレベルアップします。`;
 
-      $("#retryBtn").textContent =
-        "レベルアップして次へ";
+      if (promoteBtn) {
+        promoteBtn.textContent =
+          `次のレベルへ｜${shortModeName(promotedMode)}`;
+        promoteBtn.classList.remove(
+          "hidden"
+        );
+      }
     } else if (
       !timeup &&
       sessionWeakAsked > 0
@@ -16831,8 +17787,22 @@ HTML = r"""
   }
 
   function goMenu() {
+    const abandoningChallenge =
+      workspace.classList.contains(
+        "show"
+      ) &&
+      !results.classList.contains(
+        "show"
+      ) &&
+      Boolean(currentMode);
+
+    if (abandoningChallenge) {
+      clearChallengeResumeState();
+    }
+
     // Always restore the challenge menu before cleanup.
     forceChallengeMenuView();
+    refreshChallengeMenuUi();
 
     if (
       sessionVideoActive ||
@@ -16886,6 +17856,20 @@ HTML = r"""
     medalResetBtn.addEventListener(
       "click",
       handleMedalResetClick
+    );
+  }
+
+  if (resumeChallengeBtn) {
+    resumeChallengeBtn.addEventListener(
+      "click",
+      resumeSavedChallenge
+    );
+  }
+
+  if (discardResumeBtn) {
+    discardResumeBtn.addEventListener(
+      "click",
+      clearChallengeResumeState
     );
   }
 
@@ -17324,19 +18308,50 @@ HTML = r"""
   bgmBtn.addEventListener("click", toggleBgm);
 
   $("#retryBtn").addEventListener("click", () => {
-    if (promotedMode) {
-      requestStartMode(
-        promotedMode
+    if (!currentMode) {
+      return;
+    }
+
+    if (activeWeaknessChallengeMode) {
+      startWeaknessChallenge(
+        currentMode
       );
       return;
     }
 
-    if (currentMode) {
-      requestStartMode(
-        currentMode
-      );
-    }
+    requestStartMode(
+      currentMode
+    );
   });
+
+  if (promoteBtn) {
+    promoteBtn.addEventListener(
+      "click",
+      () => {
+        if (promotedMode) {
+          requestStartMode(
+            promotedMode
+          );
+        }
+      }
+    );
+  }
+
+  window.addEventListener(
+    "pagehide",
+    () => {
+      saveChallengeResumeState();
+    }
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (document.hidden) {
+        saveChallengeResumeState();
+      }
+    }
+  );
 
   timeLimitEnabled =
     loadTimeLimitSetting();
@@ -17396,6 +18411,7 @@ HTML = r"""
   } catch (error) {}
 
   renderLearningCategories();
+  refreshChallengeMenuUi();
   installInAppBackGuard();
   updateBgmButton();
   updateVoiceUi();
