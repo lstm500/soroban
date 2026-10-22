@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V96-CHALLENGE-UI-WEAKNESS-RESTART-AUDIO"
+APP_VERSION = "CLEAN-V97-WEAKNESS-IN-LEARNING-SLOT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -203,6 +203,16 @@ HTML = r"""
 
   .weakness-view {
     display: none;
+  }
+
+  /* 学習モードは現在TOPから使用しない。実装コードは保守用に残す。 */
+  #learningView {
+    display: none !important;
+  }
+
+  .home-mode-btn.weakness-home {
+    background: #fff9ec;
+    border-color: #cba769;
   }
 
   .weakness-view.show {
@@ -3325,7 +3335,7 @@ HTML = r"""
 <div id="homeView" class="app-home">
   <div class="home-title">そろばん</div>
   <div class="home-sub">
-    計算に挑戦するか、珠の動かし方を順番に学ぶかを選んでください。
+    チャレンジ・苦手克服・暗算から練習方法を選んでください。
   </div>
 
   <div class="home-rank-card">
@@ -3339,15 +3349,6 @@ HTML = r"""
     </div>
   </div>
 
-  <button type="button" id="homeWeaknessBtn" data-app-nav="weakness" class="home-weakness-btn">
-    <span class="home-weakness-icon">↻</span>
-    <span class="home-weakness-copy">
-      <strong>苦手克服モード</strong>
-      <span>間違えた問題だけを、通常チャレンジと同じ区分で練習します。</span>
-    </span>
-    <span class="home-weakness-arrow">›</span>
-  </button>
-
   <div class="home-mode-grid">
     <button type="button" id="homeChallengeBtn" data-app-nav="challenge" class="home-mode-btn primary-home">
       <span class="home-mode-kicker">CHALLENGE</span>
@@ -3357,11 +3358,11 @@ HTML = r"""
       </span>
     </button>
 
-    <button type="button" id="homeLearningBtn" data-app-nav="learning" class="home-mode-btn">
-      <span class="home-mode-kicker">LEARNING</span>
-      <span class="home-mode-name">学習モード</span>
+    <button type="button" id="homeWeaknessBtn" data-app-nav="weakness" class="home-mode-btn weakness-home">
+      <span class="home-mode-kicker">REVIEW</span>
+      <span class="home-mode-name">苦手克服モード</span>
       <span class="home-mode-desc">
-        足し算・引き算・掛け算・割り算の珠の動きを、ゆっくり学びます。
+        チャレンジで間違えた問題だけを、レベル別にもう一度練習します。
       </span>
     </button>
 
@@ -4225,13 +4226,7 @@ HTML = r"""
     } else if (target === "challenge" || target === "challenge-menu") {
       menu.classList.remove("hidden");
     } else if (target === "learning") {
-      learning.classList.add("show");
-      const category = byId("learningCategoryView");
-      const stage = byId("learningStageView");
-      const lesson = byId("learningLessonView");
-      if (category) category.classList.remove("hidden");
-      if (stage) stage.classList.add("hidden");
-      if (lesson) lesson.classList.add("hidden");
+      weakness.classList.add("show");
     } else if (target === "anzan") {
       anzan.classList.add("show");
       const menuViewEl = byId("anzanMenuView");
@@ -4302,7 +4297,7 @@ HTML = r"""
         if (target === "home") showHome();
         else if (target === "challenge-menu") goMenu();
         else if (target === "challenge") showChallengeMenu();
-        else if (target === "learning") showLearningHome();
+        else if (target === "learning") showWeaknessHome();
         else if (target === "anzan") showAnzanHome();
         else if (target === "settings") showSettings();
         else if (target === "weakness") showWeaknessHome();
