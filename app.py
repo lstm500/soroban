@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V95-RETRY-RESUME-WEAKNESS-RANK-GUIDE"
+APP_VERSION = "CLEAN-V96-CHALLENGE-UI-WEAKNESS-RESTART-AUDIO"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -160,6 +160,167 @@ HTML = r"""
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     margin-top: 6px;
+  }
+
+  .home-weakness-btn {
+    width: 100%;
+    min-height: 92px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 14px;
+    padding: 14px 18px;
+    border: 2px solid #cba769;
+    border-radius: 18px;
+    background: #fff9ec;
+    color: #443a2c;
+    text-align: left;
+    box-shadow: 0 6px 18px rgba(81, 61, 25, .07);
+  }
+
+  .home-weakness-icon {
+    font-size: 27px;
+  }
+
+  .home-weakness-copy strong {
+    display: block;
+    font-size: 18px;
+  }
+
+  .home-weakness-copy span {
+    display: block;
+    margin-top: 3px;
+    color: #71614c;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .home-weakness-arrow {
+    font-size: 22px;
+    font-weight: 1000;
+  }
+
+  .weakness-view {
+    display: none;
+  }
+
+  .weakness-view.show {
+    display: block;
+  }
+
+  .challenge-operation-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 14px 0 18px;
+  }
+
+  .challenge-operation-nav button {
+    min-height: 46px;
+    padding: 8px 6px;
+    border: 1px solid #d4ccbf;
+    border-radius: 12px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  .challenge-operation-nav button:hover {
+    border-color: #9cb3c5;
+    background: #f4f9fc;
+  }
+
+  .mode-section-anchor {
+    scroll-margin-top: 86px;
+  }
+
+  .rank-goal-summary {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.55;
+    color: #5b5142;
+  }
+
+  .rank-goal-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .rank-goal-row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 11px;
+    border: 1px solid #e0d5bd;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .rank-goal-row.done {
+    border-color: #b7cfba;
+    background: #f3faf4;
+  }
+
+  .rank-goal-op {
+    font-size: 12px;
+    font-weight: 1000;
+    color: #3f5261;
+  }
+
+  .rank-goal-mode {
+    min-width: 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #665f56;
+  }
+
+  .rank-goal-status {
+    white-space: nowrap;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #f6ead0;
+    color: #76571e;
+    font-size: 10px;
+    font-weight: 1000;
+  }
+
+  .rank-goal-row.done .rank-goal-status {
+    background: #dfeee1;
+    color: #35603c;
+  }
+
+  .weakness-group {
+    margin-top: 18px;
+  }
+
+  .weakness-group-title {
+    margin: 0 0 9px;
+    font-size: 19px;
+    font-weight: 1000;
+  }
+
+  .weakness-mode-card.unavailable {
+    opacity: .64;
+    background: #f6f4ef;
+  }
+
+  .restart-challenge-btn {
+    border-color: #d4ae68;
+    background: #fff7e7;
+    color: #654a1d;
+    font-weight: 950;
+  }
+
+  /* 動画での振り返りは現在使わない。機能コードは残すがUIと起動経路を無効化。 */
+  .analysis-control,
+  #cameraSetupModal,
+  #videoReviewPanel,
+  #recordingBadge {
+    display: none !important;
   }
 
 
@@ -1092,6 +1253,24 @@ HTML = r"""
       font-size: 11px;
     }
 
+    .home-weakness-btn {
+      min-height: 84px;
+      padding: 12px 13px;
+    }
+
+    .challenge-operation-nav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rank-goal-row {
+      grid-template-columns: 62px minmax(0, 1fr);
+    }
+
+    .rank-goal-status {
+      grid-column: 2;
+      justify-self: start;
+    }
+
     .learning-category-grid,
     .learning-stage-grid,
     .learning-point-grid,
@@ -1345,7 +1524,7 @@ HTML = r"""
   .challenge-quick-nav {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 8px;
   }
 
@@ -3129,7 +3308,7 @@ HTML = r"""
     .mode-grid { grid-template-columns: 1fr; }
     .mode-card { min-height: 0; }
     .statusbar { grid-template-columns: 1fr auto; }
-    .challenge-quick-nav { grid-template-columns: 1fr 1fr; }
+    .challenge-quick-nav { grid-template-columns: 1fr 1fr 1fr; }
     .review { grid-template-columns: 1fr; }
 
     .question-card {
@@ -3159,6 +3338,15 @@ HTML = r"""
       <div id="homeRankNext" class="app-rank-next">チャレンジでメダルを獲得しよう</div>
     </div>
   </div>
+
+  <button type="button" id="homeWeaknessBtn" data-app-nav="weakness" class="home-weakness-btn">
+    <span class="home-weakness-icon">↻</span>
+    <span class="home-weakness-copy">
+      <strong>苦手克服モード</strong>
+      <span>間違えた問題だけを、通常チャレンジと同じ区分で練習します。</span>
+    </span>
+    <span class="home-weakness-arrow">›</span>
+  </button>
 
   <div class="home-mode-grid">
     <button type="button" id="homeChallengeBtn" data-app-nav="challenge" class="home-mode-btn primary-home">
@@ -3193,6 +3381,28 @@ HTML = r"""
       </span>
     </button>
   </div>
+</div>
+
+
+<div id="weaknessView" class="weakness-view">
+  <div class="subview-topbar">
+    <button type="button" id="weaknessTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
+    <div class="subview-topbar-title">苦手克服モード</div>
+  </div>
+
+  <div class="anzan-hero">
+    <h2>間違えた問題だけを練習</h2>
+    <p>通常チャレンジで間違えた問題を保存しています。未克服問題がないレベルは選択できません。</p>
+  </div>
+
+  <div class="challenge-operation-nav">
+    <button type="button" class="weakness-operation-jump" data-target="weak-add">足し算</button>
+    <button type="button" class="weakness-operation-jump" data-target="weak-sub">引き算</button>
+    <button type="button" class="weakness-operation-jump" data-target="weak-mul">掛け算</button>
+    <button type="button" class="weakness-operation-jump" data-target="weak-div">割り算</button>
+  </div>
+
+  <div id="weaknessChallengeGrid"></div>
 </div>
 
 
@@ -3420,7 +3630,7 @@ HTML = r"""
     </button>
   </div>
 
-  <div class="analysis-control">
+  <div class="analysis-control hidden">
     <div>
       <div class="analysis-control-title">🎥 動画で振り返り</div>
       <div class="analysis-control-note">
@@ -3447,13 +3657,14 @@ HTML = r"""
     <div id="nextRankGuideText" class="next-rank-guide-text"></div>
   </div>
 
-  <div class="level-title">苦手克服チャレンジ</div>
-  <div class="weakness-challenge-note">
-    間違えた問題をレベル別に保存しています。未克服の問題があるレベルだけ選べます。正解した問題は苦手一覧から外れます。
+  <div class="challenge-operation-nav" aria-label="計算の種類">
+    <button type="button" class="challenge-operation-jump" data-target="challenge-add">足し算</button>
+    <button type="button" class="challenge-operation-jump" data-target="challenge-sub">引き算</button>
+    <button type="button" class="challenge-operation-jump" data-target="challenge-mul">掛け算</button>
+    <button type="button" class="challenge-operation-jump" data-target="challenge-div">割り算</button>
   </div>
-  <div id="weaknessChallengeGrid" class="mode-grid"></div>
 
-  <div class="level-title">初級モード｜足し算のみ</div>
+  <div id="challenge-add" class="level-title mode-section-anchor">足し算</div>
   <div class="mode-grid">
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 1</div>
@@ -3496,7 +3707,7 @@ HTML = r"""
     </article>
   </div>
 
-  <div class="level-title">初級モード｜引き算のみ</div>
+  <div id="challenge-sub" class="level-title mode-section-anchor">引き算</div>
   <div class="mode-grid">
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 1</div>
@@ -3539,7 +3750,7 @@ HTML = r"""
     </article>
   </div>
 
-  <div class="level-title">中級モード｜掛け算のみ</div>
+  <div id="challenge-mul" class="level-title mode-section-anchor">掛け算</div>
   <div class="mode-grid">
     <article class="mode-card">
       <div class="mode-no">INTERMEDIATE MUL 1</div>
@@ -3566,7 +3777,7 @@ HTML = r"""
     </article>
   </div>
 
-  <div class="level-title">中級モード｜割り算のみ</div>
+  <div id="challenge-div" class="level-title mode-section-anchor">割り算</div>
   <div class="mode-grid">
     <article class="mode-card">
       <div class="mode-no">INTERMEDIATE DIV 1</div>
@@ -3593,7 +3804,7 @@ HTML = r"""
     </article>
   </div>
 
-  <div class="level-title">上級モード</div>
+  <div id="challenge-advanced" class="level-title mode-section-anchor">上級総合</div>
   <div class="mode-grid">
     <article class="mode-card">
       <div class="mode-no">ADVANCED 1</div>
@@ -3800,6 +4011,7 @@ HTML = r"""
     <div class="challenge-quick-nav">
       <button type="button" id="challengePlayTopBtn" data-app-nav="home" onclick="window.__sorobanHardNav && window.__sorobanHardNav('home'); return false;">← TOPへ</button>
       <button type="button" id="quitBtn" data-app-nav="challenge-menu" onclick="window.__sorobanHardNav && window.__sorobanHardNav('challenge-menu'); return false;">モード選択へ</button>
+      <button type="button" id="restartChallengeBtn" class="restart-challenge-btn">↻ 最初からやり直す</button>
     </div>
     <div id="voiceStatus" class="voice-status">音声回答：OFF</div>
     <div id="bgmName" class="bgm-name">BGM：準備中</div>
@@ -3987,10 +4199,11 @@ HTML = r"""
     const learning = byId("learningView");
     const anzan = byId("anzanView");
     const settings = byId("settingsView");
+    const weakness = byId("weaknessView");
     const workspaceEl = byId("workspace");
     const resultsEl = byId("results");
 
-    if (!home || !menu || !learning || !anzan || !settings || !workspaceEl || !resultsEl) {
+    if (!home || !menu || !learning || !anzan || !settings || !weakness || !workspaceEl || !resultsEl) {
       return false;
     }
 
@@ -4000,6 +4213,7 @@ HTML = r"""
       learning.classList.remove("show");
       anzan.classList.remove("show");
       settings.classList.remove("show");
+      weakness.classList.remove("show");
       workspaceEl.classList.remove("show");
       resultsEl.classList.remove("show");
     };
@@ -4028,6 +4242,8 @@ HTML = r"""
       if (resultViewEl) resultViewEl.classList.add("hidden");
     } else if (target === "settings") {
       settings.classList.add("show");
+    } else if (target === "weakness") {
+      weakness.classList.add("show");
     } else {
       return false;
     }
@@ -4062,7 +4278,8 @@ HTML = r"""
       if (
         (
           target === "home" ||
-          target === "challenge-menu"
+          target === "challenge-menu" ||
+          target === "weakness"
         ) &&
         workspaceEl?.classList.contains(
           "show"
@@ -4088,6 +4305,7 @@ HTML = r"""
         else if (target === "learning") showLearningHome();
         else if (target === "anzan") showAnzanHome();
         else if (target === "settings") showSettings();
+        else if (target === "weakness") showWeaknessHome();
       } catch (error) {}
     }, 0);
   }
@@ -4116,6 +4334,7 @@ HTML = r"""
   const anzanGameView = $("#anzanGameView");
   const anzanResultView = $("#anzanResultView");
   const settingsView = $("#settingsView");
+  const weaknessView = $("#weaknessView");
   const menuView = $("#menuView");
   const learningView = $("#learningView");
   const learningCategoryView = $("#learningCategoryView");
@@ -4262,6 +4481,24 @@ HTML = r"""
     a2: { title: "上級2｜3桁×2桁 / 4桁÷2桁" },
     a3: { title: "上級3｜3桁×3桁 / 5桁÷3桁" }
   };
+
+  const MODE_GROUPS = Object.freeze([
+    { key: "add", title: "足し算", modes: ["ba1", "ba2", "ba3", "ba4", "ba5"] },
+    { key: "sub", title: "引き算", modes: ["bs1", "bs2", "bs3", "bs4", "bs5"] },
+    { key: "mul", title: "掛け算", modes: ["mm1", "mm2", "mm3"] },
+    { key: "div", title: "割り算", modes: ["md1", "md2", "md3"] },
+    { key: "advanced", title: "上級総合", modes: ["a1", "a2", "a3"] }
+  ]);
+
+  function operationLabelForMode(mode) {
+    if (String(mode).startsWith("ba")) return "足し算";
+    if (String(mode).startsWith("bs")) return "引き算";
+    if (String(mode).startsWith("mm")) return "掛け算";
+    if (String(mode).startsWith("md")) return "割り算";
+    if (mode === "a1") return "足・引";
+    if (mode === "a2" || mode === "a3") return "掛・割";
+    return "総合";
+  }
 
   const LEARNING_PROGRESS_STORAGE_KEY =
     "soroban_tutorial_progress_v1";
@@ -4837,8 +5074,8 @@ HTML = r"""
   const HINT_MIC_AFTER_TTS_MS = 70;
   const HINT_MIC_RETRY_MS = 180;
 
-  const BGM_VOLUME_NORMAL = 0.18;
-  const BGM_VOLUME_APP_SPEECH = 0.03;
+  const BGM_VOLUME_NORMAL = 0.54;
+  const BGM_VOLUME_APP_SPEECH = 0.09;
   const BGM_VOLUME_LISTENING = 0.00;
 
   let bgmKeepAliveTimer = null;
@@ -7586,6 +7823,8 @@ HTML = r"""
     const rule =
       nextRankRule();
 
+    nextRankGuideText.innerHTML = "";
+
     if (!rule) {
       nextRankGuideTitle.textContent =
         "最高称号を獲得しています";
@@ -7595,7 +7834,64 @@ HTML = r"""
     }
 
     nextRankGuideTitle.textContent =
-      `次の${rule.name}まで`;
+      `${rule.name}まで`;
+
+    const summary =
+      document.createElement("div");
+    summary.className =
+      "rank-goal-summary";
+    summary.textContent =
+      rule.type === "all"
+        ? "下の条件をすべて達成すると昇級・昇段です。"
+        : "下のどれか1つを達成すると昇級・昇段です。";
+
+    const list =
+      document.createElement("div");
+    list.className =
+      "rank-goal-list";
+
+    rule.modes.forEach((mode) => {
+      const best =
+        bestCorrectForMode(mode);
+      const done =
+        best >= rule.minCorrect;
+
+      const row =
+        document.createElement("div");
+      row.className =
+        `rank-goal-row ${done ? "done" : ""}`;
+
+      const op =
+        document.createElement("div");
+      op.className =
+        "rank-goal-op";
+      op.textContent =
+        operationLabelForMode(mode);
+
+      const modeText =
+        document.createElement("div");
+      modeText.className =
+        "rank-goal-mode";
+      modeText.textContent =
+        shortModeName(mode);
+
+      const status =
+        document.createElement("div");
+      status.className =
+        "rank-goal-status";
+      status.textContent =
+        done
+          ? `達成済み ${best}/12`
+          : `最高${best}/12 → ${rule.minCorrect}/12以上`;
+
+      row.appendChild(op);
+      row.appendChild(modeText);
+      row.appendChild(status);
+      list.appendChild(row);
+    });
+
+    nextRankGuideText.appendChild(summary);
+    nextRankGuideText.appendChild(list);
 
     const outstanding =
       rule.modes.filter(
@@ -7603,28 +7899,6 @@ HTML = r"""
           bestCorrectForMode(mode) <
           rule.minCorrect
       );
-
-    const progressText =
-      rule.modes
-        .map((mode) => {
-          const best =
-            bestCorrectForMode(mode);
-
-          const state =
-            best >= rule.minCorrect
-              ? "達成済み"
-              : `最高${best}/12 → ${rule.minCorrect}/12以上`;
-
-          return `${shortModeName(mode)}：${state}`;
-        })
-        .join(
-          rule.type === "all"
-            ? " ／ "
-            : " または "
-        );
-
-    nextRankGuideText.textContent =
-      `${rule.requirement}。${progressText}`;
 
     const recommendModes =
       outstanding.length
@@ -7661,19 +7935,15 @@ HTML = r"""
           ".rank-recommend-chip"
         )
       ) {
-        const badge =
+        const chip =
           document.createElement(
             "span"
           );
-
-        badge.className =
+        chip.className =
           "chip rank-recommend-chip";
-        badge.textContent =
-          `次の${rule.name}におすすめ`;
-
-        chips.appendChild(
-          badge
-        );
+        chip.textContent =
+          `${rule.name}におすすめ`;
+        chips.prepend(chip);
       }
     });
   }
@@ -8174,32 +8444,40 @@ HTML = r"""
       return;
     }
 
-    weaknessChallengeGrid.innerHTML =
-      "";
+    weaknessChallengeGrid.innerHTML = "";
 
-    let available = 0;
+    MODE_GROUPS.forEach((group) => {
+      const wrapper =
+        document.createElement(
+          "section"
+        );
+      wrapper.className =
+        "weakness-group mode-section-anchor";
+      wrapper.id =
+        `weak-${group.key}`;
 
-    Object.keys(modeInfo)
-      .forEach((mode) => {
+      const heading =
+        document.createElement("h3");
+      heading.className =
+        "weakness-group-title";
+      heading.textContent =
+        group.title;
+
+      const grid =
+        document.createElement("div");
+      grid.className =
+        "mode-grid";
+
+      group.modes.forEach((mode) => {
         const candidates =
           getWeakCandidates(mode);
-
-        if (!candidates.length) {
-          return;
-        }
-
-        available += 1;
 
         const card =
           document.createElement(
             "article"
           );
-
         card.className =
-          "mode-card weakness-mode-card";
-
-        const name =
-          shortModeName(mode);
+          `mode-card weakness-mode-card ${candidates.length ? "" : "unavailable"}`;
 
         const examples =
           candidates
@@ -8211,9 +8489,13 @@ HTML = r"""
             .join("、");
 
         card.innerHTML = `
-          <div class="mode-no">苦手克服</div>
-          <div class="mode-name">${name}</div>
-          <div class="mode-desc">未克服 ${candidates.length}問${examples ? `｜${examples}` : ""}</div>
+          <div class="mode-no">${group.title}</div>
+          <div class="mode-name">${shortModeName(mode)}</div>
+          <div class="mode-desc">${
+            candidates.length
+              ? `未克服 ${candidates.length}問${examples ? `｜${examples}` : ""}`
+              : "未克服の問題はありません"
+          }</div>
           <div class="chips"><span class="chip">最大12問</span><span class="chip">時間制限なし</span></div>
         `;
 
@@ -8221,46 +8503,40 @@ HTML = r"""
           document.createElement(
             "button"
           );
-
         button.type =
           "button";
         button.className =
-          "primary";
+          candidates.length
+            ? "primary"
+            : "";
+        button.disabled =
+          !candidates.length;
         button.textContent =
-          "苦手克服をはじめる";
+          candidates.length
+            ? "苦手克服をはじめる"
+            : "現在は選択できません";
 
-        button.addEventListener(
-          "click",
-          () => {
-            startWeaknessChallenge(
-              mode
-            );
-          }
-        );
+        if (candidates.length) {
+          button.addEventListener(
+            "click",
+            () => {
+              startWeaknessChallenge(
+                mode
+              );
+            }
+          );
+        }
 
-        card.appendChild(
-          button
-        );
-        weaknessChallengeGrid.appendChild(
-          card
-        );
+        card.appendChild(button);
+        grid.appendChild(card);
       });
 
-    if (available === 0) {
-      const empty =
-        document.createElement(
-          "div"
-        );
-
-      empty.className =
-        "weakness-empty";
-      empty.textContent =
-        "現在、未克服の間違い問題はありません。通常のチャレンジで間違えた問題がここに追加されます。";
-
+      wrapper.appendChild(heading);
+      wrapper.appendChild(grid);
       weaknessChallengeGrid.appendChild(
-        empty
+        wrapper
       );
-    }
+    });
   }
 
   function startWeaknessChallenge(
@@ -8302,7 +8578,6 @@ HTML = r"""
 
   function refreshChallengeMenuUi() {
     renderChallengeResumeCard();
-    renderWeaknessChallengeGrid();
     refreshNextRankGuide();
   }
 
@@ -9905,6 +10180,10 @@ HTML = r"""
       utterance.onend = done;
       utterance.onerror = done;
 
+      try {
+        window.speechSynthesis.resume();
+      } catch (error) {}
+
       window.speechSynthesis.speak(
         utterance
       );
@@ -9921,19 +10200,8 @@ HTML = r"""
     });
   }
 
-  function stopHintNarrationForUserSpeech() {
-    // 子どもの発話を検知したら、珠ヒントの読み上げを即停止する。
-    // hintNarrationActive は維持し、次の説明は通常どおり読み上げられるようにする。
-    hintNarrationToken += 1;
+  // 珠ヒントは回答が先に入っても、解説を最後まで読み上げてから判定する。
 
-    if (
-      "speechSynthesis" in window
-    ) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch (error) {}
-    }
-  }
 
   function scheduleHintQuestionRetry(
     step,
@@ -12308,6 +12576,10 @@ HTML = r"""
       utterance.onerror =
         done;
 
+      try {
+        window.speechSynthesis.resume();
+      } catch (error) {}
+
       window.speechSynthesis.speak(
         utterance
       );
@@ -12639,33 +12911,42 @@ HTML = r"""
 
   function speakAnswerFeedback(
     ok,
-    streak
+    streak,
+    onDone = null
   ) {
-    // 判定音声中はマイクだけ一時停止。
-    // BGM再生ノードは止めず、読み上げ用の3%へ下げる。
     voicePauseForFeedback = true;
-
     stopVoiceRecognition();
     refreshBgmVolume();
-
     bgmEngine.ensureRunning();
+
+    let completed = false;
+
+    const finishFeedback = () => {
+      if (completed) {
+        return;
+      }
+
+      completed = true;
+      voicePauseForFeedback = false;
+      refreshBgmVolume();
+      bgmEngine.ensureRunning();
+
+      if (
+        typeof onDone ===
+        "function"
+      ) {
+        onDone();
+      }
+    };
 
     if (
       !("speechSynthesis" in window) ||
       typeof SpeechSynthesisUtterance ===
         "undefined"
     ) {
-      voicePauseForFeedback = false;
-      refreshBgmVolume();
-
-      if (voiceAnswerEnabled) {
-        scheduleVoiceRestart(280);
-      }
-
+      finishFeedback();
       return;
     }
-
-    window.speechSynthesis.cancel();
 
     const message =
       !ok
@@ -12674,52 +12955,65 @@ HTML = r"""
           ? `お見事！${streak}問連続正解！`
           : "お見事！";
 
-    const utterance =
-      new SpeechSynthesisUtterance(
-        message
+    try {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+    } catch (error) {}
+
+    // 次の問題の「ゴワサン」で途中キャンセルされないよう、
+    // この音声が終わってから問題を進める。
+    const fallbackTimer =
+      setTimeout(
+        finishFeedback,
+        3200
       );
 
-    utterance.lang = "ja-JP";
-    utterance.rate = 0.98;
-    utterance.pitch = 1.03;
-    utterance.volume = 1.0;
-
-    const voice =
-      getJapaneseVoice();
-
-    if (voice) {
-      utterance.voice = voice;
-    }
-
-    let resumed = false;
-
-    const resumeAfterFeedback = () => {
-      if (resumed) {
+    waitForJapaneseVoice(
+      1200
+    ).then((voice) => {
+      if (completed) {
         return;
       }
 
-      resumed = true;
-      voicePauseForFeedback = false;
+      const utterance =
+        new SpeechSynthesisUtterance(
+          message
+        );
 
-      // BGMはここでも再スタートしない。
-      // 同じWebAudioノードのGainだけ戻す。
-      refreshBgmVolume();
-      bgmEngine.ensureRunning();
+      utterance.lang = "ja-JP";
+      utterance.rate = 0.96;
+      utterance.pitch = 1.03;
+      // Web Speech APIの最大音量。
+      utterance.volume = 1.0;
 
-      if (voiceAnswerEnabled) {
-        scheduleVoiceRestart(280);
+      if (voice) {
+        utterance.voice = voice;
       }
-    };
 
-    utterance.onend =
-      resumeAfterFeedback;
+      const done = () => {
+        clearTimeout(
+          fallbackTimer
+        );
+        finishFeedback();
+      };
 
-    utterance.onerror =
-      resumeAfterFeedback;
+      utterance.onend = done;
+      utterance.onerror = done;
 
-    window.speechSynthesis.speak(
-      utterance
-    );
+      try {
+        window.speechSynthesis.resume();
+        window.speechSynthesis.speak(
+          utterance
+        );
+      } catch (error) {
+        done();
+      }
+    }).catch(() => {
+      clearTimeout(
+        fallbackTimer
+      );
+      finishFeedback();
+    });
   }
 
   function setRainbowForStreak(streak) {
@@ -12954,6 +13248,7 @@ HTML = r"""
     learningView.classList.remove("show");
     anzanView.classList.remove("show");
     settingsView.classList.remove("show");
+    weaknessView.classList.remove("show");
     homeView.classList.remove("hidden");
   }
 
@@ -12962,6 +13257,7 @@ HTML = r"""
     learningView.classList.remove("show");
     anzanView.classList.remove("show");
     settingsView.classList.remove("show");
+    weaknessView.classList.remove("show");
     workspace.classList.remove("show");
     results.classList.remove("show");
     menuView.classList.remove("hidden");
@@ -13011,6 +13307,26 @@ HTML = r"""
     runUiCleanup(closeRankCelebration);
   }
 
+  function showWeaknessHome() {
+    stopTimer();
+    stopBgm();
+    hideSorobanHint();
+    stopLearningAnimation();
+    stopAnzanSession();
+    setVoiceAnswerEnabled(false);
+
+    homeView.classList.add("hidden");
+    menuView.classList.add("hidden");
+    learningView.classList.remove("show");
+    anzanView.classList.remove("show");
+    settingsView.classList.remove("show");
+    workspace.classList.remove("show");
+    results.classList.remove("show");
+    weaknessView.classList.add("show");
+
+    renderWeaknessChallengeGrid();
+  }
+
   function showLearningHome() {
     stopTimer();
     stopBgm();
@@ -13027,6 +13343,9 @@ HTML = r"""
       "show"
     );
     settingsView.classList.remove(
+      "show"
+    );
+    weaknessView.classList.remove(
       "show"
     );
     workspace.classList.remove(
@@ -14110,6 +14429,9 @@ HTML = r"""
     settingsView.classList.remove(
       "show"
     );
+    weaknessView.classList.remove(
+      "show"
+    );
     workspace.classList.remove(
       "show"
     );
@@ -14148,6 +14470,9 @@ HTML = r"""
       "show"
     );
     anzanView.classList.remove(
+      "show"
+    );
+    weaknessView.classList.remove(
       "show"
     );
     workspace.classList.remove(
@@ -15396,18 +15721,10 @@ HTML = r"""
     mode,
     sourceButton = null
   ) {
-    if (
-      !analysisVideoEnabled
-    ) {
-      resetSessionVideoData();
-      startMode(mode);
-      return;
-    }
-
-    openCameraSetup(
-      mode,
-      sourceButton
-    );
+    // 動画での振り返りは現在非表示・停止。
+    analysisVideoEnabled = false;
+    resetSessionVideoData();
+    startMode(mode);
   }
 
   function beginRecordedChallenge() {
@@ -16364,6 +16681,58 @@ HTML = r"""
     );
   }
 
+  function restartCurrentChallengeFromBeginning() {
+    if (
+      !currentMode ||
+      !workspace.classList.contains(
+        "show"
+      ) ||
+      results.classList.contains(
+        "show"
+      )
+    ) {
+      return;
+    }
+
+    const mode =
+      currentMode;
+    const sameQuestions =
+      Array.isArray(questions)
+        ? questions.map(
+            (question) => ({
+              ...question
+            })
+          )
+        : [];
+
+    const wasWeakness =
+      activeWeaknessChallengeMode;
+    const wasRemedial =
+      activeRemedialSkillId;
+    const voiceWasOn =
+      voiceAnswerEnabled;
+    const total =
+      sessionTotalQuestions;
+
+    clearChallengeResumeState();
+
+    startMode(
+      mode,
+      {
+        presetQuestions:
+          sameQuestions,
+        totalQuestions:
+          total,
+        weaknessChallengeMode:
+          wasWeakness,
+        remedialSkillId:
+          wasRemedial,
+        voiceAnswerEnabled:
+          voiceWasOn
+      }
+    );
+  }
+
   function startMode(
     mode,
     options = {}
@@ -16391,6 +16760,26 @@ HTML = r"""
       resumeState?.activeWeaknessChallengeMode ||
       options.weaknessChallengeMode ||
       null;
+
+    const challengeMenuTarget =
+      activeWeaknessChallengeMode
+        ? "weakness"
+        : "challenge-menu";
+
+    const quitButton =
+      $("#quitBtn");
+
+    if (quitButton) {
+      quitButton.dataset.appNav =
+        challengeMenuTarget;
+    }
+
+    const resultMenuBtn =
+      $("#menuBtn");
+    if (resultMenuBtn) {
+      resultMenuBtn.dataset.appNav =
+        challengeMenuTarget;
+    }
 
     sessionTotalQuestions =
       Math.max(
@@ -16549,6 +16938,7 @@ HTML = r"""
     learningView.classList.remove("show");
     anzanView.classList.remove("show");
     settingsView.classList.remove("show");
+    weaknessView.classList.remove("show");
     menuView.classList.add("hidden");
     workspace.classList.add("show");
     resetChallengeScrollPosition();
@@ -16586,7 +16976,9 @@ HTML = r"""
         ? Boolean(
             resumeState.voiceAnswerEnabled
           )
-        : preferredVoiceAnswerEnabled;
+        : options.voiceAnswerEnabled !== undefined
+          ? Boolean(options.voiceAnswerEnabled)
+          : preferredVoiceAnswerEnabled;
 
     updateVoiceUi(
       voiceAnswerEnabled
@@ -16798,10 +17190,6 @@ HTML = r"""
       correctStreak = 0;
     }
 
-    // 正解時：「正解！○問連続正解中！」
-    // 不正解時：「残念！」
-    speakAnswerFeedback(ok, correctStreak);
-
     $("#score").textContent = `正解 ${score}`;
     $("#streak").textContent = `連続正解 ${correctStreak}`;
 
@@ -16822,15 +17210,24 @@ HTML = r"""
     feedback.textContent = ok ? "お見事！" : `残念！ 答えは ${q.answer}`;
     feedback.className = `feedback ${ok ? "good" : "bad"}`;
 
-    setTimeout(() => {
-      index += 1;
+    const advanceAfterFeedback = () => {
+      setTimeout(() => {
+        index += 1;
 
-      if (index >= sessionTotalQuestions) {
-        finish(false);
-      } else {
-        renderQuestion();
-      }
-    }, 850);
+        if (index >= sessionTotalQuestions) {
+          finish(false);
+        } else {
+          renderQuestion();
+        }
+      }, 140);
+    };
+
+    // 「お見事／残念」を最後まで再生してから、次の「ゴワサン」へ進む。
+    speakAnswerFeedback(
+      ok,
+      correctStreak,
+      advanceAfterFeedback
+    );
   }
 
   function updateTimer() {
@@ -18238,6 +18635,27 @@ HTML = r"""
   setupModeChallengeCountLabels();
   setupModeRankingButtons();
 
+  root.querySelectorAll(
+    ".challenge-operation-jump, .weakness-operation-jump"
+  ).forEach((button) => {
+    button.addEventListener(
+      "click",
+      () => {
+        const target =
+          root.querySelector(
+            `#${button.dataset.target}`
+          );
+
+        if (target) {
+          target.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+        }
+      }
+    );
+  });
+
   root.querySelectorAll(".start-mode").forEach((button) => {
     button.addEventListener("click", () => {
       requestStartMode(
@@ -18306,6 +18724,11 @@ HTML = r"""
   );
 
   bgmBtn.addEventListener("click", toggleBgm);
+
+  $("#restartChallengeBtn").addEventListener(
+    "click",
+    restartCurrentChallengeFromBeginning
+  );
 
   $("#retryBtn").addEventListener("click", () => {
     if (!currentMode) {
@@ -18380,17 +18803,14 @@ HTML = r"""
   anzanSpeed =
     loadAnzanSpeed();
 
-  analysisVideoEnabled =
-    loadBooleanSetting(
-      ANALYSIS_VIDEO_SETTING_KEY,
-      false
-    );
+  analysisVideoEnabled = false;
 
   homeView.classList.remove("hidden");
   menuView.classList.add("hidden");
   learningView.classList.remove("show");
   anzanView.classList.remove("show");
   settingsView.classList.remove("show");
+  weaknessView.classList.remove("show");
   workspace.classList.remove("show");
 
   updateTimeLimitUi();
