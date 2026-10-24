@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V101-MEDAL-MODAL-FIX"
+APP_VERSION = "CLEAN-V102-MOBILE-CHALLENGE-COMPACT-MEDAL-TOP"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2908,17 +2908,18 @@ HTML = r"""
   .rank-celebration {
     display: none;
     pointer-events: none;
-    position: fixed;
+    position: absolute;
     inset: 0;
+    min-height: 100%;
     z-index: 5000;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+    padding: 16px 18px 24px;
     background:
-      radial-gradient(circle at center, rgba(43,58,83,.38), rgba(15,17,24,.88));
+      radial-gradient(circle at top center, rgba(43,58,83,.38), rgba(15,17,24,.88));
   }
 
   .rank-celebration.show {
@@ -2932,11 +2933,10 @@ HTML = r"""
     z-index: 3;
     width: min(430px, 94vw);
     max-width: 430px;
-    max-height: calc(100dvh - 36px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    margin: auto;
-    padding: 28px 18px 22px;
+    max-height: none;
+    overflow: visible;
+    margin: 0 auto;
+    padding: 22px 16px 18px;
     border: 2px solid rgba(255,255,255,.7);
     border-radius: 28px;
     background: #fffaf0;
@@ -3068,61 +3068,69 @@ HTML = r"""
     }
 
     .rank-celebration {
+      position: absolute;
       align-items: flex-start;
-      padding-top: max(14px, env(safe-area-inset-top));
-      padding-bottom: max(14px, env(safe-area-inset-bottom));
+      padding: 10px 10px 18px;
     }
 
     .rank-celebration-card {
-      width: min(94vw, 380px);
-      max-height: calc(100dvh - 28px);
-      padding: 20px 14px 18px;
-      border-radius: 22px;
+      width: min(94vw, 360px);
+      max-height: none;
+      overflow: visible;
+      margin: 0 auto;
+      padding: 14px 12px 14px;
+      border-radius: 20px;
+    }
+
+    .rank-celebration-kicker {
+      font-size: 10px;
+      letter-spacing: .12em;
     }
 
     .rank-celebration-medal {
-      width: 104px;
-      height: 104px;
-      margin: 14px auto 16px;
-      border-width: 6px;
+      width: 88px;
+      height: 88px;
+      margin: 10px auto 12px;
+      border-width: 5px;
     }
 
     .rank-celebration-medal::before,
     .rank-celebration-medal::after {
-      top: 78px;
-      width: 32px;
-      height: 56px;
+      top: 66px;
+      width: 28px;
+      height: 46px;
     }
 
-    .rank-celebration-medal::before { left: 14px; }
-    .rank-celebration-medal::after { right: 14px; }
+    .rank-celebration-medal::before { left: 12px; }
+    .rank-celebration-medal::after { right: 12px; }
 
     .rank-celebration-medal .rank-medal-text {
-      max-width: 82px;
-      font-size: 22px;
+      max-width: 72px;
+      font-size: 19px;
     }
 
     .rank-celebration-title {
-      font-size: clamp(22px, 8vw, 34px);
-      line-height: 1.18;
+      font-size: clamp(21px, 7vw, 30px);
+      line-height: 1.12;
     }
 
     .rank-celebration-sub {
-      margin-top: 6px;
-      font-size: 11px;
-      line-height: 1.55;
+      margin-top: 5px;
+      font-size: 10px;
+      line-height: 1.45;
     }
 
     .rank-celebration button {
-      margin-top: 14px;
-      min-height: 46px;
-      font-size: 14px;
+      margin-top: 10px;
+      min-height: 42px;
+      font-size: 13px;
     }
 
     .rank-burst {
-      width: 360px;
-      height: 360px;
-      margin: -180px 0 0 -180px;
+      top: 165px;
+      width: 300px;
+      height: 300px;
+      margin: -150px 0 0 -150px;
     }
   }
 
@@ -3400,7 +3408,12 @@ HTML = r"""
   }
 
   @media (max-width: 760px) {
-    #soroban-app { padding: 10px; }
+    #soroban-app { padding: 8px; }
+
+    /* Streamlit側にも版表示があるため、iframe内の重複表示は隠す。 */
+    #versionLabel {
+      display: none;
+    }
 
     .intro {
       flex-direction: column;
@@ -3409,16 +3422,152 @@ HTML = r"""
 
     .mode-grid { grid-template-columns: 1fr; }
     .mode-card { min-height: 0; }
-    .statusbar { grid-template-columns: 1fr auto; }
-    .challenge-quick-nav { grid-template-columns: 1fr 1fr 1fr; }
     .review { grid-template-columns: 1fr; }
 
-    .question-card {
-      min-height: 540px;
-      padding: 18px;
+    /* ===== チャレンジ中の上部UIを3段に圧縮 ===== */
+    .statusbar {
+      position: sticky;
+      top: 0;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 6px 8px;
+      padding: 9px 10px;
+      border-radius: 14px;
     }
 
-    .equation { margin-top: 32px; }
+    .statusbar > div:first-child {
+      grid-column: 1 / 3;
+      min-width: 0;
+    }
+
+    .status-title {
+      font-size: 14px;
+      line-height: 1.25;
+    }
+
+    .status-sub {
+      margin-top: 1px;
+      font-size: 10px;
+    }
+
+    .timer {
+      grid-column: 3;
+      min-width: 68px;
+      font-size: 22px;
+    }
+
+    .streak {
+      grid-column: 1;
+      font-size: 12px;
+    }
+
+    .voice-btn {
+      grid-column: 2;
+      min-height: 36px;
+      padding: 6px 9px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    #bgmBtn {
+      grid-column: 3;
+      min-height: 36px;
+      padding: 6px 9px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .challenge-quick-nav {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .challenge-quick-nav button {
+      min-height: 34px;
+      padding: 5px 5px;
+      border-radius: 9px;
+      font-size: 10px;
+      line-height: 1.2;
+    }
+
+    /* 状態はボタン自体で分かるため、スマホでは重複2行を省略。 */
+    .voice-status,
+    .bgm-name {
+      display: none !important;
+    }
+
+    /* ===== 問題を1画面内に早く見せる ===== */
+    .question-card {
+      min-height: 0;
+      margin-top: 8px;
+      padding: 12px 12px 14px;
+      border-radius: 18px;
+    }
+
+    .qtop {
+      gap: 8px;
+    }
+
+    .qcount,
+    .score {
+      font-size: 11px;
+    }
+
+    .equation {
+      margin: 18px 0 12px;
+      font-size: clamp(42px, 13vw, 58px);
+      line-height: 1.05;
+    }
+
+    .hint-launch {
+      margin: 0 0 10px;
+    }
+
+    .hint-btn {
+      min-height: 40px;
+      padding: 7px 12px;
+      font-size: 12px;
+    }
+
+    .answer-form {
+      gap: 7px;
+    }
+
+    .answer-input {
+      width: min(250px, 100%);
+      min-height: 52px;
+      font-size: 27px;
+    }
+
+    .answer-form button[type="submit"] {
+      min-height: 46px;
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+
+    .keypad-wrap {
+      margin-top: 10px;
+    }
+
+    .keypad-label {
+      margin-bottom: 5px;
+      font-size: 11px;
+    }
+
+    .keypad {
+      gap: 6px;
+    }
+
+    .keypad button {
+      min-height: 48px;
+      font-size: 20px;
+    }
+
+    .feedback {
+      min-height: 28px;
+      margin-top: 8px;
+      font-size: 17px;
+    }
   }
 </style>
 
