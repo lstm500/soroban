@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V102-MOBILE-CHALLENGE-COMPACT-MEDAL-TOP"
+APP_VERSION = "CLEAN-V103-TOP-ALIGNED-VERSION-FOOTER"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -63,7 +63,6 @@ def get_bgm_urls():
     return urls
 
 
-st.caption(f"APP VERSION: {APP_VERSION}")
 
 
 try:
@@ -131,11 +130,20 @@ HTML = r"""
     margin-bottom: 8px;
   }
 
+  .home-version-footer {
+    margin-top: 18px;
+    padding: 6px 2px 2px;
+    color: #a09a90;
+    font-size: 9px;
+    text-align: center;
+    letter-spacing: .02em;
+  }
+
   /* =====================================================
      APP TOP
      ===================================================== */
   .app-home {
-    padding: 22px 0 12px;
+    padding: 8px 0 12px;
   }
 
   .home-title {
@@ -3410,11 +3418,6 @@ HTML = r"""
   @media (max-width: 760px) {
     #soroban-app { padding: 8px; }
 
-    /* Streamlit側にも版表示があるため、iframe内の重複表示は隠す。 */
-    #versionLabel {
-      display: none;
-    }
-
     .intro {
       flex-direction: column;
       align-items: flex-start;
@@ -3571,8 +3574,6 @@ HTML = r"""
   }
 </style>
 
-<div id="versionLabel" class="version"></div>
-
 <div id="homeView" class="app-home">
   <div class="home-title">そろばん</div>
   <div class="home-sub">
@@ -3623,6 +3624,8 @@ HTML = r"""
       </span>
     </button>
   </div>
+
+  <div id="versionLabel" class="home-version-footer"></div>
 </div>
 
 
@@ -17013,6 +17016,9 @@ HTML = r"""
         });
       } catch (error) {}
     };
+
+    // 表示切替直後にも即時で最上部へ戻す。
+    reset();
 
     requestAnimationFrame(() => {
       requestAnimationFrame(
