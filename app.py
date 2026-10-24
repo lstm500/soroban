@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V99-LOUDER-AUDIO"
+APP_VERSION = "CLEAN-V101-MEDAL-MODAL-FIX"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -2913,8 +2913,10 @@ HTML = r"""
     z-index: 5000;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    padding: 18px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
     background:
       radial-gradient(circle at center, rgba(43,58,83,.38), rgba(15,17,24,.88));
   }
@@ -2929,6 +2931,11 @@ HTML = r"""
     position: relative;
     z-index: 3;
     width: min(430px, 94vw);
+    max-width: 430px;
+    max-height: calc(100dvh - 36px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: auto;
     padding: 28px 18px 22px;
     border: 2px solid rgba(255,255,255,.7);
     border-radius: 28px;
@@ -3058,6 +3065,64 @@ HTML = r"""
 
     .home-rank-name {
       font-size: 19px;
+    }
+
+    .rank-celebration {
+      align-items: flex-start;
+      padding-top: max(14px, env(safe-area-inset-top));
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .rank-celebration-card {
+      width: min(94vw, 380px);
+      max-height: calc(100dvh - 28px);
+      padding: 20px 14px 18px;
+      border-radius: 22px;
+    }
+
+    .rank-celebration-medal {
+      width: 104px;
+      height: 104px;
+      margin: 14px auto 16px;
+      border-width: 6px;
+    }
+
+    .rank-celebration-medal::before,
+    .rank-celebration-medal::after {
+      top: 78px;
+      width: 32px;
+      height: 56px;
+    }
+
+    .rank-celebration-medal::before { left: 14px; }
+    .rank-celebration-medal::after { right: 14px; }
+
+    .rank-celebration-medal .rank-medal-text {
+      max-width: 82px;
+      font-size: 22px;
+    }
+
+    .rank-celebration-title {
+      font-size: clamp(22px, 8vw, 34px);
+      line-height: 1.18;
+    }
+
+    .rank-celebration-sub {
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .rank-celebration button {
+      margin-top: 14px;
+      min-height: 46px;
+      font-size: 14px;
+    }
+
+    .rank-burst {
+      width: 360px;
+      height: 360px;
+      margin: -180px 0 0 -180px;
     }
   }
 
@@ -5097,7 +5162,7 @@ HTML = r"""
   const HINT_MIC_RETRY_MS = 180;
 
   const BGM_VOLUME_NORMAL = 0.68;
-  const BGM_VOLUME_APP_SPEECH = 0.14;
+  const BGM_VOLUME_APP_SPEECH = 0.09;
   const BGM_VOLUME_LISTENING = 0.00;
 
   let bgmKeepAliveTimer = null;
