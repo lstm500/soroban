@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V98-BRONZE-SILVER-GOLD-HINT-OUTCOME"
+APP_VERSION = "CLEAN-V99-LOUDER-AUDIO"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5096,8 +5096,8 @@ HTML = r"""
   const HINT_MIC_AFTER_TTS_MS = 70;
   const HINT_MIC_RETRY_MS = 180;
 
-  const BGM_VOLUME_NORMAL = 0.54;
-  const BGM_VOLUME_APP_SPEECH = 0.09;
+  const BGM_VOLUME_NORMAL = 0.68;
+  const BGM_VOLUME_APP_SPEECH = 0.14;
   const BGM_VOLUME_LISTENING = 0.00;
 
   let bgmKeepAliveTimer = null;
@@ -17555,7 +17555,7 @@ HTML = r"""
       const master = ctx.createGain();
       master.gain.setValueAtTime(0.0001, now);
       master.gain.exponentialRampToValueAtTime(
-        0.72,
+        0.92,
         now + 0.025
       );
       master.gain.exponentialRampToValueAtTime(
@@ -17590,7 +17590,7 @@ HTML = r"""
           now + note.start
         );
         gain.gain.exponentialRampToValueAtTime(
-          index === notes.length - 1 ? .28 : .16,
+          index === notes.length - 1 ? .34 : .20,
           now + note.start + .025
         );
         gain.gain.exponentialRampToValueAtTime(
@@ -17615,7 +17615,7 @@ HTML = r"""
         now + .42
       );
 
-      drumGain.gain.setValueAtTime(.36, now);
+      drumGain.gain.setValueAtTime(.44, now);
       drumGain.gain.exponentialRampToValueAtTime(
         .0001,
         now + .48
