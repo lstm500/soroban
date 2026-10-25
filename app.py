@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V103-TOP-ALIGNED-VERSION-FOOTER"
+APP_VERSION = "CLEAN-V104-ALWAYS-5MIN-GOLD-TIMER-DISPLAY"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1372,10 +1372,6 @@ HTML = r"""
   .time-limit-toggle.off {
     background: #ece8df;
     color: #56504a;
-  }
-
-  #soroban-app.untimed-mode .ranking-open-btn {
-    display: none;
   }
 
   .badge {
@@ -3596,7 +3592,7 @@ HTML = r"""
       <span class="home-mode-kicker">CHALLENGE</span>
       <span class="home-mode-name">チャレンジモード</span>
       <span class="home-mode-desc">
-        12問の計算トレーニング。時間制限のON/OFFや音声回答も使えます。
+        12問の計算トレーニング。5分以内の完了で金メダル対象になります。5分を過ぎても最後まで続けられます。
       </span>
     </button>
 
@@ -3620,7 +3616,7 @@ HTML = r"""
       <span class="home-mode-kicker">SETTINGS</span>
       <span class="home-mode-name">設定</span>
       <span class="home-mode-desc">
-        BGM・音声・時間制限・暗算速度をまとめて設定します。
+        BGM・音声・残り時間表示・暗算速度をまとめて設定します。
       </span>
     </button>
   </div>
@@ -3761,9 +3757,9 @@ HTML = r"""
 
   <div class="settings-grid">
     <article class="setting-card">
-      <div class="setting-title">チャレンジの時間制限</div>
-      <div class="setting-desc">5分で挑戦するか、時間制限なしにします。</div>
-      <div id="settingTimeValue" class="setting-value">5分</div>
+      <div class="setting-title">残り時間の表示</div>
+      <div class="setting-desc">5分の残り時間を画面に表示するか選びます。0:00になってもチャレンジは続きます。</div>
+      <div id="settingTimeValue" class="setting-value">表示する</div>
       <button type="button" id="settingTimeBtn">切り替える</button>
     </article>
 
@@ -3865,13 +3861,13 @@ HTML = r"""
       割り算以外は、計算式を確定する直前に左右の数へ必ず+1します。
       そのため表示される数に0は出ません。
     </div>
-    <div id="modeTimeBadge" class="badge">12問 / 5分</div>
+    <div id="modeTimeBadge" class="badge">12問 / 金メダル基準5分</div>
   </div>
 
   <div class="time-limit-control">
-    <span class="time-limit-label">時間制限</span>
+    <span class="time-limit-label">残り時間</span>
     <button type="button" id="timeLimitBtn" class="time-limit-toggle">
-      5分
+      表示する
     </button>
   </div>
 
@@ -3915,7 +3911,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 1</div>
       <div class="mode-name">1桁・繰り上がりなし</div>
       <div class="mode-desc">1〜9同士の足し算。一の位から十の位への繰り上がりがない12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba1">はじめる</button>
     </article>
 
@@ -3923,7 +3919,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 2</div>
       <div class="mode-name">1桁・繰り上がりあり</div>
       <div class="mode-desc">1〜9同士の足し算。一の位から十の位へ必ず繰り上がる12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba2">はじめる</button>
     </article>
 
@@ -3931,7 +3927,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 3</div>
       <div class="mode-name">2桁・繰り上がりなし</div>
       <div class="mode-desc">10〜99同士。一の位から十の位への繰り上がりがない2桁レベルです。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba3">はじめる</button>
     </article>
 
@@ -3939,7 +3935,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 4</div>
       <div class="mode-name">2桁・繰り上がりあり</div>
       <div class="mode-desc">10〜99同士。一の位から十の位へ必ず繰り上がる2桁レベルです。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba4">はじめる</button>
     </article>
 
@@ -3947,7 +3943,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER ADD 5</div>
       <div class="mode-name">3桁の足し算</div>
       <div class="mode-desc">100〜999同士の足し算。従来の3桁レベルです。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba5">はじめる</button>
     </article>
   </div>
@@ -3958,7 +3954,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 1</div>
       <div class="mode-name">1桁・繰り下がりなし</div>
       <div class="mode-desc">1〜9同士。一の位だけで引ける、繰り下がりなしの12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="bs1">はじめる</button>
     </article>
 
@@ -3966,7 +3962,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 2</div>
       <div class="mode-name">1桁を引く・繰り下がりあり</div>
       <div class="mode-desc">10〜18から1〜9を引き、一の位の不足で十の位から必ず繰り下がる12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="bs2">はじめる</button>
     </article>
 
@@ -3974,7 +3970,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 3</div>
       <div class="mode-name">2桁・繰り下がりなし</div>
       <div class="mode-desc">10〜99同士。一の位から十の位への繰り下がりがない2桁レベルです。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="bs3">はじめる</button>
     </article>
 
@@ -3982,7 +3978,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 4</div>
       <div class="mode-name">2桁・繰り下がりあり</div>
       <div class="mode-desc">10〜99同士。一の位の不足で十の位から必ず繰り下がる2桁レベルです。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="bs4">はじめる</button>
     </article>
 
@@ -3990,7 +3986,7 @@ HTML = r"""
       <div class="mode-no">BEGINNER SUB 5</div>
       <div class="mode-name">3桁の引き算</div>
       <div class="mode-desc">100〜999同士の引き算。従来の3桁レベルです。答えは0以上です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="bs5">はじめる</button>
     </article>
   </div>
@@ -4001,7 +3997,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE MUL 1</div>
       <div class="mode-name">1桁×1桁</div>
       <div class="mode-desc">1〜9同士の掛け算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="mm1">はじめる</button>
     </article>
 
@@ -4009,7 +4005,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE MUL 2</div>
       <div class="mode-name">2桁×1桁</div>
       <div class="mode-desc">2桁×1桁の掛け算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="mm2">はじめる</button>
     </article>
 
@@ -4017,7 +4013,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE MUL 3</div>
       <div class="mode-name">2桁×2桁</div>
       <div class="mode-desc">2桁同士の掛け算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="mm3">はじめる</button>
     </article>
   </div>
@@ -4028,7 +4024,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE DIV 1</div>
       <div class="mode-name">1〜81 ÷ 1桁</div>
       <div class="mode-desc">1〜81を1桁で割り、答えが整数になる割り算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="md1">はじめる</button>
     </article>
 
@@ -4036,7 +4032,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE DIV 2</div>
       <div class="mode-name">3桁÷1桁</div>
       <div class="mode-desc">100〜999を1桁で割り、答えが整数になる割り算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="md2">はじめる</button>
     </article>
 
@@ -4044,7 +4040,7 @@ HTML = r"""
       <div class="mode-no">INTERMEDIATE DIV 3</div>
       <div class="mode-name">3桁÷2桁</div>
       <div class="mode-desc">100〜999を2桁で割り、答えが整数になる割り算のみ12問です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="md3">はじめる</button>
     </article>
   </div>
@@ -4055,7 +4051,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 1</div>
       <div class="mode-name">4桁の足し算・引き算</div>
       <div class="mode-desc">最終表示は1000〜9999。引き算の答えは0以上です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="a1">はじめる</button>
     </article>
 
@@ -4063,7 +4059,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 2</div>
       <div class="mode-name">3桁×2桁 / 4桁÷2桁</div>
       <div class="mode-desc">3桁×2桁の掛け算と、4桁÷2桁の整数解です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="a2">はじめる</button>
     </article>
 
@@ -4071,7 +4067,7 @@ HTML = r"""
       <div class="mode-no">ADVANCED 3</div>
       <div class="mode-name">3桁×3桁 / 5桁÷3桁</div>
       <div class="mode-desc">3桁同士の掛け算と、5桁÷3桁の整数解です。</div>
-      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">5分</span></div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="a3">はじめる</button>
     </article>
   </div>
@@ -5251,7 +5247,9 @@ HTML = r"""
   let answers = [];
   let seconds = 300;
   let timerHandle = null;
+  // 5分計測は常時有効。0:00になっても強制終了しない。
   let timeLimitEnabled = true;
+  let timeDisplayEnabled = true;
   let locked = false;
   let correctStreak = 0;
   let maxCorrectStreak = 0;
@@ -6974,7 +6972,7 @@ HTML = r"""
       label: "金",
       minCorrect: 11,
       timedOnly: true,
-      description: "5分モードで11/12以上・時間内クリア"
+      description: "11/12以上・5分以内にクリア"
     }
   ]);
 
@@ -8661,7 +8659,7 @@ HTML = r"""
       questions,
       answers,
       seconds,
-      timeLimitEnabled,
+      timeLimitEnabled: true,
       correctStreak,
       maxCorrectStreak,
       sessionWeakAsked,
@@ -8806,7 +8804,7 @@ HTML = r"""
               ? `未克服 ${candidates.length}問${examples ? `｜${examples}` : ""}`
               : "未克服の問題はありません"
           }</div>
-          <div class="chips"><span class="chip">最大12問</span><span class="chip">時間制限なし</span></div>
+          <div class="chips"><span class="chip">最大12問</span><span class="chip">5分計測</span></div>
         `;
 
         const button =
@@ -9089,7 +9087,7 @@ HTML = r"""
       return;
     }
 
-    // 補習は録画なし・時間制限なしで、考え方の定着を優先。
+    // 補習は録画なし。5分は計測しますが、0:00でも最後まで続けます。
     resetSessionVideoData();
 
     startMode(
@@ -15365,9 +15363,9 @@ HTML = r"""
 
   function updateSettingsUi() {
     settingTimeValue.textContent =
-      timeLimitEnabled
-        ? "5分"
-        : "時間制限なし";
+      timeDisplayEnabled
+        ? "表示する"
+        : "表示しない";
 
     settingVoiceValue.textContent =
       preferredVoiceAnswerEnabled
@@ -15402,17 +15400,33 @@ HTML = r"""
     updateSettingsUi();
   }
 
-  const TIME_LIMIT_STORAGE_KEY =
+  const TIME_DISPLAY_STORAGE_KEY =
+    "soroban_time_display_enabled_v1";
+  const LEGACY_TIME_LIMIT_STORAGE_KEY =
     "soroban_time_limit_enabled_v1";
 
-  function loadTimeLimitSetting() {
+  function loadTimeDisplaySetting() {
     try {
       const raw =
         localStorage.getItem(
-          TIME_LIMIT_STORAGE_KEY
+          TIME_DISPLAY_STORAGE_KEY
         );
 
+      if (raw === "true") {
+        return true;
+      }
+
       if (raw === "false") {
+        return false;
+      }
+
+      // 旧「時間制限ON/OFF」は表示設定として引き継ぐ。
+      const legacy =
+        localStorage.getItem(
+          LEGACY_TIME_LIMIT_STORAGE_KEY
+        );
+
+      if (legacy === "false") {
         return false;
       }
     } catch (error) {}
@@ -15420,35 +15434,31 @@ HTML = r"""
     return true;
   }
 
-  function saveTimeLimitSetting() {
+  function saveTimeDisplaySetting() {
     try {
       localStorage.setItem(
-        TIME_LIMIT_STORAGE_KEY,
-        String(timeLimitEnabled)
+        TIME_DISPLAY_STORAGE_KEY,
+        String(timeDisplayEnabled)
       );
     } catch (error) {}
   }
 
   function updateTimeLimitUi() {
-    root.classList.toggle(
-      "untimed-mode",
-      !timeLimitEnabled
-    );
+    // 計測自体は常時5分。ここでは表示するかどうかだけ切り替える。
+    timeLimitEnabled = true;
 
     timeLimitBtn.textContent =
-      timeLimitEnabled
-        ? "5分"
-        : "OFF";
+      timeDisplayEnabled
+        ? "表示する"
+        : "表示しない";
 
     timeLimitBtn.classList.toggle(
       "off",
-      !timeLimitEnabled
+      !timeDisplayEnabled
     );
 
     modeTimeBadge.textContent =
-      timeLimitEnabled
-        ? "12問 / 5分"
-        : "12問 / 時間制限なし";
+      "12問 / 金メダル基準5分";
 
     root
       .querySelectorAll(
@@ -15456,15 +15466,16 @@ HTML = r"""
       )
       .forEach((chip) => {
         chip.textContent =
-          timeLimitEnabled
-            ? "5分"
-            : "時間制限なし";
+          "金:5分以内";
       });
 
     statusSub.textContent =
-      timeLimitEnabled
-        ? "12問・制限時間5分"
-        : "12問・時間制限なし・得点なし";
+      "12問・金メダル基準5分";
+
+    timerEl.classList.toggle(
+      "hidden",
+      !timeDisplayEnabled
+    );
 
     if (!workspace.classList.contains("show")) {
       return;
@@ -16429,13 +16440,9 @@ HTML = r"""
       certificationEligible:
         !activeRemedialSkillId &&
         !activeWeaknessChallengeMode,
-      timeLimitEnabled:
-        Boolean(timeLimitEnabled),
+      timeLimitEnabled: true,
       completedWithinLimit:
-        Boolean(
-          timeLimitEnabled &&
-          !timeup
-        ),
+        Boolean(!timeup),
       correctCount:
         Number(
           challengeScore?.correctCount
@@ -16968,10 +16975,10 @@ HTML = r"""
 
 
   function toggleTimeLimit() {
-    timeLimitEnabled =
-      !timeLimitEnabled;
+    timeDisplayEnabled =
+      !timeDisplayEnabled;
 
-    saveTimeLimitSetting();
+    saveTimeDisplaySetting();
     updateTimeLimitUi();
   }
 
@@ -17233,12 +17240,8 @@ HTML = r"""
           )
         : 300;
 
-    if (resumeState) {
-      timeLimitEnabled =
-        Boolean(
-          resumeState.timeLimitEnabled
-        );
-    }
+    // 旧再開データが時間制限OFFでも、現在は常時5分計測。
+    timeLimitEnabled = true;
 
     locked = false;
     correctStreak =
@@ -17351,41 +17354,32 @@ HTML = r"""
     updateTimeLimitUi();
     updateTimer();
 
-    const specialPractice =
-      Boolean(
-        activeRemedialSkillId ||
-        activeWeaknessChallengeMode
+    timerHandle = setInterval(() => {
+      seconds = Math.max(
+        0,
+        seconds - 1
       );
+      updateTimer();
 
-    if (
-      timeLimitEnabled &&
-      !specialPractice
-    ) {
-      timerHandle = setInterval(() => {
-        seconds -= 1;
-        updateTimer();
+      if (!locked) {
+        saveChallengeResumeState();
+      }
 
-        if (!locked) {
-          saveChallengeResumeState();
-        }
-
-        if (seconds <= 0) {
-          finish(true);
-        }
-      }, 1000);
-    }
+      // 0:00になったら計測だけ止める。
+      // チャレンジは強制終了せず、金メダル対象外になるだけ。
+      if (seconds <= 0) {
+        stopTimer();
+      }
+    }, 1000);
 
     if (activeRemedialSkillId) {
-      timerEl.textContent = "補習";
       statusSub.textContent =
-        `補習問題${sessionTotalQuestions}問・時間制限なし`;
+        `補習問題${sessionTotalQuestions}問・5分計測`;
     } else if (
       activeWeaknessChallengeMode
     ) {
-      timerEl.textContent =
-        "苦手克服";
       statusSub.textContent =
-        `間違えた問題${sessionTotalQuestions}問・時間制限なし`;
+        `間違えた問題${sessionTotalQuestions}問・5分計測`;
     }
 
     playBgmForStreak(0, true);
@@ -17659,16 +17653,10 @@ HTML = r"""
   }
 
   function updateTimer() {
-    if (!timeLimitEnabled) {
-      timerEl.textContent =
-        "制限なし";
-
-      timerEl.classList.remove(
-        "warn"
-      );
-
-      return;
-    }
+    timerEl.classList.toggle(
+      "hidden",
+      !timeDisplayEnabled
+    );
 
     const safe = Math.max(0, seconds);
     const min = Math.floor(safe / 60);
@@ -18219,6 +18207,13 @@ HTML = r"""
   }
 
   function finish(timeup) {
+    // 5分を超えても最後まで解く。timeupは「時間超過」の記録だけに使う。
+    timeup =
+      Boolean(
+        timeup ||
+        seconds <= 0
+      );
+
     clearChallengeResumeState();
     finalizeVideoQuestionMarks();
 
@@ -18245,27 +18240,6 @@ HTML = r"""
 
     locked = true;
 
-    if (timeup) {
-      for (
-        let i = index;
-        i < sessionTotalQuestions;
-        i += 1
-      ) {
-        if (!questions[i]) {
-          questions[i] =
-            makeQuestionForIndex(
-              i,
-              currentMode
-            );
-        }
-
-        answers.push({
-          q: questions[i],
-          user: null,
-          ok: false
-        });
-      }
-    }
 
     questionCard.classList.remove(
       "voice-waiting"
@@ -18321,7 +18295,6 @@ HTML = r"""
     }
 
     const timedResult =
-      timeLimitEnabled &&
       !activeRemedialSkillId &&
       !activeWeaknessChallengeMode;
 
@@ -18375,7 +18348,6 @@ HTML = r"""
     const canPromote =
       !activeRemedialSkillId &&
       !activeWeaknessChallengeMode &&
-      !timeup &&
       Boolean(
         NEXT_MODE[currentMode]
       ) &&
@@ -18404,13 +18376,10 @@ HTML = r"""
         `苦手克服${sessionTotalQuestions}問終了。${outcomeSummary}です。未克服は残り${remainingWeak}問です。`;
     } else if (timeup) {
       resultMessage =
-        `5分になりました。${outcomeSummary}です。${weakSummary}`;
-    } else if (timeLimitEnabled) {
-      resultMessage =
-        `${sessionTotalQuestions}問終了。残り時間は${timerEl.textContent}、${outcomeSummary}です。${weakSummary}`;
+        `${sessionTotalQuestions}問終了。5分を超えたため今回は金メダル条件の対象外です。${outcomeSummary}です。${weakSummary}`;
     } else {
       resultMessage =
-        `${sessionTotalQuestions}問終了。${outcomeSummary}です。${weakSummary}`;
+        `${sessionTotalQuestions}問終了。5分以内に完了しました。残り時間は${timerEl.textContent}、${outcomeSummary}です。${weakSummary}`;
     }
 
     if (
@@ -18433,7 +18402,6 @@ HTML = r"""
         );
       }
     } else if (
-      !timeup &&
       sessionWeakAsked > 0
     ) {
       resultMessage +=
@@ -19222,8 +19190,9 @@ HTML = r"""
     }
   );
 
-  timeLimitEnabled =
-    loadTimeLimitSetting();
+  timeLimitEnabled = true;
+  timeDisplayEnabled =
+    loadTimeDisplaySetting();
 
   bgmOn =
     loadBooleanSetting(
