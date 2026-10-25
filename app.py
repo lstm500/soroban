@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V116-VOICE-300MS-RESET"
+APP_VERSION = "CLEAN-V118-VOICE-INTERNAL-GAP-CUT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5487,8 +5487,8 @@ HTML = r"""
   const MIC_RESULT_GUARD_MS = 350;
   const HINT_MIC_AFTER_TTS_MS = 70;
   const HINT_MIC_RETRY_MS = 180;
-  // 発話が途切れて0.3秒続いたら、その発話セッションを破棄する。
-  const VOICE_SILENCE_RESET_MS = 300;
+  // 発話が途切れて0.15秒続いたら、その発話セッションを破棄する。
+  const VOICE_SILENCE_RESET_MS = 150;
 
   const BGM_VOLUME_NORMAL = 0.68;
   const BGM_VOLUME_APP_SPEECH = 0.09;
@@ -10586,7 +10586,7 @@ HTML = r"""
     if (
       hintQuestionRecognition
     ) {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         hintQuestionRecognition
       );
       setVoiceRecognitionProcessing(
@@ -10788,7 +10788,7 @@ HTML = r"""
     recognition.continuous =
       false;
     recognition.interimResults =
-      false;
+      true;
     recognition.maxAlternatives =
       8;
 
@@ -10814,6 +10814,13 @@ HTML = r"""
     }
 
     recognition.onstart = () => {
+      resetSpeechSegmentState(
+        recognition
+      );
+      getSpeechSegmentState(
+        recognition
+      );
+
       hintQuestionListening =
         true;
       hintQuestionListeningStartedAt =
@@ -10852,9 +10859,20 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
-      clearSpeechSilenceReset(
-        recognition
+      noteSpeechSegmentStart(
+        recognition,
+        () => {
+          if (step) {
+            step.pendingHintAnswer = null;
+          }
+
+          setHintVoiceStatus(
+            "前の発話を破棄して、後の数字だけ聞いています…",
+            "listening"
+          );
+        }
       );
+
       setVoiceRecognitionProcessing(
         recognition,
         false
@@ -10874,23 +10892,13 @@ HTML = r"""
     };
 
     recognition.onspeechend = () => {
+      noteSpeechSegmentEnd(
+        recognition
+      );
+
       setVoiceRecognitionProcessing(
         recognition,
         true
-      );
-
-      armSpeechSilenceReset(
-        recognition,
-        () => {
-          if (step) {
-            step.pendingHintAnswer = null;
-          }
-
-          setHintVoiceStatus(
-            "0.3秒以上途切れたため、もう一度答えてね。",
-            "wrong"
-          );
-        }
       );
 
       setHintVoiceStatus(
@@ -10902,18 +10910,25 @@ HTML = r"""
     recognition.onresult = (
       event
     ) => {
-      clearSpeechSilenceReset(
-        recognition
-      );
       setVoiceRecognitionProcessing(
         recognition,
         false
       );
 
       const result =
-        getLatestRecognitionResult(
-          event
+        filterRecognitionResultToLatestSegment(
+          recognition,
+          getLatestRecognitionResult(
+            event
+          )
         );
+
+      if (
+        !result ||
+        result.isFinal === false
+      ) {
+        return;
+      }
 
       const selected =
         isComplement
@@ -10984,7 +10999,7 @@ HTML = r"""
     recognition.onerror = (
       event
     ) => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
@@ -11014,7 +11029,7 @@ HTML = r"""
     };
 
     recognition.onend = () => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
@@ -12191,30 +12206,63 @@ HTML = r"""
     );
   }
 
-  const speechSilenceResetTimers =
+  const speechSegmentStates =
     new WeakMap();
 
   const voiceRecognitionProcessing =
     new Set();
 
-  function clearSpeechSilenceReset(
+  function getSpeechSegmentState(
+    recognition
+  ) {
+    if (!recognition) {
+      return null;
+    }
+
+    let state =
+      speechSegmentStates.get(
+        recognition
+      );
+
+    if (!state) {
+      state = {
+        gapTimer: null,
+        gapExceeded: false,
+        lastTranscript: "",
+        prefixBeforeCut: "",
+        cutActive: false
+      };
+
+      speechSegmentStates.set(
+        recognition,
+        state
+      );
+    }
+
+    return state;
+  }
+
+  function resetSpeechSegmentState(
     recognition
   ) {
     if (!recognition) {
       return;
     }
 
-    const timer =
-      speechSilenceResetTimers.get(
+    const state =
+      speechSegmentStates.get(
         recognition
       );
 
-    if (timer) {
-      clearTimeout(timer);
-      speechSilenceResetTimers.delete(
-        recognition
+    if (state?.gapTimer) {
+      clearTimeout(
+        state.gapTimer
       );
     }
+
+    speechSegmentStates.delete(
+      recognition
+    );
   }
 
   function setVoiceRecognitionProcessing(
@@ -12243,50 +12291,252 @@ HTML = r"""
     );
   }
 
-  function armSpeechSilenceReset(
-    recognition,
-    onReset
+  function noteSpeechSegmentEnd(
+    recognition
   ) {
-    if (!recognition) {
+    const state =
+      getSpeechSegmentState(
+        recognition
+      );
+
+    if (!state) {
       return;
     }
 
-    clearSpeechSilenceReset(
-      recognition
-    );
+    if (state.gapTimer) {
+      clearTimeout(
+        state.gapTimer
+      );
+    }
 
-    const timer =
+    state.gapExceeded = false;
+
+    state.gapTimer =
       setTimeout(() => {
-        speechSilenceResetTimers.delete(
-          recognition
-        );
-
-        recognition.__silenceReset =
-          true;
-
-        setVoiceRecognitionProcessing(
-          recognition,
-          false
-        );
-
-        try {
-          if (
-            typeof onReset ===
-            "function"
-          ) {
-            onReset();
-          }
-        } catch (error) {}
-
-        try {
-          recognition.abort();
-        } catch (error) {}
+        state.gapTimer = null;
+        state.gapExceeded = true;
       }, VOICE_SILENCE_RESET_MS);
+  }
 
-    speechSilenceResetTimers.set(
-      recognition,
-      timer
-    );
+  function noteSpeechSegmentStart(
+    recognition,
+    onCut = null
+  ) {
+    const state =
+      getSpeechSegmentState(
+        recognition
+      );
+
+    if (!state) {
+      return false;
+    }
+
+    if (state.gapTimer) {
+      clearTimeout(
+        state.gapTimer
+      );
+      state.gapTimer = null;
+    }
+
+    const shouldCut =
+      state.gapExceeded;
+
+    state.gapExceeded = false;
+
+    if (!shouldCut) {
+      return false;
+    }
+
+    // 0.15秒以上の無音のあと再び声が入った場合、
+    // 無音より前の文字列を「前半」として記録し、
+    // 以後はその前半を認識結果から除外する。
+    state.prefixBeforeCut =
+      state.lastTranscript || "";
+
+    state.lastTranscript = "";
+    state.cutActive = true;
+
+    try {
+      if (
+        typeof onCut ===
+        "function"
+      ) {
+        onCut();
+      }
+    } catch (error) {}
+
+    return true;
+  }
+
+  function stripSpeechBeforeLatestSegment(
+    transcript,
+    prefix
+  ) {
+    let current =
+      String(
+        transcript || ""
+      ).trim();
+
+    const prior =
+      String(
+        prefix || ""
+      ).trim();
+
+    if (!current) {
+      return current;
+    }
+
+    const separators =
+      /[\s、。,.！!？?]+/;
+
+    if (prior) {
+      if (
+        current.startsWith(
+          prior
+        )
+      ) {
+        const rest =
+          current
+            .slice(prior.length)
+            .replace(
+              /^[\s、。,.！!？?]+/,
+              ""
+            )
+            .trim();
+
+        if (rest) {
+          return rest;
+        }
+      }
+
+      const compactCurrent =
+        current.replace(
+          /[\s、。,.！!？?]+/g,
+          ""
+        );
+
+      const compactPrior =
+        prior.replace(
+          /[\s、。,.！!？?]+/g,
+          ""
+        );
+
+      if (
+        compactPrior &&
+        compactCurrent.startsWith(
+          compactPrior
+        ) &&
+        compactCurrent.length >
+          compactPrior.length
+      ) {
+        return compactCurrent
+          .slice(
+            compactPrior.length
+          )
+          .trim();
+      }
+    }
+
+    // 境界情報はあるが前半文字列が取得できなかった場合。
+    // 「18 19」のように区切りがあれば最後の発話だけを採用。
+    const parts =
+      current
+        .split(separators)
+        .map(
+          (part) => part.trim()
+        )
+        .filter(Boolean);
+
+    if (parts.length >= 2) {
+      return parts[
+        parts.length - 1
+      ];
+    }
+
+    // ブラウザが「18」「18」を区切りなしの「1818」として
+    // 返した場合も、音声境界が検出済みなら後半だけを採用。
+    const compact =
+      current.replace(
+        /[\s、。,.！!？?]+/g,
+        ""
+      );
+
+    if (
+      compact.length >= 2 &&
+      compact.length % 2 === 0
+    ) {
+      const half =
+        compact.length / 2;
+
+      if (
+        compact.slice(0, half) ===
+        compact.slice(half)
+      ) {
+        return compact.slice(
+          half
+        );
+      }
+    }
+
+    return current;
+  }
+
+  function filterRecognitionResultToLatestSegment(
+    recognition,
+    result
+  ) {
+    if (!result) {
+      return null;
+    }
+
+    const state =
+      getSpeechSegmentState(
+        recognition
+      );
+
+    const filtered = [];
+
+    for (
+      let i = 0;
+      i < result.length;
+      i += 1
+    ) {
+      const alternative =
+        result[i];
+
+      const rawTranscript =
+        String(
+          alternative?.transcript || ""
+        ).trim();
+
+      const transcript =
+        state?.cutActive
+          ? stripSpeechBeforeLatestSegment(
+              rawTranscript,
+              state.prefixBeforeCut
+            )
+          : rawTranscript;
+
+      filtered.push({
+        transcript,
+        confidence:
+          alternative?.confidence
+      });
+    }
+
+    filtered.isFinal =
+      result.isFinal !== false;
+
+    const first =
+      String(
+        filtered[0]?.transcript || ""
+      ).trim();
+
+    if (state && first) {
+      state.lastTranscript = first;
+    }
+
+    return filtered;
   }
 
   function getLatestRecognitionResult(event) {
@@ -12913,9 +13163,6 @@ HTML = r"""
   function handleRecognizedSpeech(
     event
   ) {
-    clearSpeechSilenceReset(
-      voiceRecognition
-    );
     setVoiceRecognitionProcessing(
       voiceRecognition,
       false
@@ -12931,11 +13178,23 @@ HTML = r"""
     }
 
     const result =
-      getLatestRecognitionResult(
-        event
+      filterRecognitionResultToLatestSegment(
+        voiceRecognition,
+        getLatestRecognitionResult(
+          event
+        )
       );
 
     if (!result) {
+      return;
+    }
+
+    // interim結果は前半文字列を覚えるためだけに使い、
+    // 回答確定には使わない。
+    if (result.isFinal === false) {
+      updateVoiceUi(
+        "音声回答：聞いています…"
+      );
       return;
     }
 
@@ -13008,7 +13267,7 @@ HTML = r"""
 
     recognition.lang = "ja-JP";
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 5;
 
     recognition.onstart = () => {
@@ -13021,6 +13280,13 @@ HTML = r"""
       ) {
         answerInput.value = "";
       }
+
+      resetSpeechSegmentState(
+        recognition
+      );
+      getSpeechSegmentState(
+        recognition
+      );
 
       voiceRecognitionRunning = true;
       voiceListeningStartedAt =
@@ -13043,9 +13309,18 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
-      clearSpeechSilenceReset(
-        recognition
+      noteSpeechSegmentStart(
+        recognition,
+        () => {
+          // 同じ認識の途中でも0.15秒以上切れたら、
+          // 前半は捨てて後半を新しい回答として扱う。
+          answerInput.value = "";
+          updateVoiceUi(
+            "音声回答：前の発話を破棄して聞き直しています…"
+          );
+        }
       );
+
       setVoiceRecognitionProcessing(
         recognition,
         false
@@ -13061,20 +13336,16 @@ HTML = r"""
     };
 
     recognition.onspeechend = () => {
+      // 無音区間の計測を開始する。ここでは認識自体は切らない。
+      // 次の発話が0.15秒以上あとに来た時点で前半を破棄する。
+      noteSpeechSegmentEnd(
+        recognition
+      );
+
       // 発話終了後のブラウザ解析中はタイマーを止める。
       setVoiceRecognitionProcessing(
         recognition,
         true
-      );
-
-      armSpeechSilenceReset(
-        recognition,
-        () => {
-          answerInput.value = "";
-          updateVoiceUi(
-            "音声回答：0.3秒以上途切れたため、もう一度話してください"
-          );
-        }
       );
 
       // 結果確定まではBGMを戻さず、語尾をBGMで汚さない。
@@ -13087,7 +13358,7 @@ HTML = r"""
       handleRecognizedSpeech;
 
     recognition.onend = () => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
@@ -13124,7 +13395,7 @@ HTML = r"""
     recognition.onerror = (
       event
     ) => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
@@ -15218,7 +15489,7 @@ HTML = r"""
       refreshBgmVolume();
       return;
     }
-    clearSpeechSilenceReset(kukuRecognition);
+    resetSpeechSegmentState(kukuRecognition);
     setVoiceRecognitionProcessing(kukuRecognition, false);
     try { kukuRecognition.onend = null; kukuRecognition.abort(); } catch (error) {}
     kukuRecognition = null;
@@ -15379,10 +15650,17 @@ HTML = r"""
 
     recognition.lang = "ja-JP";
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 10;
 
     recognition.onstart = () => {
+      resetSpeechSegmentState(
+        recognition
+      );
+      getSpeechSegmentState(
+        recognition
+      );
+
       // 新しい発話セッション開始時に、前回の音声回答を必ず破棄する。
       kukuAnswerBuffer = "";
       updateKukuAnswerDisplay();
@@ -15394,9 +15672,16 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
-      clearSpeechSilenceReset(
-        recognition
+      noteSpeechSegmentStart(
+        recognition,
+        () => {
+          kukuAnswerBuffer = "";
+          updateKukuAnswerDisplay();
+          kukuPrompt.textContent =
+            "🎤 前の発話を破棄して、後の数字だけ聞いています…";
+        }
       );
+
       setVoiceRecognitionProcessing(
         recognition,
         false
@@ -15408,40 +15693,44 @@ HTML = r"""
     };
 
     recognition.onspeechend = () => {
+      noteSpeechSegmentEnd(
+        recognition
+      );
+
       setVoiceRecognitionProcessing(
         recognition,
         true
-      );
-
-      armSpeechSilenceReset(
-        recognition,
-        () => {
-          kukuAnswerBuffer = "";
-          updateKukuAnswerDisplay();
-          kukuPrompt.textContent =
-            "🎤 0.3秒以上途切れたため、もう一度答えてね";
-        }
       );
 
       kukuPrompt.textContent = "🎤 確認中…";
     };
 
     recognition.onresult = (event) => {
-      clearSpeechSilenceReset(
-        recognition
-      );
       setVoiceRecognitionProcessing(
         recognition,
         false
       );
 
+      const result =
+        filterRecognitionResultToLatestSegment(
+          recognition,
+          getLatestRecognitionResult(
+            event
+          )
+        );
+
+      if (
+        !result ||
+        result.isFinal === false
+      ) {
+        return;
+      }
+
       gotResult = true;
 
       const selected =
         selectBestNumericSpeech(
-          getLatestRecognitionResult(
-            event
-          )
+          result
         );
 
       if (selected) {
@@ -15457,7 +15746,7 @@ HTML = r"""
     };
 
     recognition.onerror = (event) => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
@@ -15475,8 +15764,7 @@ HTML = r"""
       // ユーザー操作による停止や権限エラーは自動再試行しない。
       if (
         (
-          errorName === "aborted" &&
-          !recognition.__silenceReset
+          errorName === "aborted" 
         ) ||
         errorName === "not-allowed" ||
         errorName === "service-not-allowed" ||
@@ -15492,7 +15780,7 @@ HTML = r"""
     };
 
     recognition.onend = () => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
@@ -15620,7 +15908,7 @@ HTML = r"""
       return;
     }
 
-    clearSpeechSilenceReset(
+    resetSpeechSegmentState(
       anzanRecognition
     );
     setVoiceRecognitionProcessing(
@@ -16019,12 +16307,19 @@ HTML = r"""
       false;
 
     recognition.interimResults =
-      false;
+      true;
 
     recognition.maxAlternatives =
       5;
 
     recognition.onstart = () => {
+      resetSpeechSegmentState(
+        recognition
+      );
+      getSpeechSegmentState(
+        recognition
+      );
+
       // 新しい発話セッション開始時に、前回の音声回答を必ず破棄する。
       anzanAnswerBuffer = "";
       updateAnzanAnswerDisplay();
@@ -16040,9 +16335,16 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
-      clearSpeechSilenceReset(
-        recognition
+      noteSpeechSegmentStart(
+        recognition,
+        () => {
+          anzanAnswerBuffer = "";
+          updateAnzanAnswerDisplay();
+          anzanVoiceStatus.textContent =
+            "🎤 前の発話を破棄して、後の数字だけ聞いています…";
+        }
       );
+
       setVoiceRecognitionProcessing(
         recognition,
         false
@@ -16056,19 +16358,13 @@ HTML = r"""
     };
 
     recognition.onspeechend = () => {
+      noteSpeechSegmentEnd(
+        recognition
+      );
+
       setVoiceRecognitionProcessing(
         recognition,
         true
-      );
-
-      armSpeechSilenceReset(
-        recognition,
-        () => {
-          anzanAnswerBuffer = "";
-          updateAnzanAnswerDisplay();
-          anzanVoiceStatus.textContent =
-            "🎤 0.3秒以上途切れたため、もう一度答えてね";
-        }
       );
 
       anzanVoiceStatus.textContent =
@@ -16077,18 +16373,25 @@ HTML = r"""
 
     recognition.onresult =
       (event) => {
-        clearSpeechSilenceReset(
-          recognition
-        );
         setVoiceRecognitionProcessing(
           recognition,
           false
         );
 
         const result =
-          getLatestRecognitionResult(
-            event
+          filterRecognitionResultToLatestSegment(
+            recognition,
+            getLatestRecognitionResult(
+              event
+            )
           );
+
+        if (
+          !result ||
+          result.isFinal === false
+        ) {
+          return;
+        }
 
         if (
           anzanListeningStartedAt > 0 &&
@@ -16121,7 +16424,7 @@ HTML = r"""
       };
 
     recognition.onerror = () => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
@@ -16138,7 +16441,7 @@ HTML = r"""
     };
 
     recognition.onend = () => {
-      clearSpeechSilenceReset(
+      resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
