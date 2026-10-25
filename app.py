@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V124-KUKU-3-6-9-VOICE-FIX"
+APP_VERSION = "CLEAN-V125-KUKU-PRACTICAL-VOICE-ACCURACY"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5359,7 +5359,7 @@ HTML = r"""
   // 九九専用の高速音声区切り。
   // Web Speech APIのspeechend判定を待たず、実マイク音量で150ms無音を検出する。
   const KUKU_VAD_SILENCE_MS = 150;
-  const KUKU_VAD_MIN_RMS = 0.0035;
+  const KUKU_VAD_MIN_RMS = 0.0020;
   let kukuVadStream = null;
   let kukuVadContext = null;
   let kukuVadSource = null;
@@ -12964,6 +12964,144 @@ HTML = r"""
   }
 
 
+  function normalizeKukuSpeechAlias(
+    input
+  ) {
+    return String(input || "")
+      .trim()
+      .replace(/[０-９]/g, (char) =>
+        String.fromCharCode(
+          char.charCodeAt(0) -
+          0xFEE0
+        )
+      )
+      // 短い数字は日本語ASRで同音語へ変換されやすい。
+      .replace(/位置|壱/g, "一")
+      .replace(/荷|弐/g, "二")
+      .replace(/山|酸|産|参|算/g, "三")
+      .replace(/四つ|よっつ/g, "四")
+      .replace(/語|御/g, "五")
+      .replace(/録|禄|ロック|ろっく/g, "六")
+      .replace(/奈々/g, "七")
+      .replace(/蜂|鉢/g, "八")
+      .replace(/急|球|旧|級/g, "九")
+      .replace(/銃|重/g, "十");
+  }
+
+  function selectBestKukuNumericSpeech(
+    result
+  ) {
+    if (!result) {
+      return null;
+    }
+
+    let best = null;
+
+    for (
+      let i = 0;
+      i < result.length;
+      i += 1
+    ) {
+      const alternative =
+        result[i];
+
+      const rawTranscript =
+        String(
+          alternative?.transcript || ""
+        ).trim();
+
+      if (!rawTranscript) {
+        continue;
+      }
+
+      const transcript =
+        normalizeKukuSpeechAlias(
+          rawTranscript
+        );
+
+      if (
+        !isLikelyNumericSpeech(
+          transcript
+        )
+      ) {
+        continue;
+      }
+
+      const value =
+        japaneseIntegerToNumber(
+          transcript
+        );
+
+      // 九九の回答として扱う範囲。
+      // 誤答も正しく認識したいので、正解値への寄せは行わない。
+      if (
+        value === null ||
+        !Number.isInteger(value) ||
+        value < 0 ||
+        value > 99
+      ) {
+        continue;
+      }
+
+      const rawConfidence =
+        Number(
+          alternative?.confidence
+        );
+
+      const confidence =
+        Number.isFinite(
+          rawConfidence
+        )
+          ? rawConfidence
+          : 0;
+
+      const normalized =
+        normalizeNumericSpeechText(
+          transcript
+        );
+
+      const directNumber =
+        /^-?\d+$/.test(
+          normalized
+        );
+
+      const cleanJapaneseNumber =
+        /^-?[一二三四五六七八九〇零十百]+$/.test(
+          normalized
+        );
+
+      // confidenceは参考値にとどめる。
+      // 短い「さん・ろく・きゅう」を低confidenceだけで捨てない。
+      const score =
+        confidence * 0.55 +
+        (directNumber ? 0.34 : 0) +
+        (cleanJapaneseNumber ? 0.28 : 0) -
+        Math.min(
+          0.08,
+          rawTranscript.length *
+            0.0015
+        );
+
+      if (
+        !best ||
+        score > best.score
+      ) {
+        best = {
+          value,
+          transcript:
+            rawTranscript,
+          normalizedTranscript:
+            transcript,
+          confidence,
+          score
+        };
+      }
+    }
+
+    return best;
+  }
+
+
   function selectBestHintSingleDigitSpeech(
     result
   ) {
@@ -15669,7 +15807,7 @@ HTML = r"""
     let speechStarted = false;
     let voicedFrames = 0;
     let lastVoiceAt = 0;
-    let noiseFloor = 0.004;
+    let noiseFloor = 0.002;
 
     const sample = () => {
       if (
@@ -15734,8 +15872,8 @@ HTML = r"""
         Math.max(
           KUKU_VAD_MIN_RMS,
           Math.min(
-            0.024,
-            noiseFloor * 1.7
+            0.018,
+            noiseFloor * 1.45
           )
         );
 
@@ -15746,8 +15884,8 @@ HTML = r"""
         rms >= threshold ||
         peak >=
           Math.max(
-            0.010,
-            threshold * 2.0
+            0.006,
+            threshold * 1.5
           );
 
       if (voiced) {
@@ -16039,7 +16177,8 @@ HTML = r"""
     const recognitionQuestionToken =
       kukuRunToken;
 
-    kukuRecognition = recognition;
+    kukuRecognition =
+      recognition;
 
     let answerAccepted = false;
     let retryAllowed = true;
@@ -16047,22 +16186,45 @@ HTML = r"""
     let vadActive = false;
     let vadSilenceReached = false;
     let latestSelected = null;
+    let finalSelected = null;
+    let finalizeFallbackTimer = null;
 
-    recognition.lang = "ja-JP";
-    recognition.continuous = false;
+    recognition.lang =
+      "ja-JP";
 
-    // 最終結果を待たず途中候補を保持し、
-    // 実音声150ms無音で即確定する。
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 10;
+    recognition.continuous =
+      false;
 
-    const isCurrentRecognition = () =>
-      kukuRecognition === recognition &&
-      recognitionQuestionToken ===
-        kukuRunToken;
+    // 途中候補を保持するが、途中候補だけでは判定しない。
+    recognition.interimResults =
+      true;
+
+    recognition.maxAlternatives =
+      10;
+
+    const isCurrentRecognition =
+      () =>
+        kukuRecognition ===
+          recognition &&
+        recognitionQuestionToken ===
+          kukuRunToken;
+
+    const clearFinalizeFallback =
+      () => {
+        if (
+          finalizeFallbackTimer
+        ) {
+          clearTimeout(
+            finalizeFallbackTimer
+          );
+
+          finalizeFallbackTimer =
+            null;
+        }
+      };
 
     const scheduleRetry = (
-      delay = 60
+      delay = 70
     ) => {
       if (
         !retryAllowed ||
@@ -16102,51 +16264,74 @@ HTML = r"""
         return;
       }
 
+      clearFinalizeFallback();
+
       answerAccepted = true;
       retryAllowed = false;
 
       kukuAnswerBuffer =
-        String(selected.value);
+        String(
+          selected.value
+        );
 
       updateKukuAnswerDisplay();
       submitKukuAnswer();
     };
 
-    const forceFastFinalize = () => {
-      if (
-        !isCurrentRecognition() ||
-        answerAccepted
-      ) {
-        return;
-      }
+    const requestFinalResult =
+      () => {
+        if (
+          !isCurrentRecognition() ||
+          answerAccepted ||
+          vadSilenceReached
+        ) {
+          return;
+        }
 
-      vadSilenceReached = true;
+        vadSilenceReached = true;
 
-      // ブラウザ側の認識処理中はゲームタイマーを止める。
-      setVoiceRecognitionProcessing(
-        recognition,
-        true
-      );
-
-      kukuPrompt.textContent =
-        "🎤 確認中…";
-
-      // 最新候補が既に取れていれば、ブラウザのfinalを待たず即採用。
-      if (latestSelected) {
-        acceptAnswer(
-          latestSelected
+        // ここからは回答時間ではなく認識処理時間。
+        setVoiceRecognitionProcessing(
+          recognition,
+          true
         );
-        return;
-      }
 
-      // 候補がまだならstop()で最終候補を即要求する。
-      try {
-        recognition.stop();
-      } catch (error) {}
-    };
+        kukuPrompt.textContent =
+          "🎤 確認中…";
+
+        // 150ms無音で発話自体はここで終了。
+        // interim候補を即採用せず、Chromeにfinal候補を要求する。
+        try {
+          recognition.stop();
+        } catch (error) {}
+
+        // Android/Chromeでfinal/onendが遅い場合だけ、
+        // 最新の途中候補を短時間の保険として使う。
+        finalizeFallbackTimer =
+          setTimeout(() => {
+            if (
+              !isCurrentRecognition() ||
+              answerAccepted
+            ) {
+              return;
+            }
+
+            const fallback =
+              finalSelected ||
+              latestSelected;
+
+            if (fallback) {
+              acceptAnswer(
+                fallback
+              );
+            }
+          }, 180);
+      };
 
     recognition.onstart = () => {
-      if (!isCurrentRecognition()) {
+      if (
+        !isCurrentRecognition()
+      ) {
         return;
       }
 
@@ -16166,8 +16351,6 @@ HTML = r"""
       kukuPrompt.textContent =
         "🎤 答えを言ってね";
 
-      // SpeechRecognitionとは別に実マイク音量を監視する。
-      // 150ms無音を実測した時点で認識完了へ進む。
       startKukuFastVadMonitor(
         () => {
           if (
@@ -16184,14 +16367,7 @@ HTML = r"""
             "🎤 聞いています…";
         },
         () => {
-          if (
-            !isCurrentRecognition() ||
-            answerAccepted
-          ) {
-            return;
-          }
-
-          forceFastFinalize();
+          requestFinalResult();
         }
       ).then((active) => {
         vadActive =
@@ -16201,39 +16377,42 @@ HTML = r"""
       });
     };
 
-    recognition.onspeechstart = () => {
-      if (!isCurrentRecognition()) {
-        return;
-      }
+    recognition.onspeechstart =
+      () => {
+        if (
+          !isCurrentRecognition()
+        ) {
+          return;
+        }
 
-      kukuSpeechDetected = true;
-      refreshBgmVolume();
-
-      kukuPrompt.textContent =
-        "🎤 聞いています…";
-    };
-
-    recognition.onspeechend = () => {
-      if (!isCurrentRecognition()) {
-        return;
-      }
-
-      // VADが使えない端末だけWeb Speech APIのspeechendを代替に使う。
-      if (!vadActive) {
-        setVoiceRecognitionProcessing(
-          recognition,
-          true
-        );
+        kukuSpeechDetected = true;
+        refreshBgmVolume();
 
         kukuPrompt.textContent =
-          "🎤 確認中…";
-      }
-    };
+          "🎤 聞いています…";
+      };
+
+    recognition.onspeechend =
+      () => {
+        if (
+          !isCurrentRecognition()
+        ) {
+          return;
+        }
+
+        // 実音量VADが使えない端末だけSpeechRecognitionの
+        // speechendを発話終了として使う。
+        if (!vadActive) {
+          requestFinalResult();
+        }
+      };
 
     recognition.onresult = (
       event
     ) => {
-      if (!isCurrentRecognition()) {
+      if (
+        !isCurrentRecognition()
+      ) {
         return;
       }
 
@@ -16247,7 +16426,7 @@ HTML = r"""
       }
 
       const selected =
-        selectBestNumericSpeech(
+        selectBestKukuNumericSpeech(
           result
         );
 
@@ -16255,43 +16434,41 @@ HTML = r"""
         latestSelected =
           selected;
 
-        // 実音声150ms無音を既に検出済みなら即確定。
-        if (vadSilenceReached) {
-          acceptAnswer(
-            latestSelected
-          );
-          return;
+        if (
+          result.isFinal !==
+            false
+        ) {
+          finalSelected =
+            selected;
         }
       }
 
-      // VADが使えない場合は従来どおりfinal結果で即確定。
+      // 150ms無音後にfinalが返ったら、それを最優先で即確定。
       if (
-        !vadActive &&
-        result.isFinal !== false
+        vadSilenceReached &&
+        finalSelected
       ) {
         setVoiceRecognitionProcessing(
           recognition,
           false
         );
 
-        if (latestSelected) {
-          acceptAnswer(
-            latestSelected
-          );
-        } else {
-          kukuPrompt.textContent =
-            "数字だけを、もう一度言ってね。";
-        }
+        acceptAnswer(
+          finalSelected
+        );
       }
     };
 
     recognition.onerror = (
       event
     ) => {
-      if (!isCurrentRecognition()) {
+      if (
+        !isCurrentRecognition()
+      ) {
         return;
       }
 
+      clearFinalizeFallback();
       stopKukuFastVadMonitor();
 
       setVoiceRecognitionProcessing(
@@ -16326,23 +16503,37 @@ HTML = r"""
     };
 
     recognition.onend = () => {
-      if (!isCurrentRecognition()) {
+      if (
+        !isCurrentRecognition()
+      ) {
         return;
       }
 
       stopKukuFastVadMonitor();
 
-      // 150ms無音後にstop()した場合、最後に得られた候補を即採用。
+      const candidate =
+        finalSelected ||
+        latestSelected;
+
+      // stop()後のfinal/onendが来た時点で候補があれば確定。
       if (
         !answerAccepted &&
         vadSilenceReached &&
-        latestSelected
+        candidate
       ) {
-        acceptAnswer(
-          latestSelected
+        setVoiceRecognitionProcessing(
+          recognition,
+          false
         );
+
+        acceptAnswer(
+          candidate
+        );
+
         return;
       }
+
+      clearFinalizeFallback();
 
       kukuRecognition = null;
 
@@ -16369,25 +16560,32 @@ HTML = r"""
       ) {
         kukuAnswerBuffer = "";
         updateKukuAnswerDisplay();
-        scheduleRetry(60);
+
+        kukuPrompt.textContent =
+          "🎤 もう一度、答えを言ってね";
+
+        scheduleRetry(70);
       }
     };
 
-    // onstartを待つ前から表示を切り替え、体感待機をなくす。
+    // 体感遅延をなくすためstart()前から表示する。
     kukuListening = true;
+
     kukuPrompt.textContent =
       "🎤 答えを言ってね";
 
     try {
       recognition.start();
 
-      // start()失敗の検出も従来より早くする。
+      // start()が黙って失敗する端末の保険。
       setTimeout(() => {
         if (
           !recognitionStarted &&
           isCurrentRecognition() &&
           !kukuLocked
         ) {
+          clearFinalizeFallback();
+
           kukuRecognition = null;
           stopKukuFastVadMonitor();
 
@@ -16414,13 +16612,15 @@ HTML = r"""
           kukuPrompt.textContent =
             "🎤 マイクを再接続しています…";
 
-          scheduleRetry(60);
+          scheduleRetry(70);
         }
       }, 450);
     } catch (error) {
+      clearFinalizeFallback();
+
       if (
         kukuRecognition ===
-        recognition
+          recognition
       ) {
         kukuRecognition = null;
       }
@@ -16446,7 +16646,7 @@ HTML = r"""
       kukuPrompt.textContent =
         "🎤 マイクを再接続しています…";
 
-      scheduleRetry(60);
+      scheduleRetry(70);
     }
   }
 
