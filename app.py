@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V113-KUKU-QUIETER-BGM-BETTER-MIC"
+APP_VERSION = "CLEAN-V114-VOICE-SESSION-RESET"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -10868,7 +10868,9 @@ HTML = r"""
       event
     ) => {
       const result =
-        event.results?.[0];
+        getLatestRecognitionResult(
+          event
+        );
 
       const selected =
         isComplement
@@ -12130,6 +12132,89 @@ HTML = r"""
     );
   }
 
+  function getLatestRecognitionResult(event) {
+    const results = event?.results;
+
+    if (!results || !results.length) {
+      return null;
+    }
+
+    const requestedIndex =
+      Number.isInteger(event?.resultIndex)
+        ? event.resultIndex
+        : results.length - 1;
+
+    const index =
+      Math.max(
+        0,
+        Math.min(
+          results.length - 1,
+          requestedIndex
+        )
+      );
+
+    return results[index] || null;
+  }
+
+  function collapseRepeatedNumericSpeech(input) {
+    const raw =
+      String(input || "").trim();
+
+    if (!raw) {
+      return raw;
+    }
+
+    // 音声が一度途切れた後に同じ回答を言い直した際、
+    // Chrome等が「18 18」「十八、十八」のように
+    // 1つの認識結果へ結合して返すことがある。
+    // 同じ発話が区切りを挟んで連続した場合は1回分だけ使う。
+    const parts =
+      raw
+        .split(/[\s、。,.！!？?]+/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    if (parts.length >= 2) {
+      const normalizePart = (part) =>
+        String(part)
+          .toLowerCase()
+          .replace(/\s+/g, "");
+
+      const normalizedParts =
+        parts.map(normalizePart);
+
+      const last =
+        normalizedParts[
+          normalizedParts.length - 1
+        ];
+
+      const allSame =
+        normalizedParts.every(
+          (part) => part === last
+        );
+
+      if (allSame) {
+        return parts[
+          parts.length - 1
+        ];
+      }
+
+      // 最後の2発話だけが同じ場合も、最新の1回だけ採用する。
+      if (
+        normalizedParts.length >= 2 &&
+        normalizedParts[
+          normalizedParts.length - 2
+        ] === last
+      ) {
+        return parts[
+          parts.length - 1
+        ];
+      }
+    }
+
+    return raw;
+  }
+
   function japaneseDigitValue(char) {
     const values = {
       "〇": 0,
@@ -12157,7 +12242,9 @@ HTML = r"""
 
   function japaneseIntegerToNumber(input) {
     const original =
-      String(input || "");
+      collapseRepeatedNumericSpeech(
+        input
+      );
 
     const compact =
       original
@@ -12277,7 +12364,9 @@ HTML = r"""
     input
   ) {
     return String(
-      input || ""
+      collapseRepeatedNumericSpeech(
+        input
+      ) || ""
     )
       .toLowerCase()
       .replace(
@@ -12677,7 +12766,9 @@ HTML = r"""
     }
 
     const result =
-      event.results?.[0];
+      getLatestRecognitionResult(
+        event
+      );
 
     if (!result) {
       return;
@@ -12756,6 +12847,16 @@ HTML = r"""
     recognition.maxAlternatives = 5;
 
     recognition.onstart = () => {
+      // 新しい発話は必ず新しい回答として扱う。
+      // 前の音声認識結果を次の発話へ持ち越さない。
+      if (
+        String(
+          voiceStatus.textContent || ""
+        ).includes("音声回答：「")
+      ) {
+        answerInput.value = "";
+      }
+
       voiceRecognitionRunning = true;
       voiceListeningStartedAt =
         Date.now();
@@ -15062,6 +15163,10 @@ HTML = r"""
     recognition.maxAlternatives = 10;
 
     recognition.onstart = () => {
+      // 新しい発話セッション開始時に、前回の音声回答を必ず破棄する。
+      kukuAnswerBuffer = "";
+      updateKukuAnswerDisplay();
+
       kukuListening = true;
       kukuSpeechDetected = false;
       refreshBgmVolume();
@@ -15083,7 +15188,9 @@ HTML = r"""
 
       const selected =
         selectBestNumericSpeech(
-          event.results?.[0]
+          getLatestRecognitionResult(
+            event
+          )
         );
 
       if (selected) {
@@ -15134,6 +15241,9 @@ HTML = r"""
         !kukuLocked &&
         !kukuPromptSpeaking
       ) {
+        kukuAnswerBuffer = "";
+        updateKukuAnswerDisplay();
+
         setTimeout(
           () => {
             if (
@@ -15636,6 +15746,10 @@ HTML = r"""
       5;
 
     recognition.onstart = () => {
+      // 新しい発話セッション開始時に、前回の音声回答を必ず破棄する。
+      anzanAnswerBuffer = "";
+      updateAnzanAnswerDisplay();
+
       anzanListening = true;
       anzanListeningStartedAt =
         Date.now();
@@ -15662,7 +15776,9 @@ HTML = r"""
     recognition.onresult =
       (event) => {
         const result =
-          event.results?.[0];
+          getLatestRecognitionResult(
+            event
+          );
 
         if (
           anzanListeningStartedAt > 0 &&
