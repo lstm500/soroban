@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V111-KUKU-STANDARD-CHANT-ALL-ADVANCED"
+APP_VERSION = "CLEAN-V113-KUKU-QUIETER-BGM-BETTER-MIC"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5492,7 +5492,9 @@ HTML = r"""
 
   const BGM_VOLUME_NORMAL = 0.68;
   const BGM_VOLUME_APP_SPEECH = 0.09;
-  // 九九の問題発声は聞き取りやすさを最優先し、発声中だけBGMを止める。
+  // 九九チャレンジは音声回答を優先するため、通常時もBGMを小さめにする。
+  const BGM_VOLUME_KUKU_NORMAL = 0.30;
+  // 九九の問題発声中とマイク待機中は、声を最優先してBGMを止める。
   const BGM_VOLUME_KUKU_PROMPT = 0.00;
   const BGM_VOLUME_LISTENING = 0.00;
 
@@ -11887,8 +11889,12 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // 問題を考えている間は、マイクがONでもBGMを通常音量で流す。
-    // 実際の発話をSpeechRecognitionが検知した瞬間だけ0%へ下げる。
+    // 九九チャレンジでは、マイク待機中からBGMを完全に止める。
+    // 発話検知前のBGMが音声認識へ回り込むのを防ぐ。
+    if (kukuListening) {
+      return BGM_VOLUME_LISTENING;
+    }
+
     if (
       voiceSpeechDetected ||
       anzanSpeechDetected ||
@@ -11908,6 +11914,16 @@ HTML = r"""
       hintNarrationActive
     ) {
       return BGM_VOLUME_APP_SPEECH;
+    }
+
+    // 九九画面で考えている間も、通常チャレンジよりBGMを小さくする。
+    if (
+      kukuView &&
+      kukuView.classList.contains("show") &&
+      kukuGameView &&
+      !kukuGameView.classList.contains("hidden")
+    ) {
+      return BGM_VOLUME_KUKU_NORMAL;
     }
 
     return BGM_VOLUME_NORMAL;
@@ -15023,19 +15039,122 @@ HTML = r"""
   }
 
   function startKukuVoiceRecognition() {
-    if (!kukuVoiceEnabled || kukuLocked) return;
+    if (!kukuVoiceEnabled || kukuLocked || kukuPromptSpeaking) return;
+
     const Recognition = getSpeechRecognitionClass();
-    if (!Recognition) { kukuPrompt.textContent = "このブラウザでは音声回答を使えません。数字で答えてください。"; return; }
+    if (!Recognition) {
+      kukuPrompt.textContent =
+        "このブラウザでは音声回答を使えません。数字で答えてください。";
+      return;
+    }
+
     stopKukuRecognition();
-    const recognition = new Recognition(); kukuRecognition = recognition;
-    recognition.lang = "ja-JP"; recognition.continuous = false; recognition.interimResults = false; recognition.maxAlternatives = 5;
-    recognition.onstart = () => { kukuListening = true; kukuSpeechDetected = false; refreshBgmVolume(); kukuPrompt.textContent = "🎤 答えを言ってね"; };
-    recognition.onspeechstart = () => { kukuSpeechDetected = true; refreshBgmVolume(); kukuPrompt.textContent = "🎤 聞いています…"; };
-    recognition.onspeechend = () => { kukuPrompt.textContent = "🎤 確認中…"; };
-    recognition.onresult = (event) => { const selected = selectBestNumericSpeech(event.results?.[0]); if (selected) { kukuAnswerBuffer = String(selected.value); updateKukuAnswerDisplay(); submitKukuAnswer(); } else { kukuPrompt.textContent = "数字だけを、もう一度言ってね。"; } };
-    recognition.onerror = () => { kukuListening = false; kukuSpeechDetected = false; refreshBgmVolume(); kukuPrompt.textContent = "うまく聞き取れませんでした。数字でも答えられます。"; };
-    recognition.onend = () => { kukuListening = false; kukuSpeechDetected = false; refreshBgmVolume(); };
-    try { recognition.start(); } catch (error) { kukuPrompt.textContent = "音声回答を開始できませんでした。数字で答えてください。"; }
+
+    const recognition = new Recognition();
+    kukuRecognition = recognition;
+
+    let gotResult = false;
+    let retryAllowed = true;
+
+    recognition.lang = "ja-JP";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 10;
+
+    recognition.onstart = () => {
+      kukuListening = true;
+      kukuSpeechDetected = false;
+      refreshBgmVolume();
+      kukuPrompt.textContent = "🎤 答えを言ってね";
+    };
+
+    recognition.onspeechstart = () => {
+      kukuSpeechDetected = true;
+      refreshBgmVolume();
+      kukuPrompt.textContent = "🎤 聞いています…";
+    };
+
+    recognition.onspeechend = () => {
+      kukuPrompt.textContent = "🎤 確認中…";
+    };
+
+    recognition.onresult = (event) => {
+      gotResult = true;
+
+      const selected =
+        selectBestNumericSpeech(
+          event.results?.[0]
+        );
+
+      if (selected) {
+        retryAllowed = false;
+        kukuAnswerBuffer =
+          String(selected.value);
+        updateKukuAnswerDisplay();
+        submitKukuAnswer();
+      } else {
+        kukuPrompt.textContent =
+          "数字だけを、もう一度言ってね。";
+      }
+    };
+
+    recognition.onerror = (event) => {
+      kukuListening = false;
+      kukuSpeechDetected = false;
+      refreshBgmVolume();
+
+      const errorName =
+        event?.error || "";
+
+      // ユーザー操作による停止や権限エラーは自動再試行しない。
+      if (
+        errorName === "aborted" ||
+        errorName === "not-allowed" ||
+        errorName === "service-not-allowed" ||
+        errorName === "audio-capture"
+      ) {
+        retryAllowed = false;
+      }
+
+      kukuPrompt.textContent =
+        errorName === "no-speech"
+          ? "🎤 もう一度、答えを言ってね"
+          : "うまく聞き取れませんでした。もう一度言ってね。";
+    };
+
+    recognition.onend = () => {
+      kukuListening = false;
+      kukuSpeechDetected = false;
+      refreshBgmVolume();
+
+      if (
+        retryAllowed &&
+        !gotResult &&
+        kukuVoiceEnabled &&
+        !kukuLocked &&
+        !kukuPromptSpeaking
+      ) {
+        setTimeout(
+          () => {
+            if (
+              kukuVoiceEnabled &&
+              !kukuLocked &&
+              !kukuPromptSpeaking
+            ) {
+              startKukuVoiceRecognition();
+            }
+          },
+          140
+        );
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (error) {
+      kukuPrompt.textContent =
+        "音声回答を開始できませんでした。数字で答えてください。";
+    }
   }
 
   function startKukuMode(level) {
@@ -15069,7 +15188,7 @@ HTML = r"""
     else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
     kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; playBgmForStreak(kukuStreak);
     const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= kukuQuestions.length) finishKukuMode(false); else runKukuQuestion(); };
-    speakAnswerFeedback(ok, kukuStreak, advance);
+    speakAnswerFeedback(ok, kukuStreak, advance, ok ? "お見事！" : "残念！");
   }
 
   function finishKukuMode(timeup = false) {
