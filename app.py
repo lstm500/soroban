@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V115-VOICE-1S-RESET-TIMER-PAUSE-KUKU-NOBGM"
+APP_VERSION = "CLEAN-V116-VOICE-300MS-RESET"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5487,8 +5487,8 @@ HTML = r"""
   const MIC_RESULT_GUARD_MS = 350;
   const HINT_MIC_AFTER_TTS_MS = 70;
   const HINT_MIC_RETRY_MS = 180;
-  // 発話が途切れて1秒続いたら、その発話セッションを破棄する。
-  const VOICE_SILENCE_RESET_MS = 1000;
+  // 発話が途切れて0.3秒続いたら、その発話セッションを破棄する。
+  const VOICE_SILENCE_RESET_MS = 300;
 
   const BGM_VOLUME_NORMAL = 0.68;
   const BGM_VOLUME_APP_SPEECH = 0.09;
@@ -10887,7 +10887,7 @@ HTML = r"""
           }
 
           setHintVoiceStatus(
-            "1秒以上途切れたため、もう一度答えてね。",
+            "0.3秒以上途切れたため、もう一度答えてね。",
             "wrong"
           );
         }
@@ -13072,7 +13072,7 @@ HTML = r"""
         () => {
           answerInput.value = "";
           updateVoiceUi(
-            "音声回答：1秒以上途切れたため、もう一度話してください"
+            "音声回答：0.3秒以上途切れたため、もう一度話してください"
           );
         }
       );
@@ -15419,7 +15419,7 @@ HTML = r"""
           kukuAnswerBuffer = "";
           updateKukuAnswerDisplay();
           kukuPrompt.textContent =
-            "🎤 1秒以上途切れたため、もう一度答えてね";
+            "🎤 0.3秒以上途切れたため、もう一度答えてね";
         }
       );
 
@@ -16067,7 +16067,7 @@ HTML = r"""
           anzanAnswerBuffer = "";
           updateAnzanAnswerDisplay();
           anzanVoiceStatus.textContent =
-            "🎤 1秒以上途切れたため、もう一度答えてね";
+            "🎤 0.3秒以上途切れたため、もう一度答えてね";
         }
       );
 
