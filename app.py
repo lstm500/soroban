@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V105-KUKU-INSTANT-CHALLENGE"
+APP_VERSION = "CLEAN-V107-KUKU-TRADITIONAL-CHANT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3695,7 +3695,7 @@ HTML = r"""
       <article class="kuku-level-card">
         <div class="kuku-level-no">LEVEL 2｜中級</div>
         <div class="kuku-level-name">昇順または降順</div>
-        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1→×9または×9→×1で9問出題します。</div>
+        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1→×9または×9→×1で9問出題します。音声は一般的な九九の唱え方です。</div>
         <div class="kuku-level-meta">9問・60秒</div>
         <button type="button" class="primary start-kuku" data-kuku-level="2">はじめる</button>
       </article>
@@ -14944,6 +14944,121 @@ HTML = r"""
     kukuTimerHandle = setInterval(() => { kukuSeconds = Math.max(0, kukuSeconds - 1); updateKukuTimer(); if (kukuSeconds <= 0) { stopKukuTimer(); finishKukuMode(true); } }, 1000);
   }
 
+  const KUKU_CHANT_STEMS = {
+    1: {
+      1: "いんいちが",
+      2: "いんにが",
+      3: "いんさんが",
+      4: "いんしが",
+      5: "いんごが",
+      6: "いんろくが",
+      7: "いんしちが",
+      8: "いんはちが",
+      9: "いんくが"
+    },
+    2: {
+      1: "にいちが",
+      2: "ににんが",
+      3: "にさんが",
+      4: "にしが",
+      5: "にご",
+      6: "にろく",
+      7: "にしち",
+      8: "にはち",
+      9: "にく"
+    },
+    3: {
+      1: "さんいちが",
+      2: "さんにが",
+      3: "さざんが",
+      4: "さんし",
+      5: "さんご",
+      6: "さぶろく",
+      7: "さんしち",
+      8: "さんぱ",
+      9: "さんく"
+    },
+    4: {
+      1: "しいちが",
+      2: "しにが",
+      3: "しさん",
+      4: "しし",
+      5: "しご",
+      6: "しろく",
+      7: "ししち",
+      8: "しはち",
+      9: "しく"
+    },
+    5: {
+      1: "ごいちが",
+      2: "ごに",
+      3: "ごさん",
+      4: "ごし",
+      5: "ごご",
+      6: "ごろく",
+      7: "ごしち",
+      8: "ごはち",
+      9: "ごく"
+    },
+    6: {
+      1: "ろくいちが",
+      2: "ろくに",
+      3: "ろくさん",
+      4: "ろくし",
+      5: "ろくご",
+      6: "ろくろく",
+      7: "ろくしち",
+      8: "ろくは",
+      9: "ろっく"
+    },
+    7: {
+      1: "しちいちが",
+      2: "しちに",
+      3: "しちさん",
+      4: "しちし",
+      5: "しちご",
+      6: "しちろく",
+      7: "しちしち",
+      8: "しちは",
+      9: "しちく"
+    },
+    8: {
+      1: "はちいちが",
+      2: "はちに",
+      3: "はちさん",
+      4: "はちし",
+      5: "はちご",
+      6: "はちろく",
+      7: "はちしち",
+      8: "はっぱ",
+      9: "はっく"
+    },
+    9: {
+      1: "くいちが",
+      2: "くに",
+      3: "くさん",
+      4: "くし",
+      5: "くご",
+      6: "くろく",
+      7: "くしち",
+      8: "くは",
+      9: "くく"
+    }
+  };
+
+  function getKukuSpokenPrompt(question) {
+    if (kukuLevel === 2) {
+      const stem =
+        KUKU_CHANT_STEMS?.[question.a]?.[question.b];
+
+      if (stem) {
+        return `${stem}？`;
+      }
+    }
+
+    return `${question.a}掛ける${question.b}は？`;
+  }
+
   function speakKukuQuestion(question, onDone) {
     stopKukuRecognition();
     let finished = false;
@@ -14952,12 +15067,12 @@ HTML = r"""
     kukuPromptSpeaking = true; refreshBgmVolume();
     try { window.speechSynthesis.cancel(); window.speechSynthesis.resume(); } catch (error) {}
     waitForJapaneseVoice(1000).then((voice) => {
-      const utterance = new SpeechSynthesisUtterance(`${question.a}掛ける${question.b}は？`);
-      utterance.lang = "ja-JP"; utterance.rate = 0.94; utterance.pitch = 1.02; utterance.volume = 1.0;
+      const utterance = new SpeechSynthesisUtterance(getKukuSpokenPrompt(question));
+      utterance.lang = "ja-JP"; utterance.rate = 1.18; utterance.pitch = 1.02; utterance.volume = 1.0;
       if (voice) utterance.voice = voice;
       utterance.onend = done; utterance.onerror = done;
       window.speechSynthesis.speak(utterance);
-      setTimeout(done, 2600);
+      setTimeout(done, 1900);
     }).catch(done);
   }
 
@@ -14993,8 +15108,8 @@ HTML = r"""
     const token = ++kukuRunToken; const question = kukuQuestions[kukuQuestionIndex];
     kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
     kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${KUKU_TOTAL_QUESTIONS}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
-    kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = `${question.a}掛ける${question.b}は？`;
-    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 100); else kukuPrompt.textContent = "数字をタップして答えてね"; });
+    kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = getKukuSpokenPrompt(question);
+    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 60); else kukuPrompt.textContent = "数字をタップして答えてね"; });
   }
 
   function submitKukuAnswer() {
