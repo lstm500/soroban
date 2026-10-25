@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V107-KUKU-TRADITIONAL-CHANT"
+APP_VERSION = "CLEAN-V110-KUKU-PERFECT-PRAISE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3706,6 +3706,20 @@ HTML = r"""
         <div class="kuku-level-meta">9問・60秒</div>
         <button type="button" class="primary start-kuku" data-kuku-level="3">はじめる</button>
       </article>
+      <article class="kuku-level-card">
+        <div class="kuku-level-no">LEVEL 4｜特級</div>
+        <div class="kuku-level-name">完全ランダム27問</div>
+        <div class="kuku-level-desc">1×1〜9×9から重複なしでランダムに27問出題します。</div>
+        <div class="kuku-level-meta">27問・90秒</div>
+        <button type="button" class="primary start-kuku" data-kuku-level="4">はじめる</button>
+      </article>
+      <article class="kuku-level-card">
+        <div class="kuku-level-no">LEVEL 5｜名人</div>
+        <div class="kuku-level-name">九九81問すべて</div>
+        <div class="kuku-level-desc">1×1〜9×9の全81問を、それぞれ1回ずつ完全ランダムで出題します。</div>
+        <div class="kuku-level-meta">81問・240秒</div>
+        <button type="button" class="primary start-kuku" data-kuku-level="5">はじめる</button>
+      </article>
     </div>
   </div>
   <div id="kukuGameView" class="hidden">
@@ -5478,6 +5492,8 @@ HTML = r"""
 
   const BGM_VOLUME_NORMAL = 0.68;
   const BGM_VOLUME_APP_SPEECH = 0.09;
+  // 九九の問題発声は聞き取りやすさを最優先し、発声中だけBGMを止める。
+  const BGM_VOLUME_KUKU_PROMPT = 0.00;
   const BGM_VOLUME_LISTENING = 0.00;
 
   let bgmKeepAliveTimer = null;
@@ -11882,10 +11898,13 @@ HTML = r"""
       return BGM_VOLUME_LISTENING;
     }
 
+    if (kukuPromptSpeaking) {
+      return BGM_VOLUME_KUKU_PROMPT;
+    }
+
     if (
       voiceCalloutRunning ||
       voicePauseForFeedback ||
-      kukuPromptSpeaking ||
       hintNarrationActive
     ) {
       return BGM_VOLUME_APP_SPEECH;
@@ -14917,9 +14936,21 @@ HTML = r"""
       if (!ascending) multipliers.reverse();
       return multipliers.map((value) => ({ a: dan, b: value, answer: dan * value, direction: ascending ? "昇順" : "降順" }));
     }
+
     const all = [];
-    for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) all.push({ a, b, answer: a * b, direction: "ランダム" });
-    return shuffleKuku(all).slice(0, KUKU_TOTAL_QUESTIONS);
+    for (let a = 1; a <= 9; a += 1) {
+      for (let b = 1; b <= 9; b += 1) {
+        all.push({ a, b, answer: a * b, direction: "ランダム" });
+      }
+    }
+
+    const shuffled = shuffleKuku(all);
+
+    if (level === 3) return shuffled.slice(0, 9);
+    if (level === 4) return shuffled.slice(0, 27);
+
+    // 名人は81問すべてを1回ずつ。
+    return shuffled;
   }
 
   function updateKukuAnswerDisplay() { kukuAnswerDisplay.textContent = kukuAnswerBuffer || "\u00a0"; }
@@ -14933,14 +14964,17 @@ HTML = r"""
   function updateKukuTimer() {
     if (kukuLevel === 1) { kukuTimer.textContent = "時間なし"; kukuTimer.classList.remove("warn"); return; }
     const safe = Math.max(0, kukuSeconds);
-    kukuTimer.textContent = `0:${String(safe).padStart(2, "0")}`;
+    const minutes = Math.floor(safe / 60);
+    const secondsPart = safe % 60;
+    kukuTimer.textContent = `${minutes}:${String(secondsPart).padStart(2, "0")}`;
     kukuTimer.classList.toggle("warn", safe <= 10);
   }
 
   function startKukuTimer() {
     stopKukuTimer();
     if (kukuLevel === 1) return;
-    kukuSeconds = 60; updateKukuTimer();
+    kukuSeconds = kukuLevel === 4 ? 90 : kukuLevel === 5 ? 240 : 60;
+    updateKukuTimer();
     kukuTimerHandle = setInterval(() => { kukuSeconds = Math.max(0, kukuSeconds - 1); updateKukuTimer(); if (kukuSeconds <= 0) { stopKukuTimer(); finishKukuMode(true); } }, 1000);
   }
 
@@ -15094,7 +15128,7 @@ HTML = r"""
 
   function startKukuMode(level) {
     stopKukuSession();
-    kukuLevel = Math.max(1, Math.min(3, Number(level) || 1));
+    kukuLevel = Math.max(1, Math.min(5, Number(level) || 1));
     kukuQuestions = buildKukuQuestions(kukuLevel); kukuQuestionIndex = 0; kukuCorrect = 0; kukuStreak = 0; kukuAnswerBuffer = ""; kukuVoiceEnabled = preferredVoiceAnswerEnabled; kukuLocked = true;
     kukuMenuView.classList.add("hidden"); kukuResultView.classList.add("hidden"); kukuGameView.classList.remove("hidden");
     updateKukuButtons(); updateKukuAnswerDisplay();
@@ -15107,7 +15141,7 @@ HTML = r"""
     if (kukuQuestionIndex >= kukuQuestions.length) { finishKukuMode(false); return; }
     const token = ++kukuRunToken; const question = kukuQuestions[kukuQuestionIndex];
     kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
-    kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${KUKU_TOTAL_QUESTIONS}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
+    kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${kukuQuestions.length}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
     kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = getKukuSpokenPrompt(question);
     speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 60); else kukuPrompt.textContent = "数字をタップして答えてね"; });
   }
@@ -15122,7 +15156,7 @@ HTML = r"""
     if (ok) { kukuCorrect += 1; kukuStreak += 1; kukuFeedback.textContent = "お見事！"; kukuFeedback.className = "kuku-feedback good"; }
     else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
     kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; playBgmForStreak(kukuStreak);
-    const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= KUKU_TOTAL_QUESTIONS) finishKukuMode(false); else runKukuQuestion(); };
+    const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= kukuQuestions.length) finishKukuMode(false); else runKukuQuestion(); };
     speakAnswerFeedback(ok, kukuStreak, advance);
   }
 
@@ -15131,10 +15165,38 @@ HTML = r"""
     stopKukuRecognition(); stopKukuTimer(); kukuPromptSpeaking = false; kukuLocked = true; refreshBgmVolume();
     try { window.speechSynthesis.cancel(); } catch (error) {}
     stopBgm(); kukuGameView.classList.add("hidden"); kukuResultView.classList.remove("hidden");
-    kukuResultScore.textContent = `${kukuCorrect} / ${KUKU_TOTAL_QUESTIONS}`;
-    if (timeup) kukuResultText.textContent = `60秒終了。${kukuCorrect}問正解でした。`;
-    else if (kukuCorrect === KUKU_TOTAL_QUESTIONS) kukuResultText.textContent = "全問正解。九九をすぐに答えられています。";
-    else kukuResultText.textContent = "間違えた九九を確認して、もう一度挑戦しましょう。";
+    kukuResultScore.textContent = `${kukuCorrect} / ${kukuQuestions.length}`;
+
+    const kukuPerfect = kukuCorrect === kukuQuestions.length;
+
+    if (kukuPerfect) {
+      kukuResultText.textContent = "お見事！パーフェクト！全問正解です。";
+
+      if (
+        "speechSynthesis" in window &&
+        typeof SpeechSynthesisUtterance !== "undefined"
+      ) {
+        try {
+          const utterance = new SpeechSynthesisUtterance("お見事！パーフェクト！");
+          utterance.lang = "ja-JP";
+          utterance.rate = 0.96;
+          utterance.pitch = 1.03;
+          utterance.volume = 1.0;
+          const voice = getJapaneseVoice();
+          if (voice) utterance.voice = voice;
+          window.speechSynthesis.speak(utterance);
+        } catch (error) {}
+      }
+
+      return;
+    }
+
+    if (timeup) {
+      const limitLabel = kukuLevel === 4 ? "90秒" : kukuLevel === 5 ? "240秒" : "60秒";
+      kukuResultText.textContent = `${limitLabel}終了。${kukuCorrect}問正解でした。`;
+    } else {
+      kukuResultText.textContent = "間違えた九九を確認して、もう一度挑戦しましょう。";
+    }
   }
 
   function stopAnzanRecognition() {
