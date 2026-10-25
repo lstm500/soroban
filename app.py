@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V125-KUKU-PRACTICAL-VOICE-ACCURACY"
+APP_VERSION = "CLEAN-V127-KUKU-CONTINUOUS-VOICE-SPEECH-ONLY-TIMER"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5355,6 +5355,22 @@ HTML = r"""
   let kukuPromptSpeaking = false;
   let kukuVoiceEnabled = false;
   let kukuRunToken = 0;
+
+  // 九九の音声認識はチャレンジ開始から終了まで常時維持する。
+  // 問題ごとに認識器をstop/abortしない。
+  let kukuRecognitionShouldRun = false;
+  let kukuRecognitionRestartTimer = null;
+  let kukuVoiceWindowOpen = false;
+  let kukuVoiceWindowToken = 0;
+  let kukuVoiceFinalizeTimer = null;
+  let kukuLatestVoiceCandidate = null;
+  let kukuPendingVoiceCandidate = null;
+  let kukuSegmentHasSpeech = false;
+
+  // 九九の制限時間は「子どもが実際に発声している時間」だけを消費する。
+  let kukuRemainingMs = 0;
+  let kukuChildSpeaking = false;
+  let kukuSpeechTimerLastAt = 0;
 
   // 九九専用の高速音声区切り。
   // Web Speech APIのspeechend判定を待たず、実マイク音量で150ms無音を検出する。
@@ -15958,59 +15974,150 @@ HTML = r"""
     recognition.onend = null;
   }
 
-  function stopKukuRecognition() {
-    stopKukuFastVadMonitor();
-
-    const recognition = kukuRecognition;
-
-    if (!recognition) {
-      kukuListening = false;
-      kukuSpeechDetected = false;
-      refreshBgmVolume();
+  function clearKukuRecognitionRestartTimer() {
+    if (!kukuRecognitionRestartTimer) {
       return;
     }
 
-    // 先に現在の認識から切り離す。
-    // abort() 後に遅れて発生するイベントが次問の状態を書き換えないようにする。
-    kukuRecognition = null;
-    resetSpeechSegmentState(recognition);
-    setVoiceRecognitionProcessing(recognition, false);
-    detachKukuRecognitionHandlers(recognition);
+    clearTimeout(
+      kukuRecognitionRestartTimer
+    );
 
-    try {
-      recognition.abort();
-    } catch (error) {}
-
-    kukuListening = false;
-    kukuSpeechDetected = false;
-    refreshBgmVolume();
+    kukuRecognitionRestartTimer = null;
   }
 
-  function finishKukuRecognitionAfterAnswer() {
-    stopKukuFastVadMonitor();
-
-    const recognition = kukuRecognition;
-
-    if (!recognition) {
-      kukuListening = false;
-      kukuSpeechDetected = false;
-      refreshBgmVolume();
+  function clearKukuVoiceFinalizeTimer() {
+    if (!kukuVoiceFinalizeTimer) {
       return;
     }
 
-    // 回答確定時は abort() ではなく stop() で正常終了させる。
-    // Android/Chrome で次問の recognition.start() が塞がれるのを防ぐ。
-    kukuRecognition = null;
-    resetSpeechSegmentState(recognition);
-    setVoiceRecognitionProcessing(recognition, false);
-    detachKukuRecognitionHandlers(recognition);
+    clearTimeout(
+      kukuVoiceFinalizeTimer
+    );
 
-    try {
-      recognition.stop();
-    } catch (error) {
+    kukuVoiceFinalizeTimer = null;
+  }
+
+  function consumeKukuSpeakingTime(
+    now = performance.now()
+  ) {
+    if (
+      kukuLevel === 1 ||
+      !kukuChildSpeaking ||
+      kukuSpeechTimerLastAt <= 0
+    ) {
+      return;
+    }
+
+    const elapsed =
+      Math.max(
+        0,
+        now -
+          kukuSpeechTimerLastAt
+      );
+
+    kukuRemainingMs =
+      Math.max(
+        0,
+        kukuRemainingMs -
+          elapsed
+      );
+
+    kukuSpeechTimerLastAt =
+      now;
+  }
+
+  function setKukuChildSpeaking(
+    active
+  ) {
+    const next =
+      Boolean(active);
+
+    if (
+      next ===
+      kukuChildSpeaking
+    ) {
+      return;
+    }
+
+    const now =
+      performance.now();
+
+    if (kukuChildSpeaking) {
+      consumeKukuSpeakingTime(
+        now
+      );
+    }
+
+    kukuChildSpeaking =
+      next;
+
+    kukuSpeechTimerLastAt =
+      next
+        ? now
+        : 0;
+
+    updateKukuTimer();
+
+    if (
+      kukuLevel !== 1 &&
+      kukuRemainingMs <= 0 &&
+      !kukuResultView.classList.contains(
+        "hidden"
+      ) === false
+    ) {
+      finishKukuMode(true);
+    }
+  }
+
+  function closeKukuAnswerWindow() {
+    kukuVoiceWindowOpen = false;
+    ++kukuVoiceWindowToken;
+
+    clearKukuVoiceFinalizeTimer();
+    stopKukuFastVadMonitor();
+    setKukuChildSpeaking(false);
+
+    kukuLatestVoiceCandidate = null;
+    kukuPendingVoiceCandidate = null;
+    kukuSegmentHasSpeech = false;
+
+    setVoiceRecognitionProcessing(
+      kukuRecognition,
+      false
+    );
+  }
+
+  function stopKukuRecognition() {
+    // この関数は「九九終了」またはユーザーが音声回答をOFFにした時だけ使う。
+    // 各問題の切替・正誤判定では呼ばない。
+    kukuRecognitionShouldRun = false;
+
+    clearKukuRecognitionRestartTimer();
+    closeKukuAnswerWindow();
+
+    const recognition =
+      kukuRecognition;
+
+    kukuRecognition = null;
+
+    if (recognition) {
+      resetSpeechSegmentState(
+        recognition
+      );
+
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
+      detachKukuRecognitionHandlers(
+        recognition
+      );
+
       try {
         recognition.abort();
-      } catch (innerError) {}
+      } catch (error) {}
     }
 
     kukuListening = false;
@@ -16019,7 +16126,18 @@ HTML = r"""
   }
 
   function stopKukuTimer() {
-    if (kukuTimerHandle) { clearInterval(kukuTimerHandle); kukuTimerHandle = null; }
+    consumeKukuSpeakingTime();
+
+    if (kukuTimerHandle) {
+      clearInterval(
+        kukuTimerHandle
+      );
+
+      kukuTimerHandle = null;
+    }
+
+    kukuChildSpeaking = false;
+    kukuSpeechTimerLastAt = 0;
   }
 
   function stopKukuSession() {
@@ -16077,34 +16195,90 @@ HTML = r"""
   }
 
   function updateKukuTimer() {
-    if (kukuLevel === 1) { kukuTimer.textContent = "時間なし"; kukuTimer.classList.remove("warn"); return; }
-    const safe = Math.max(0, kukuSeconds);
-    const minutes = Math.floor(safe / 60);
-    const secondsPart = safe % 60;
-    kukuTimer.textContent = `${minutes}:${String(secondsPart).padStart(2, "0")}`;
-    kukuTimer.classList.toggle("warn", safe <= 10);
+    if (kukuLevel === 1) {
+      kukuTimer.textContent =
+        "時間なし";
+
+      kukuTimer.classList.remove(
+        "warn"
+      );
+
+      return;
+    }
+
+    const safeSeconds =
+      Math.max(
+        0,
+        Math.ceil(
+          kukuRemainingMs /
+          1000
+        )
+      );
+
+    // 既存コードとの互換用。
+    kukuSeconds =
+      safeSeconds;
+
+    const minutes =
+      Math.floor(
+        safeSeconds / 60
+      );
+
+    const secondsPart =
+      safeSeconds % 60;
+
+    kukuTimer.textContent =
+      `${minutes}:${String(
+        secondsPart
+      ).padStart(2, "0")}`;
+
+    kukuTimer.classList.toggle(
+      "warn",
+      safeSeconds <= 10
+    );
   }
 
   function startKukuTimer() {
     stopKukuTimer();
-    if (kukuLevel === 1) return;
-    kukuSeconds = kukuLevel === 4 ? 90 : kukuLevel === 5 ? 240 : 60;
-    updateKukuTimer();
-    kukuTimerHandle = setInterval(() => {
-      // 発話後にブラウザが音声解析している時間は制限時間に含めない。
-      if (isVoiceRecognitionProcessing()) {
-        updateKukuTimer();
-        return;
-      }
 
-      kukuSeconds = Math.max(0, kukuSeconds - 1);
+    if (kukuLevel === 1) {
+      kukuRemainingMs = 0;
       updateKukuTimer();
+      return;
+    }
 
-      if (kukuSeconds <= 0) {
-        stopKukuTimer();
-        finishKukuMode(true);
-      }
-    }, 1000);
+    const limitSeconds =
+      kukuLevel === 4
+        ? 90
+        : kukuLevel === 5
+          ? 240
+          : 60;
+
+    kukuRemainingMs =
+      limitSeconds * 1000;
+
+    kukuChildSpeaking = false;
+    kukuSpeechTimerLastAt = 0;
+
+    updateKukuTimer();
+
+    // 50ms単位で実発声時間だけを積算する。
+    kukuTimerHandle =
+      setInterval(() => {
+        if (!kukuChildSpeaking) {
+          return;
+        }
+
+        consumeKukuSpeakingTime();
+        updateKukuTimer();
+
+        if (
+          kukuRemainingMs <= 0
+        ) {
+          stopKukuTimer();
+          finishKukuMode(true);
+        }
+      }, 50);
   }
 
   const KUKU_CHANT_STEMS = {
@@ -16135,7 +16309,10 @@ HTML = r"""
   }
 
   function speakKukuQuestion(question, onDone) {
-    stopKukuRecognition();
+    // 問題読み上げ中もSpeechRecognition自体は止めない。
+    // 回答受付だけ閉じ、読み上げ音の認識結果を無視する。
+    closeKukuAnswerWindow();
+
     let finished = false;
     const done = () => { if (finished) return; finished = true; kukuPromptSpeaking = false; refreshBgmVolume(); if (typeof onDone === "function") onDone(); };
     if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") { done(); return; }
@@ -16151,11 +16328,38 @@ HTML = r"""
     }).catch(done);
   }
 
+  function scheduleKukuRecognitionRestart(
+    delay = 25
+  ) {
+    if (
+      !kukuRecognitionShouldRun ||
+      !kukuVoiceEnabled
+    ) {
+      return;
+    }
+
+    clearKukuRecognitionRestartTimer();
+
+    kukuRecognitionRestartTimer =
+      setTimeout(() => {
+        kukuRecognitionRestartTimer =
+          null;
+
+        if (
+          kukuRecognitionShouldRun &&
+          kukuVoiceEnabled &&
+          !kukuRecognition
+        ) {
+          startKukuVoiceRecognition();
+        }
+      }, delay);
+  }
+
   function startKukuVoiceRecognition() {
     if (
       !kukuVoiceEnabled ||
-      kukuLocked ||
-      kukuPromptSpeaking
+      !kukuRecognitionShouldRun ||
+      kukuRecognition
     ) {
       return;
     }
@@ -16165,253 +16369,94 @@ HTML = r"""
 
     if (!Recognition) {
       kukuPrompt.textContent =
-        "このブラウザでは音声回答を使えません。数字で答えてください。";
+        "このブラウザでは音声回答を使えません。";
       return;
     }
-
-    stopKukuRecognition();
 
     const recognition =
       new Recognition();
 
-    const recognitionQuestionToken =
-      kukuRunToken;
-
     kukuRecognition =
       recognition;
-
-    let answerAccepted = false;
-    let retryAllowed = true;
-    let recognitionStarted = false;
-    let vadActive = false;
-    let vadSilenceReached = false;
-    let latestSelected = null;
-    let finalSelected = null;
-    let finalizeFallbackTimer = null;
 
     recognition.lang =
       "ja-JP";
 
+    // 可能な限り1つの認識器を全問で継続利用する。
     recognition.continuous =
-      false;
+      true;
 
-    // 途中候補を保持するが、途中候補だけでは判定しない。
     recognition.interimResults =
       true;
 
     recognition.maxAlternatives =
       10;
 
-    const isCurrentRecognition =
-      () =>
-        kukuRecognition ===
-          recognition &&
-        recognitionQuestionToken ===
-          kukuRunToken;
-
-    const clearFinalizeFallback =
-      () => {
-        if (
-          finalizeFallbackTimer
-        ) {
-          clearTimeout(
-            finalizeFallbackTimer
-          );
-
-          finalizeFallbackTimer =
-            null;
-        }
-      };
-
-    const scheduleRetry = (
-      delay = 70
-    ) => {
-      if (
-        !retryAllowed ||
-        answerAccepted ||
-        !kukuVoiceEnabled ||
-        kukuLocked ||
-        kukuPromptSpeaking ||
-        recognitionQuestionToken !==
-          kukuRunToken
-      ) {
-        return;
-      }
-
-      setTimeout(() => {
-        if (
-          kukuVoiceEnabled &&
-          !kukuLocked &&
-          !kukuPromptSpeaking &&
-          recognitionQuestionToken ===
-            kukuRunToken &&
-          !kukuRecognition
-        ) {
-          startKukuVoiceRecognition();
-        }
-      }, delay);
-    };
-
-    const acceptAnswer = (
-      selected
-    ) => {
-      if (
-        !selected ||
-        answerAccepted ||
-        !isCurrentRecognition() ||
-        kukuLocked
-      ) {
-        return;
-      }
-
-      clearFinalizeFallback();
-
-      answerAccepted = true;
-      retryAllowed = false;
-
-      kukuAnswerBuffer =
-        String(
-          selected.value
-        );
-
-      updateKukuAnswerDisplay();
-      submitKukuAnswer();
-    };
-
-    const requestFinalResult =
-      () => {
-        if (
-          !isCurrentRecognition() ||
-          answerAccepted ||
-          vadSilenceReached
-        ) {
-          return;
-        }
-
-        vadSilenceReached = true;
-
-        // ここからは回答時間ではなく認識処理時間。
-        setVoiceRecognitionProcessing(
-          recognition,
-          true
-        );
-
-        kukuPrompt.textContent =
-          "🎤 確認中…";
-
-        // 150ms無音で発話自体はここで終了。
-        // interim候補を即採用せず、Chromeにfinal候補を要求する。
-        try {
-          recognition.stop();
-        } catch (error) {}
-
-        // Android/Chromeでfinal/onendが遅い場合だけ、
-        // 最新の途中候補を短時間の保険として使う。
-        finalizeFallbackTimer =
-          setTimeout(() => {
-            if (
-              !isCurrentRecognition() ||
-              answerAccepted
-            ) {
-              return;
-            }
-
-            const fallback =
-              finalSelected ||
-              latestSelected;
-
-            if (fallback) {
-              acceptAnswer(
-                fallback
-              );
-            }
-          }, 180);
-      };
-
     recognition.onstart = () => {
       if (
-        !isCurrentRecognition()
+        kukuRecognition !==
+          recognition
       ) {
         return;
       }
-
-      recognitionStarted = true;
-
-      resetSpeechSegmentState(
-        recognition
-      );
-
-      kukuAnswerBuffer = "";
-      updateKukuAnswerDisplay();
 
       kukuListening = true;
       kukuSpeechDetected = false;
       refreshBgmVolume();
 
-      kukuPrompt.textContent =
-        "🎤 答えを言ってね";
-
-      startKukuFastVadMonitor(
-        () => {
-          if (
-            !isCurrentRecognition() ||
-            answerAccepted
-          ) {
-            return;
-          }
-
-          kukuSpeechDetected = true;
-          refreshBgmVolume();
-
-          kukuPrompt.textContent =
-            "🎤 聞いています…";
-        },
-        () => {
-          requestFinalResult();
-        }
-      ).then((active) => {
-        vadActive =
-          Boolean(active);
-      }).catch(() => {
-        vadActive = false;
-      });
+      if (
+        kukuVoiceWindowOpen &&
+        !kukuLocked &&
+        !kukuPromptSpeaking
+      ) {
+        kukuPrompt.textContent =
+          "🎤 答えを言ってね";
+      }
     };
 
     recognition.onspeechstart =
       () => {
         if (
-          !isCurrentRecognition()
+          kukuRecognition !==
+            recognition
         ) {
           return;
         }
 
+        // 発声時間の計測はWeb Speech APIではなくVAD側で行う。
         kukuSpeechDetected = true;
         refreshBgmVolume();
-
-        kukuPrompt.textContent =
-          "🎤 聞いています…";
       };
 
     recognition.onspeechend =
       () => {
         if (
-          !isCurrentRecognition()
+          kukuRecognition !==
+            recognition
         ) {
           return;
         }
 
-        // 実音量VADが使えない端末だけSpeechRecognitionの
-        // speechendを発話終了として使う。
-        if (!vadActive) {
-          requestFinalResult();
-        }
+        // ここでは認識を止めない。
+        // 150ms無音判定もVAD側が担当する。
       };
 
     recognition.onresult = (
       event
     ) => {
       if (
-        !isCurrentRecognition()
+        kukuRecognition !==
+          recognition
+      ) {
+        return;
+      }
+
+      // 問題読み上げ・正誤音声・内部処理中の結果はすべて無視する。
+      if (
+        !kukuVoiceWindowOpen ||
+        kukuLocked ||
+        kukuPromptSpeaking ||
+        !kukuSegmentHasSpeech
       ) {
         return;
       }
@@ -16430,32 +16475,20 @@ HTML = r"""
           result
         );
 
-      if (selected) {
-        latestSelected =
-          selected;
-
-        if (
-          result.isFinal !==
-            false
-        ) {
-          finalSelected =
-            selected;
-        }
+      if (!selected) {
+        return;
       }
 
-      // 150ms無音後にfinalが返ったら、それを最優先で即確定。
-      if (
-        vadSilenceReached &&
-        finalSelected
-      ) {
-        setVoiceRecognitionProcessing(
-          recognition,
-          false
-        );
+      kukuLatestVoiceCandidate =
+        selected;
 
-        acceptAnswer(
-          finalSelected
-        );
+      // 150ms無音後の短い確定待ち中により良い候補が来たら更新する。
+      if (
+        kukuVoiceFinalizeTimer &&
+        !kukuChildSpeaking
+      ) {
+        kukuPendingVoiceCandidate =
+          selected;
       }
     };
 
@@ -16463,79 +16496,55 @@ HTML = r"""
       event
     ) => {
       if (
-        !isCurrentRecognition()
+        kukuRecognition !==
+          recognition
       ) {
         return;
       }
 
-      clearFinalizeFallback();
-      stopKukuFastVadMonitor();
+      const errorName =
+        event?.error || "";
 
       setVoiceRecognitionProcessing(
         recognition,
         false
       );
 
-      kukuListening = false;
-      kukuSpeechDetected = false;
-      refreshBgmVolume();
-
-      const errorName =
-        event?.error || "";
-
+      // 明示的な権限拒否だけは自動復旧不能。
       if (
         errorName ===
-          "not-allowed" ||
-        errorName ===
-          "service-not-allowed" ||
-        errorName ===
-          "audio-capture"
+          "not-allowed"
       ) {
-        retryAllowed = false;
+        kukuRecognitionShouldRun =
+          false;
+
+        kukuPrompt.textContent =
+          "マイクの権限がありません。ブラウザでマイクを許可してください。";
+
+        return;
       }
 
-      kukuPrompt.textContent =
-        errorName === "no-speech"
-          ? "🎤 もう一度、答えを言ってね"
-          : retryAllowed
-            ? "うまく聞き取れませんでした。もう一度言ってね。"
-            : "マイクを利用できません。数字で答えてください。";
+      // 一時的な認識失敗では音声回答を停止しない。
+      if (
+        kukuVoiceWindowOpen &&
+        !kukuLocked
+      ) {
+        kukuPrompt.textContent =
+          "🎤 答えを言ってね";
+      }
     };
 
     recognition.onend = () => {
       if (
-        !isCurrentRecognition()
+        kukuRecognition !==
+          recognition
       ) {
         return;
       }
-
-      stopKukuFastVadMonitor();
-
-      const candidate =
-        finalSelected ||
-        latestSelected;
-
-      // stop()後のfinal/onendが来た時点で候補があれば確定。
-      if (
-        !answerAccepted &&
-        vadSilenceReached &&
-        candidate
-      ) {
-        setVoiceRecognitionProcessing(
-          recognition,
-          false
-        );
-
-        acceptAnswer(
-          candidate
-        );
-
-        return;
-      }
-
-      clearFinalizeFallback();
 
       kukuRecognition = null;
+      kukuListening = false;
+      kukuSpeechDetected = false;
 
       resetSpeechSegmentState(
         recognition
@@ -16546,78 +16555,17 @@ HTML = r"""
         false
       );
 
-      detachKukuRecognitionHandlers(
-        recognition
-      );
-
-      kukuListening = false;
-      kukuSpeechDetected = false;
       refreshBgmVolume();
 
-      if (
-        retryAllowed &&
-        !answerAccepted
-      ) {
-        kukuAnswerBuffer = "";
-        updateKukuAnswerDisplay();
-
-        kukuPrompt.textContent =
-          "🎤 もう一度、答えを言ってね";
-
-        scheduleRetry(70);
-      }
+      // Chrome側が認識を自動終了しても、チャレンジ中は即再開する。
+      scheduleKukuRecognitionRestart(
+        25
+      );
     };
-
-    // 体感遅延をなくすためstart()前から表示する。
-    kukuListening = true;
-
-    kukuPrompt.textContent =
-      "🎤 答えを言ってね";
 
     try {
       recognition.start();
-
-      // start()が黙って失敗する端末の保険。
-      setTimeout(() => {
-        if (
-          !recognitionStarted &&
-          isCurrentRecognition() &&
-          !kukuLocked
-        ) {
-          clearFinalizeFallback();
-
-          kukuRecognition = null;
-          stopKukuFastVadMonitor();
-
-          resetSpeechSegmentState(
-            recognition
-          );
-
-          setVoiceRecognitionProcessing(
-            recognition,
-            false
-          );
-
-          detachKukuRecognitionHandlers(
-            recognition
-          );
-
-          try {
-            recognition.abort();
-          } catch (error) {}
-
-          kukuListening = false;
-          kukuSpeechDetected = false;
-
-          kukuPrompt.textContent =
-            "🎤 マイクを再接続しています…";
-
-          scheduleRetry(70);
-        }
-      }, 450);
     } catch (error) {
-      clearFinalizeFallback();
-
       if (
         kukuRecognition ===
           recognition
@@ -16625,71 +16573,387 @@ HTML = r"""
         kukuRecognition = null;
       }
 
-      stopKukuFastVadMonitor();
-
-      resetSpeechSegmentState(
-        recognition
+      scheduleKukuRecognitionRestart(
+        40
       );
-
-      setVoiceRecognitionProcessing(
-        recognition,
-        false
-      );
-
-      detachKukuRecognitionHandlers(
-        recognition
-      );
-
-      kukuListening = false;
-      kukuSpeechDetected = false;
-
-      kukuPrompt.textContent =
-        "🎤 マイクを再接続しています…";
-
-      scheduleRetry(70);
     }
+  }
+
+  function startKukuAnswerVadSegment(
+    windowToken
+  ) {
+    if (
+      !kukuVoiceWindowOpen ||
+      windowToken !==
+        kukuVoiceWindowToken ||
+      kukuLocked ||
+      kukuPromptSpeaking
+    ) {
+      return;
+    }
+
+    startKukuFastVadMonitor(
+      () => {
+        if (
+          !kukuVoiceWindowOpen ||
+          windowToken !==
+            kukuVoiceWindowToken ||
+          kukuLocked ||
+          kukuPromptSpeaking
+        ) {
+          return;
+        }
+
+        // 150ms以上の無音後に新しく発声が始まった場合、
+        // 前の発話候補は完全に破棄して後の発話だけを採用する。
+        if (kukuVoiceFinalizeTimer) {
+          clearKukuVoiceFinalizeTimer();
+          kukuPendingVoiceCandidate =
+            null;
+        }
+
+        kukuLatestVoiceCandidate =
+          null;
+
+        kukuSegmentHasSpeech =
+          true;
+
+        setKukuChildSpeaking(
+          true
+        );
+
+        kukuPrompt.textContent =
+          "🎤 聞いています…";
+      },
+      () => {
+        if (
+          !kukuVoiceWindowOpen ||
+          windowToken !==
+            kukuVoiceWindowToken ||
+          kukuLocked
+        ) {
+          return;
+        }
+
+        // 150ms無音になった瞬間からタイマーは必ず停止。
+        setKukuChildSpeaking(
+          false
+        );
+
+        kukuPendingVoiceCandidate =
+          kukuLatestVoiceCandidate;
+
+        kukuSegmentHasSpeech =
+          false;
+
+        setVoiceRecognitionProcessing(
+          kukuRecognition,
+          true
+        );
+
+        kukuPrompt.textContent =
+          "🎤 確認中…";
+
+        // 次の発声を即監視する。
+        // 確定待ち中に再び話し始めた場合は前者を捨てる。
+        startKukuAnswerVadSegment(
+          windowToken
+        );
+
+        clearKukuVoiceFinalizeTimer();
+
+        // 内部処理中はタイマー停止。
+        // 180msだけ認識候補の更新を待ち、認識器自体は停止しない。
+        kukuVoiceFinalizeTimer =
+          setTimeout(() => {
+            kukuVoiceFinalizeTimer =
+              null;
+
+            if (
+              !kukuVoiceWindowOpen ||
+              windowToken !==
+                kukuVoiceWindowToken ||
+              kukuLocked ||
+              kukuChildSpeaking
+            ) {
+              return;
+            }
+
+            const selected =
+              kukuPendingVoiceCandidate;
+
+            setVoiceRecognitionProcessing(
+              kukuRecognition,
+              false
+            );
+
+            if (!selected) {
+              kukuPrompt.textContent =
+                "🎤 もう一度、答えを言ってね";
+
+              return;
+            }
+
+            kukuAnswerBuffer =
+              String(
+                selected.value
+              );
+
+            updateKukuAnswerDisplay();
+            submitKukuAnswer();
+          }, 180);
+      }
+    ).catch(() => {});
+  }
+
+  function openKukuAnswerWindow() {
+    if (
+      !kukuVoiceEnabled ||
+      kukuLocked ||
+      kukuPromptSpeaking
+    ) {
+      return;
+    }
+
+    closeKukuAnswerWindow();
+
+    kukuVoiceWindowOpen = true;
+    const windowToken =
+      kukuVoiceWindowToken;
+
+    kukuLatestVoiceCandidate =
+      null;
+
+    kukuPendingVoiceCandidate =
+      null;
+
+    kukuSegmentHasSpeech =
+      false;
+
+    kukuPrompt.textContent =
+      "🎤 答えを言ってね";
+
+    kukuRecognitionShouldRun =
+      true;
+
+    startKukuVoiceRecognition();
+
+    startKukuAnswerVadSegment(
+      windowToken
+    );
   }
 
   function startKukuMode(level) {
     stopKukuSession();
-    kukuLevel = Math.max(1, Math.min(5, Number(level) || 1));
-    kukuQuestions = buildKukuQuestions(kukuLevel); kukuQuestionIndex = 0; kukuCorrect = 0; kukuStreak = 0; kukuAnswerBuffer = ""; kukuVoiceEnabled = preferredVoiceAnswerEnabled; kukuLocked = true;
-    kukuMenuView.classList.add("hidden"); kukuResultView.classList.add("hidden"); kukuGameView.classList.remove("hidden");
-    updateKukuButtons(); updateKukuAnswerDisplay();
+
+    kukuLevel =
+      Math.max(
+        1,
+        Math.min(
+          5,
+          Number(level) || 1
+        )
+      );
+
+    kukuQuestions =
+      buildKukuQuestions(
+        kukuLevel
+      );
+
+    kukuQuestionIndex = 0;
+    kukuCorrect = 0;
+    kukuStreak = 0;
+    kukuAnswerBuffer = "";
+    kukuVoiceEnabled =
+      preferredVoiceAnswerEnabled;
+    kukuLocked = true;
+
+    kukuMenuView.classList.add(
+      "hidden"
+    );
+
+    kukuResultView.classList.add(
+      "hidden"
+    );
+
+    kukuGameView.classList.remove(
+      "hidden"
+    );
+
+    updateKukuButtons();
+    updateKukuAnswerDisplay();
+
     // 九九即答チャレンジではBGMを使用しない。
     stopBgm();
 
-    // 開始ボタンのユーザー操作中にマイクVADを先行準備し、
-    // 問題後の音声認識開始待ちを最小化する。
     if (kukuVoiceEnabled) {
-      prepareKukuFastVad().catch(() => {});
+      kukuRecognitionShouldRun =
+        true;
+
+      // ユーザー操作中にVADとSpeechRecognitionを先行準備。
+      prepareKukuFastVad()
+        .catch(() => {});
+
+      startKukuVoiceRecognition();
     }
 
-    startKukuTimer(); runKukuQuestion();
+    startKukuTimer();
+    runKukuQuestion();
   }
 
   function runKukuQuestion() {
-    stopKukuRecognition();
-    if (kukuQuestionIndex >= kukuQuestions.length) { finishKukuMode(false); return; }
-    const token = ++kukuRunToken; const question = kukuQuestions[kukuQuestionIndex];
-    kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
-    kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${kukuQuestions.length}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
-    kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = getKukuSpokenPrompt(question);
-    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 0); else kukuPrompt.textContent = "数字をタップして答えてね"; });
+    if (
+      kukuQuestionIndex >=
+        kukuQuestions.length
+    ) {
+      finishKukuMode(false);
+      return;
+    }
+
+    closeKukuAnswerWindow();
+
+    const token =
+      ++kukuRunToken;
+
+    const question =
+      kukuQuestions[
+        kukuQuestionIndex
+      ];
+
+    kukuLocked = true;
+    kukuAnswerBuffer = "";
+    updateKukuAnswerDisplay();
+
+    kukuQCount.textContent =
+      `${kukuQuestionIndex + 1} / ${kukuQuestions.length}`;
+
+    kukuCorrectCount.textContent =
+      `正解 ${kukuCorrect}`;
+
+    kukuEquation.textContent =
+      `${question.a} × ${question.b} = ?`;
+
+    kukuFeedback.textContent = "";
+    kukuFeedback.className =
+      "kuku-feedback";
+
+    kukuPrompt.textContent =
+      getKukuSpokenPrompt(
+        question
+      );
+
+    speakKukuQuestion(
+      question,
+      () => {
+        if (
+          token !==
+            kukuRunToken ||
+          kukuQuestionIndex >=
+            kukuQuestions.length
+        ) {
+          return;
+        }
+
+        kukuLocked = false;
+
+        if (kukuVoiceEnabled) {
+          // 認識器は止めず、回答受付だけ開始する。
+          openKukuAnswerWindow();
+        } else {
+          kukuPrompt.textContent =
+            "数字をタップして答えてね";
+        }
+      }
+    );
   }
 
   function submitKukuAnswer() {
-    if (kukuLocked || kukuQuestionIndex >= kukuQuestions.length) return;
-    const raw = String(kukuAnswerBuffer || "").trim();
-    if (!raw) { kukuFeedback.textContent = "答えを入力してください"; kukuFeedback.className = "kuku-feedback bad"; return; }
-    const user = Number(raw); if (!Number.isFinite(user)) return;
-    kukuLocked = true; finishKukuRecognitionAfterAnswer();
-    const question = kukuQuestions[kukuQuestionIndex]; const ok = user === question.answer;
-    if (ok) { kukuCorrect += 1; kukuStreak += 1; kukuFeedback.textContent = "お見事！"; kukuFeedback.className = "kuku-feedback good"; }
-    else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
-    kukuCorrectCount.textContent = `正解 ${kukuCorrect}`;
-    const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= kukuQuestions.length) finishKukuMode(false); else runKukuQuestion(); };
-    speakAnswerFeedback(ok, kukuStreak, advance, ok ? "お見事！" : "残念！");
+    if (
+      kukuLocked ||
+      kukuQuestionIndex >=
+        kukuQuestions.length
+    ) {
+      return;
+    }
+
+    const raw =
+      String(
+        kukuAnswerBuffer || ""
+      ).trim();
+
+    if (!raw) {
+      kukuFeedback.textContent =
+        "答えを言ってね";
+
+      kukuFeedback.className =
+        "kuku-feedback bad";
+
+      return;
+    }
+
+    const user =
+      Number(raw);
+
+    if (!Number.isFinite(user)) {
+      return;
+    }
+
+    // 回答確定後もSpeechRecognition自体は停止しない。
+    // 次問まで結果だけ無視する。
+    closeKukuAnswerWindow();
+    kukuLocked = true;
+
+    const question =
+      kukuQuestions[
+        kukuQuestionIndex
+      ];
+
+    const ok =
+      user ===
+      question.answer;
+
+    if (ok) {
+      kukuCorrect += 1;
+      kukuStreak += 1;
+      kukuFeedback.textContent =
+        "お見事！";
+
+      kukuFeedback.className =
+        "kuku-feedback good";
+    } else {
+      kukuStreak = 0;
+
+      kukuFeedback.textContent =
+        `残念！ 答えは ${question.answer}`;
+
+      kukuFeedback.className =
+        "kuku-feedback bad";
+    }
+
+    kukuCorrectCount.textContent =
+      `正解 ${kukuCorrect}`;
+
+    const advance = () => {
+      kukuQuestionIndex += 1;
+
+      if (
+        kukuQuestionIndex >=
+          kukuQuestions.length
+      ) {
+        finishKukuMode(false);
+      } else {
+        runKukuQuestion();
+      }
+    };
+
+    speakAnswerFeedback(
+      ok,
+      kukuStreak,
+      advance,
+      ok
+        ? "お見事！"
+        : "残念！"
+    );
   }
 
   function finishKukuMode(timeup = false) {
@@ -20919,9 +21183,33 @@ HTML = r"""
 
   $("#kukuSubmitBtn").addEventListener("click", submitKukuAnswer);
   kukuVoiceBtn.addEventListener("click", () => {
-    kukuVoiceEnabled = !kukuVoiceEnabled; updateKukuButtons();
-    if (kukuVoiceEnabled && !kukuLocked && !kukuPromptSpeaking) startKukuVoiceRecognition();
-    else if (!kukuVoiceEnabled) { stopKukuRecognition(); kukuPrompt.textContent = "数字をタップして答えてね"; }
+    kukuVoiceEnabled =
+      !kukuVoiceEnabled;
+
+    updateKukuButtons();
+
+    if (kukuVoiceEnabled) {
+      kukuRecognitionShouldRun =
+        true;
+
+      prepareKukuFastVad()
+        .catch(() => {});
+
+      startKukuVoiceRecognition();
+
+      if (
+        !kukuLocked &&
+        !kukuPromptSpeaking
+      ) {
+        openKukuAnswerWindow();
+      }
+    } else {
+      // ユーザー自身がOFFにした時だけ音声認識を停止する。
+      stopKukuRecognition();
+
+      kukuPrompt.textContent =
+        "数字をタップして答えてね";
+    }
   });
   $("#kukuRetryBtn").addEventListener("click", () => startKukuMode(kukuLevel));
   $("#kukuMenuBtn").addEventListener("click", showKukuHome);
