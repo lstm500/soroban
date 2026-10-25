@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V104-ALWAYS-5MIN-GOLD-TIMER-DISPLAY"
+APP_VERSION = "CLEAN-V105-KUKU-INSTANT-CHALLENGE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -571,6 +571,47 @@ HTML = r"""
   .home-mode-btn.settings-home {
     background: #f4f1ec;
     border-color: #d8d1c6;
+  }
+
+  /* =====================================================
+     KUKU INSTANT CHALLENGE
+     ===================================================== */
+  .kuku-view { display: none; }
+  .kuku-view.show { display: block; }
+  .home-mode-btn.kuku-home { background: #f3f8ff; border-color: #a9bfd3; }
+  .kuku-hero { padding: 18px; border: 1px solid #dcd5c8; border-radius: 20px; background: #fff; }
+  .kuku-hero h2 { margin: 0 0 7px; font-size: clamp(24px, 4vw, 34px); }
+  .kuku-hero p { margin: 0; color: #6b655d; font-size: 13px; line-height: 1.7; }
+  .kuku-level-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+  .kuku-level-card { display: flex; flex-direction: column; min-height: 205px; padding: 16px; border: 1px solid #ddd7ca; border-radius: 18px; background: #fff; }
+  .kuku-level-no { color: #77889a; font-size: 11px; font-weight: 950; letter-spacing: .08em; }
+  .kuku-level-name { margin: 7px 0; font-size: 20px; font-weight: 1000; }
+  .kuku-level-desc { flex: 1; color: #6d675f; font-size: 12px; line-height: 1.6; }
+  .kuku-level-meta { margin: 9px 0; color: #49657d; font-size: 11px; font-weight: 950; }
+  .kuku-game-card, .kuku-result-card { margin-top: 14px; padding: 18px; border: 2px solid #ddd7ca; border-radius: 22px; background: #fff; text-align: center; }
+  .kuku-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; color: #6e685f; font-size: 12px; font-weight: 900; }
+  .kuku-status > :first-child { text-align: left; }
+  .kuku-status > :last-child { text-align: right; }
+  .kuku-timer { min-width: 72px; font-size: 25px; font-weight: 1000; color: #315f86; font-variant-numeric: tabular-nums; }
+  .kuku-timer.warn { color: #a14428; }
+  .kuku-equation { margin: 30px 0 18px; font-size: clamp(46px, 10vw, 78px); font-weight: 1000; letter-spacing: .02em; }
+  .kuku-prompt { min-height: 24px; margin: 0 0 12px; color: #665f56; font-size: 13px; font-weight: 850; }
+  .kuku-controls { width: min(520px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 auto 12px; }
+  .kuku-controls button { min-height: 42px; font-size: 12px; }
+  .kuku-answer-display { width: min(320px, 100%); min-height: 62px; display: grid; place-items: center; margin: 10px auto; border: 2px solid #cec6b8; border-radius: 14px; background: #fff; font-size: 30px; font-weight: 1000; }
+  .kuku-keypad { width: min(430px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px auto; }
+  .kuku-keypad button { min-height: 56px; font-size: 21px; }
+  .kuku-feedback { min-height: 34px; margin-top: 10px; font-size: 18px; font-weight: 950; }
+  .kuku-feedback.good { color: #2f6a43; }
+  .kuku-feedback.bad { color: #a14428; }
+  .kuku-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .kuku-result-score { margin: 8px 0; font-size: clamp(36px, 7vw, 58px); font-weight: 1000; }
+  @media (max-width: 760px) {
+    .kuku-level-grid { grid-template-columns: 1fr; }
+    .kuku-level-card { min-height: 0; }
+    .kuku-game-card { margin-top: 8px; padding: 12px; }
+    .kuku-equation { margin: 18px 0 12px; font-size: clamp(44px, 14vw, 62px); }
+    .kuku-keypad button { min-height: 48px; }
   }
 
   /* =====================================================
@@ -3573,7 +3614,7 @@ HTML = r"""
 <div id="homeView" class="app-home">
   <div class="home-title">そろばん</div>
   <div class="home-sub">
-    チャレンジ・苦手克服・暗算から練習方法を選んでください。
+    チャレンジ・苦手克服・九九即答・暗算から練習方法を選んでください。
   </div>
 
   <div class="home-rank-card">
@@ -3604,6 +3645,14 @@ HTML = r"""
       </span>
     </button>
 
+    <button type="button" id="homeKukuBtn" data-app-nav="kuku" class="home-mode-btn kuku-home">
+      <span class="home-mode-kicker">KUKU</span>
+      <span class="home-mode-name">九九即答チャレンジ</span>
+      <span class="home-mode-desc">
+        九九を見た瞬間に答える練習。掛け算のそろばんへ進む前の基礎力を確認します。
+      </span>
+    </button>
+
     <button type="button" id="homeAnzanBtn" data-app-nav="anzan" class="home-mode-btn anzan-home">
       <span class="home-mode-kicker">MENTAL</span>
       <span class="home-mode-name">暗算モード</span>
@@ -3624,6 +3673,78 @@ HTML = r"""
   <div id="versionLabel" class="home-version-footer"></div>
 </div>
 
+
+<div id="kukuView" class="kuku-view">
+  <div class="subview-topbar">
+    <button type="button" id="kukuTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
+    <div class="subview-topbar-title">九九即答チャレンジ</div>
+  </div>
+  <div id="kukuMenuView">
+    <div class="kuku-hero">
+      <h2>九九を見た瞬間に答える</h2>
+      <p>問題は「○掛ける○は？」と読み上げます。音声回答ONなら声で、OFFならスマホの数字ボタンで答えます。</p>
+    </div>
+    <div class="kuku-level-grid">
+      <article class="kuku-level-card">
+        <div class="kuku-level-no">LEVEL 1｜初級</div>
+        <div class="kuku-level-name">1つの段を昇順</div>
+        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1から×9まで順番に9問出題します。</div>
+        <div class="kuku-level-meta">9問・時間制限なし</div>
+        <button type="button" class="primary start-kuku" data-kuku-level="1">はじめる</button>
+      </article>
+      <article class="kuku-level-card">
+        <div class="kuku-level-no">LEVEL 2｜中級</div>
+        <div class="kuku-level-name">昇順または降順</div>
+        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1→×9または×9→×1で9問出題します。</div>
+        <div class="kuku-level-meta">9問・60秒</div>
+        <button type="button" class="primary start-kuku" data-kuku-level="2">はじめる</button>
+      </article>
+      <article class="kuku-level-card">
+        <div class="kuku-level-no">LEVEL 3｜上級</div>
+        <div class="kuku-level-name">完全ランダム9問</div>
+        <div class="kuku-level-desc">1×1〜9×9から重複なしでランダムに9問出題します。</div>
+        <div class="kuku-level-meta">9問・60秒</div>
+        <button type="button" class="primary start-kuku" data-kuku-level="3">はじめる</button>
+      </article>
+    </div>
+  </div>
+  <div id="kukuGameView" class="hidden">
+    <div class="kuku-game-card">
+      <div class="kuku-status">
+        <span id="kukuQCount">1 / 9</span>
+        <span id="kukuTimer" class="kuku-timer">--:--</span>
+        <span id="kukuCorrectCount">正解 0</span>
+      </div>
+      <div id="kukuEquation" class="kuku-equation">2 × 3 = ?</div>
+      <div id="kukuPrompt" class="kuku-prompt">問題を読み上げます</div>
+      <div class="kuku-controls">
+        <button type="button" id="kukuVoiceBtn">🎤 音声回答 OFF</button>
+        <button type="button" id="kukuBgmBtn">♪ BGM ON</button>
+      </div>
+      <div id="kukuAnswerDisplay" class="kuku-answer-display">&nbsp;</div>
+      <div id="kukuKeypad" class="kuku-keypad">
+        <button type="button" data-kuku-key="7">7</button><button type="button" data-kuku-key="8">8</button><button type="button" data-kuku-key="9">9</button>
+        <button type="button" data-kuku-key="4">4</button><button type="button" data-kuku-key="5">5</button><button type="button" data-kuku-key="6">6</button>
+        <button type="button" data-kuku-key="1">1</button><button type="button" data-kuku-key="2">2</button><button type="button" data-kuku-key="3">3</button>
+        <button type="button" data-kuku-action="clear">クリア</button><button type="button" data-kuku-key="0">0</button><button type="button" data-kuku-action="backspace">← 1つ消す</button>
+      </div>
+      <button type="button" id="kukuSubmitBtn" class="primary">答える</button>
+      <div id="kukuFeedback" class="kuku-feedback"></div>
+    </div>
+  </div>
+  <div id="kukuResultView" class="hidden">
+    <div class="kuku-result-card">
+      <div>九九即答チャレンジ終了</div>
+      <div id="kukuResultScore" class="kuku-result-score">0 / 9</div>
+      <div id="kukuResultText" class="kuku-prompt"></div>
+      <div class="kuku-actions">
+        <button type="button" id="kukuRetryBtn" class="primary">同じレベルをもう一回</button>
+        <button type="button" id="kukuMenuBtn">レベル選択へ</button>
+        <button type="button" data-app-nav="home">← TOPへ</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="weaknessView" class="weakness-view">
   <div class="subview-topbar">
@@ -4441,10 +4562,11 @@ HTML = r"""
     const anzan = byId("anzanView");
     const settings = byId("settingsView");
     const weakness = byId("weaknessView");
+    const kuku = byId("kukuView");
     const workspaceEl = byId("workspace");
     const resultsEl = byId("results");
 
-    if (!home || !menu || !learning || !anzan || !settings || !weakness || !workspaceEl || !resultsEl) {
+    if (!home || !menu || !learning || !anzan || !settings || !weakness || !kuku || !workspaceEl || !resultsEl) {
       return false;
     }
 
@@ -4455,6 +4577,7 @@ HTML = r"""
       anzan.classList.remove("show");
       settings.classList.remove("show");
       weakness.classList.remove("show");
+      kuku.classList.remove("show");
       workspaceEl.classList.remove("show");
       resultsEl.classList.remove("show");
     };
@@ -4479,6 +4602,14 @@ HTML = r"""
       settings.classList.add("show");
     } else if (target === "weakness") {
       weakness.classList.add("show");
+    } else if (target === "kuku") {
+      kuku.classList.add("show");
+      const menuViewEl = byId("kukuMenuView");
+      const gameViewEl = byId("kukuGameView");
+      const resultViewEl = byId("kukuResultView");
+      if (menuViewEl) menuViewEl.classList.remove("hidden");
+      if (gameViewEl) gameViewEl.classList.add("hidden");
+      if (resultViewEl) resultViewEl.classList.add("hidden");
     } else {
       return false;
     }
@@ -4514,7 +4645,8 @@ HTML = r"""
         (
           target === "home" ||
           target === "challenge-menu" ||
-          target === "weakness"
+          target === "weakness" ||
+          target === "kuku"
         ) &&
         workspaceEl?.classList.contains(
           "show"
@@ -4541,6 +4673,7 @@ HTML = r"""
         else if (target === "anzan") showAnzanHome();
         else if (target === "settings") showSettings();
         else if (target === "weakness") showWeaknessHome();
+        else if (target === "kuku") showKukuHome();
       } catch (error) {}
     }, 0);
   }
@@ -4570,6 +4703,21 @@ HTML = r"""
   const anzanResultView = $("#anzanResultView");
   const settingsView = $("#settingsView");
   const weaknessView = $("#weaknessView");
+  const kukuView = $("#kukuView");
+  const kukuMenuView = $("#kukuMenuView");
+  const kukuGameView = $("#kukuGameView");
+  const kukuResultView = $("#kukuResultView");
+  const kukuQCount = $("#kukuQCount");
+  const kukuTimer = $("#kukuTimer");
+  const kukuCorrectCount = $("#kukuCorrectCount");
+  const kukuEquation = $("#kukuEquation");
+  const kukuPrompt = $("#kukuPrompt");
+  const kukuVoiceBtn = $("#kukuVoiceBtn");
+  const kukuBgmBtn = $("#kukuBgmBtn");
+  const kukuAnswerDisplay = $("#kukuAnswerDisplay");
+  const kukuFeedback = $("#kukuFeedback");
+  const kukuResultScore = $("#kukuResultScore");
+  const kukuResultText = $("#kukuResultText");
   const menuView = $("#menuView");
   const learningView = $("#learningView");
   const learningCategoryView = $("#learningCategoryView");
@@ -5178,6 +5326,23 @@ HTML = r"""
   let sessionVideoMode = null;
   let sessionQuestionMarks = [];
   let reviewClipEndSec = null;
+
+  const KUKU_TOTAL_QUESTIONS = 9;
+  let kukuLevel = 1;
+  let kukuQuestions = [];
+  let kukuQuestionIndex = 0;
+  let kukuCorrect = 0;
+  let kukuStreak = 0;
+  let kukuAnswerBuffer = "";
+  let kukuLocked = true;
+  let kukuSeconds = 0;
+  let kukuTimerHandle = null;
+  let kukuRecognition = null;
+  let kukuListening = false;
+  let kukuSpeechDetected = false;
+  let kukuPromptSpeaking = false;
+  let kukuVoiceEnabled = false;
+  let kukuRunToken = 0;
 
   const ANZAN_TOTAL_QUESTIONS = 10;
   let anzanLevel = 1;
@@ -11711,6 +11876,7 @@ HTML = r"""
     if (
       voiceSpeechDetected ||
       anzanSpeechDetected ||
+      kukuSpeechDetected ||
       hintQuestionListening
     ) {
       return BGM_VOLUME_LISTENING;
@@ -11719,6 +11885,7 @@ HTML = r"""
     if (
       voiceCalloutRunning ||
       voicePauseForFeedback ||
+      kukuPromptSpeaking ||
       hintNarrationActive
     ) {
       return BGM_VOLUME_APP_SPEECH;
@@ -13561,6 +13728,7 @@ HTML = r"""
     anzanView.classList.remove("show");
     settingsView.classList.remove("show");
     weaknessView.classList.remove("show");
+    kukuView.classList.remove("show");
     homeView.classList.remove("hidden");
   }
 
@@ -13570,6 +13738,7 @@ HTML = r"""
     anzanView.classList.remove("show");
     settingsView.classList.remove("show");
     weaknessView.classList.remove("show");
+    kukuView.classList.remove("show");
     workspace.classList.remove("show");
     results.classList.remove("show");
     menuView.classList.remove("hidden");
@@ -13598,6 +13767,7 @@ HTML = r"""
     runUiCleanup(hideSorobanHint);
     runUiCleanup(stopLearningAnimation);
     runUiCleanup(stopAnzanSession);
+    runUiCleanup(stopKukuSession);
     runUiCleanup(() => setVoiceAnswerEnabled(false));
     runUiCleanup(closeRankingModal);
     runUiCleanup(closeRankCelebration);
@@ -13625,6 +13795,7 @@ HTML = r"""
     hideSorobanHint();
     stopLearningAnimation();
     stopAnzanSession();
+    stopKukuSession();
     setVoiceAnswerEnabled(false);
 
     homeView.classList.add("hidden");
@@ -13632,6 +13803,7 @@ HTML = r"""
     learningView.classList.remove("show");
     anzanView.classList.remove("show");
     settingsView.classList.remove("show");
+    kukuView.classList.remove("show");
     workspace.classList.remove("show");
     results.classList.remove("show");
     weaknessView.classList.add("show");
@@ -13658,6 +13830,9 @@ HTML = r"""
       "show"
     );
     weaknessView.classList.remove(
+      "show"
+    );
+    kukuView.classList.remove(
       "show"
     );
     workspace.classList.remove(
@@ -14695,6 +14870,158 @@ HTML = r"""
     );
   }
 
+  function stopKukuRecognition() {
+    if (!kukuRecognition) {
+      kukuListening = false;
+      kukuSpeechDetected = false;
+      refreshBgmVolume();
+      return;
+    }
+    try { kukuRecognition.onend = null; kukuRecognition.abort(); } catch (error) {}
+    kukuRecognition = null;
+    kukuListening = false;
+    kukuSpeechDetected = false;
+    refreshBgmVolume();
+  }
+
+  function stopKukuTimer() {
+    if (kukuTimerHandle) { clearInterval(kukuTimerHandle); kukuTimerHandle = null; }
+  }
+
+  function stopKukuSession() {
+    kukuRunToken += 1;
+    stopKukuRecognition();
+    stopKukuTimer();
+    kukuPromptSpeaking = false;
+    kukuLocked = true;
+    refreshBgmVolume();
+  }
+
+  function showKukuHome() {
+    stopTimer(); stopBgm(); hideSorobanHint(); stopLearningAnimation(); stopAnzanSession(); stopKukuSession(); setVoiceAnswerEnabled(false);
+    homeView.classList.add("hidden"); menuView.classList.add("hidden"); learningView.classList.remove("show"); anzanView.classList.remove("show"); settingsView.classList.remove("show"); weaknessView.classList.remove("show"); workspace.classList.remove("show"); results.classList.remove("show");
+    kukuView.classList.add("show"); kukuMenuView.classList.remove("hidden"); kukuGameView.classList.add("hidden"); kukuResultView.classList.add("hidden");
+  }
+
+  function shuffleKuku(items) {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [result[i], result[j]] = [result[j], result[i]]; }
+    return result;
+  }
+
+  function buildKukuQuestions(level) {
+    if (level === 1 || level === 2) {
+      const dan = randomInt(1, 9);
+      const ascending = level === 1 ? true : Math.random() < 0.5;
+      const multipliers = Array.from({ length: 9 }, (_, index) => index + 1);
+      if (!ascending) multipliers.reverse();
+      return multipliers.map((value) => ({ a: dan, b: value, answer: dan * value, direction: ascending ? "昇順" : "降順" }));
+    }
+    const all = [];
+    for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) all.push({ a, b, answer: a * b, direction: "ランダム" });
+    return shuffleKuku(all).slice(0, KUKU_TOTAL_QUESTIONS);
+  }
+
+  function updateKukuAnswerDisplay() { kukuAnswerDisplay.textContent = kukuAnswerBuffer || "\u00a0"; }
+
+  function updateKukuButtons() {
+    kukuVoiceBtn.textContent = kukuVoiceEnabled ? "🎤 音声回答 ON" : "🎤 音声回答 OFF";
+    kukuVoiceBtn.classList.toggle("on", kukuVoiceEnabled);
+    kukuBgmBtn.textContent = bgmOn ? "♪ BGM ON" : "♪ BGM OFF";
+  }
+
+  function updateKukuTimer() {
+    if (kukuLevel === 1) { kukuTimer.textContent = "時間なし"; kukuTimer.classList.remove("warn"); return; }
+    const safe = Math.max(0, kukuSeconds);
+    kukuTimer.textContent = `0:${String(safe).padStart(2, "0")}`;
+    kukuTimer.classList.toggle("warn", safe <= 10);
+  }
+
+  function startKukuTimer() {
+    stopKukuTimer();
+    if (kukuLevel === 1) return;
+    kukuSeconds = 60; updateKukuTimer();
+    kukuTimerHandle = setInterval(() => { kukuSeconds = Math.max(0, kukuSeconds - 1); updateKukuTimer(); if (kukuSeconds <= 0) { stopKukuTimer(); finishKukuMode(true); } }, 1000);
+  }
+
+  function speakKukuQuestion(question, onDone) {
+    stopKukuRecognition();
+    let finished = false;
+    const done = () => { if (finished) return; finished = true; kukuPromptSpeaking = false; refreshBgmVolume(); if (typeof onDone === "function") onDone(); };
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") { done(); return; }
+    kukuPromptSpeaking = true; refreshBgmVolume();
+    try { window.speechSynthesis.cancel(); window.speechSynthesis.resume(); } catch (error) {}
+    waitForJapaneseVoice(1000).then((voice) => {
+      const utterance = new SpeechSynthesisUtterance(`${question.a}掛ける${question.b}は？`);
+      utterance.lang = "ja-JP"; utterance.rate = 0.94; utterance.pitch = 1.02; utterance.volume = 1.0;
+      if (voice) utterance.voice = voice;
+      utterance.onend = done; utterance.onerror = done;
+      window.speechSynthesis.speak(utterance);
+      setTimeout(done, 2600);
+    }).catch(done);
+  }
+
+  function startKukuVoiceRecognition() {
+    if (!kukuVoiceEnabled || kukuLocked) return;
+    const Recognition = getSpeechRecognitionClass();
+    if (!Recognition) { kukuPrompt.textContent = "このブラウザでは音声回答を使えません。数字で答えてください。"; return; }
+    stopKukuRecognition();
+    const recognition = new Recognition(); kukuRecognition = recognition;
+    recognition.lang = "ja-JP"; recognition.continuous = false; recognition.interimResults = false; recognition.maxAlternatives = 5;
+    recognition.onstart = () => { kukuListening = true; kukuSpeechDetected = false; refreshBgmVolume(); kukuPrompt.textContent = "🎤 答えを言ってね"; };
+    recognition.onspeechstart = () => { kukuSpeechDetected = true; refreshBgmVolume(); kukuPrompt.textContent = "🎤 聞いています…"; };
+    recognition.onspeechend = () => { kukuPrompt.textContent = "🎤 確認中…"; };
+    recognition.onresult = (event) => { const selected = selectBestNumericSpeech(event.results?.[0]); if (selected) { kukuAnswerBuffer = String(selected.value); updateKukuAnswerDisplay(); submitKukuAnswer(); } else { kukuPrompt.textContent = "数字だけを、もう一度言ってね。"; } };
+    recognition.onerror = () => { kukuListening = false; kukuSpeechDetected = false; refreshBgmVolume(); kukuPrompt.textContent = "うまく聞き取れませんでした。数字でも答えられます。"; };
+    recognition.onend = () => { kukuListening = false; kukuSpeechDetected = false; refreshBgmVolume(); };
+    try { recognition.start(); } catch (error) { kukuPrompt.textContent = "音声回答を開始できませんでした。数字で答えてください。"; }
+  }
+
+  function startKukuMode(level) {
+    stopKukuSession();
+    kukuLevel = Math.max(1, Math.min(3, Number(level) || 1));
+    kukuQuestions = buildKukuQuestions(kukuLevel); kukuQuestionIndex = 0; kukuCorrect = 0; kukuStreak = 0; kukuAnswerBuffer = ""; kukuVoiceEnabled = preferredVoiceAnswerEnabled; kukuLocked = true;
+    kukuMenuView.classList.add("hidden"); kukuResultView.classList.add("hidden"); kukuGameView.classList.remove("hidden");
+    updateKukuButtons(); updateKukuAnswerDisplay();
+    if (bgmOn) { bgmEngine.ensureContext(); playBgmForStreak(0, true); }
+    startKukuTimer(); runKukuQuestion();
+  }
+
+  function runKukuQuestion() {
+    stopKukuRecognition();
+    if (kukuQuestionIndex >= kukuQuestions.length) { finishKukuMode(false); return; }
+    const token = ++kukuRunToken; const question = kukuQuestions[kukuQuestionIndex];
+    kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
+    kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${KUKU_TOTAL_QUESTIONS}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
+    kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = `${question.a}掛ける${question.b}は？`;
+    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 100); else kukuPrompt.textContent = "数字をタップして答えてね"; });
+  }
+
+  function submitKukuAnswer() {
+    if (kukuLocked || kukuQuestionIndex >= kukuQuestions.length) return;
+    const raw = String(kukuAnswerBuffer || "").trim();
+    if (!raw) { kukuFeedback.textContent = "答えを入力してください"; kukuFeedback.className = "kuku-feedback bad"; return; }
+    const user = Number(raw); if (!Number.isFinite(user)) return;
+    kukuLocked = true; stopKukuRecognition();
+    const question = kukuQuestions[kukuQuestionIndex]; const ok = user === question.answer;
+    if (ok) { kukuCorrect += 1; kukuStreak += 1; kukuFeedback.textContent = "お見事！"; kukuFeedback.className = "kuku-feedback good"; }
+    else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
+    kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; playBgmForStreak(kukuStreak);
+    const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= KUKU_TOTAL_QUESTIONS) finishKukuMode(false); else runKukuQuestion(); };
+    speakAnswerFeedback(ok, kukuStreak, advance);
+  }
+
+  function finishKukuMode(timeup = false) {
+    if (!kukuResultView.classList.contains("hidden")) return;
+    stopKukuRecognition(); stopKukuTimer(); kukuPromptSpeaking = false; kukuLocked = true; refreshBgmVolume();
+    try { window.speechSynthesis.cancel(); } catch (error) {}
+    stopBgm(); kukuGameView.classList.add("hidden"); kukuResultView.classList.remove("hidden");
+    kukuResultScore.textContent = `${kukuCorrect} / ${KUKU_TOTAL_QUESTIONS}`;
+    if (timeup) kukuResultText.textContent = `60秒終了。${kukuCorrect}問正解でした。`;
+    else if (kukuCorrect === KUKU_TOTAL_QUESTIONS) kukuResultText.textContent = "全問正解。九九をすぐに答えられています。";
+    else kukuResultText.textContent = "間違えた九九を確認して、もう一度挑戦しましょう。";
+  }
+
   function stopAnzanRecognition() {
     if (!anzanRecognition) {
       anzanListening = false;
@@ -14728,6 +15055,7 @@ HTML = r"""
     hideSorobanHint();
     stopLearningAnimation();
     stopAnzanSession();
+    stopKukuSession();
 
     homeView.classList.add(
       "hidden"
@@ -14771,6 +15099,7 @@ HTML = r"""
     hideSorobanHint();
     stopLearningAnimation();
     stopAnzanSession();
+    stopKukuSession();
 
     homeView.classList.add(
       "hidden"
@@ -18784,6 +19113,32 @@ HTML = r"""
     "click",
     goNextLearningLesson
   );
+
+  root.querySelectorAll(".start-kuku").forEach((button) => {
+    button.addEventListener("click", () => startKukuMode(button.dataset.kukuLevel));
+  });
+
+  $("#kukuKeypad").addEventListener("pointerup", (event) => {
+    if (kukuLocked) return;
+    const button = event.target.closest("button"); if (!button) return;
+    const key = button.dataset.kukuKey; const action = button.dataset.kukuAction;
+    if (key !== undefined) { if (kukuAnswerBuffer.length < 3) kukuAnswerBuffer = kukuAnswerBuffer === "0" ? key : kukuAnswerBuffer + key; updateKukuAnswerDisplay(); return; }
+    if (action === "clear") kukuAnswerBuffer = ""; else if (action === "backspace") kukuAnswerBuffer = kukuAnswerBuffer.slice(0, -1);
+    updateKukuAnswerDisplay();
+  });
+
+  $("#kukuSubmitBtn").addEventListener("click", submitKukuAnswer);
+  kukuVoiceBtn.addEventListener("click", () => {
+    kukuVoiceEnabled = !kukuVoiceEnabled; updateKukuButtons();
+    if (kukuVoiceEnabled && !kukuLocked && !kukuPromptSpeaking) startKukuVoiceRecognition();
+    else if (!kukuVoiceEnabled) { stopKukuRecognition(); kukuPrompt.textContent = "数字をタップして答えてね"; }
+  });
+  kukuBgmBtn.addEventListener("click", () => {
+    bgmOn = !bgmOn; saveBooleanSetting(BGM_SETTING_KEY, bgmOn); updateKukuButtons(); updateSettingsUi();
+    if (bgmOn) { bgmEngine.ensureContext(); playBgmForStreak(kukuStreak, true); } else stopBgm();
+  });
+  $("#kukuRetryBtn").addEventListener("click", () => startKukuMode(kukuLevel));
+  $("#kukuMenuBtn").addEventListener("click", showKukuHome);
 
   root
     .querySelectorAll(
