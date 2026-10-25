@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V118-VOICE-INTERNAL-GAP-CUT"
+APP_VERSION = "CLEAN-V119-VOICE-STABLE-GAP-CUT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -10788,7 +10788,7 @@ HTML = r"""
     recognition.continuous =
       false;
     recognition.interimResults =
-      true;
+      false;
     recognition.maxAlternatives =
       8;
 
@@ -10923,10 +10923,7 @@ HTML = r"""
           )
         );
 
-      if (
-        !result ||
-        result.isFinal === false
-      ) {
+      if (!result) {
         return;
       }
 
@@ -12438,7 +12435,8 @@ HTML = r"""
     }
 
     // 境界情報はあるが前半文字列が取得できなかった場合。
-    // 「18 19」のように区切りがあれば最後の発話だけを採用。
+    // 「18 19」「十八、十九」のように区切りがあれば、
+    // 0.15秒以上の無音より後ろの最後の発話だけを採用。
     const parts =
       current
         .split(separators)
@@ -13189,15 +13187,6 @@ HTML = r"""
       return;
     }
 
-    // interim結果は前半文字列を覚えるためだけに使い、
-    // 回答確定には使わない。
-    if (result.isFinal === false) {
-      updateVoiceUi(
-        "音声回答：聞いています…"
-      );
-      return;
-    }
-
     // 問題はマイクonstart後に初めて表示されるため、
     // 450ms未満で返る認識結果は子どもの回答とは考えにくい。
     // 直前のBGM・ゴワサンの残響として捨てる。
@@ -13267,7 +13256,7 @@ HTML = r"""
 
     recognition.lang = "ja-JP";
     recognition.continuous = false;
-    recognition.interimResults = true;
+    recognition.interimResults = false;
     recognition.maxAlternatives = 5;
 
     recognition.onstart = () => {
@@ -15650,7 +15639,7 @@ HTML = r"""
 
     recognition.lang = "ja-JP";
     recognition.continuous = false;
-    recognition.interimResults = true;
+    recognition.interimResults = false;
     recognition.maxAlternatives = 10;
 
     recognition.onstart = () => {
@@ -15719,10 +15708,7 @@ HTML = r"""
           )
         );
 
-      if (
-        !result ||
-        result.isFinal === false
-      ) {
+      if (!result) {
         return;
       }
 
@@ -16307,7 +16293,7 @@ HTML = r"""
       false;
 
     recognition.interimResults =
-      true;
+      false;
 
     recognition.maxAlternatives =
       5;
@@ -16386,10 +16372,7 @@ HTML = r"""
             )
           );
 
-        if (
-          !result ||
-          result.isFinal === false
-        ) {
+        if (!result) {
           return;
         }
 
