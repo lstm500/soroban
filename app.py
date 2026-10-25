@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V122-KUKU-FAST-VAD-150MS"
+APP_VERSION = "CLEAN-V124-KUKU-3-6-9-VOICE-FIX"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5359,7 +5359,7 @@ HTML = r"""
   // 九九専用の高速音声区切り。
   // Web Speech APIのspeechend判定を待たず、実マイク音量で150ms無音を検出する。
   const KUKU_VAD_SILENCE_MS = 150;
-  const KUKU_VAD_MIN_RMS = 0.010;
+  const KUKU_VAD_MIN_RMS = 0.0035;
   let kukuVadStream = null;
   let kukuVadContext = null;
   let kukuVadSource = null;
@@ -12696,13 +12696,13 @@ HTML = r"""
       compact
         .replace(/いち/g, "一")
         .replace(/に/g, "二")
-        .replace(/さん/g, "三")
+        .replace(/さん|サン|山|酸|産|参|算/g, "三")
         .replace(/よん|し/g, "四")
         .replace(/ご/g, "五")
-        .replace(/ろく/g, "六")
+        .replace(/ろく|ロク|六|録|禄|ろっく|ロック/g, "六")
         .replace(/なな|しち/g, "七")
         .replace(/はち/g, "八")
-        .replace(/きゅう|く/g, "九")
+        .replace(/きゅう|きゅー|きゅうう|急|球|旧|級|九州|く/g, "九")
         .replace(/れい|ぜろ/g, "零")
         .replace(/じゅう/g, "十")
         .replace(/ひゃく/g, "百")
@@ -12800,13 +12800,13 @@ HTML = r"""
       )
       .replace(/いち/g, "一")
       .replace(/に/g, "二")
-      .replace(/さん/g, "三")
+      .replace(/さん|サン|山|酸|産|参|算/g, "三")
       .replace(/よん|し/g, "四")
       .replace(/ご/g, "五")
-      .replace(/ろく/g, "六")
+      .replace(/ろく|ロク|六|録|禄|ろっく|ロック/g, "六")
       .replace(/なな|しち/g, "七")
       .replace(/はち/g, "八")
-      .replace(/きゅう|く/g, "九")
+      .replace(/きゅう|きゅー|きゅうう|急|球|旧|級|九州|く/g, "九")
       .replace(/れい|ぜろ/g, "零")
       .replace(/じゅう/g, "十")
       .replace(/ひゃく/g, "百")
@@ -12896,17 +12896,30 @@ HTML = r"""
 
       // ブラウザがconfidenceを返している場合、
       // 極端に低い数字候補はBGMや環境音の誤認識として捨てる。
-      if (
-        confidence > 0 &&
-        confidence < 0.22
-      ) {
-        continue;
-      }
-
       const normalized =
         normalizeNumericSpeechText(
           transcript
         );
+
+      const isShortKukuDigitCandidate =
+        normalized === "3" ||
+        normalized === "三" ||
+        normalized === "6" ||
+        normalized === "六" ||
+        normalized === "9" ||
+        normalized === "九";
+
+      if (
+        confidence > 0 &&
+        confidence <
+          (
+            isShortKukuDigitCandidate
+              ? 0.08
+              : 0.22
+          )
+      ) {
+        continue;
+      }
 
       const digitOnlyBonus =
         /^-?\d+$/.test(
@@ -12915,9 +12928,19 @@ HTML = r"""
           ? 0.15
           : 0;
 
+      const shortKukuDigitBonus =
+        (
+          normalized === "三" ||
+          normalized === "六" ||
+          normalized === "九"
+        )
+          ? 0.10
+          : 0;
+
       const score =
         confidence +
-        digitOnlyBonus -
+        digitOnlyBonus +
+        shortKukuDigitBonus -
         Math.min(
           0.12,
           transcript.length *
@@ -15683,6 +15706,21 @@ HTML = r"""
           kukuVadData.length
         );
 
+      let peak = 0;
+
+      for (
+        let i = 0;
+        i < kukuVadData.length;
+        i += 1
+      ) {
+        peak = Math.max(
+          peak,
+          Math.abs(
+            kukuVadData[i]
+          )
+        );
+      }
+
       if (
         !speechStarted &&
         rms < 0.03
@@ -15696,15 +15734,23 @@ HTML = r"""
         Math.max(
           KUKU_VAD_MIN_RMS,
           Math.min(
-            0.040,
-            noiseFloor * 2.8
+            0.024,
+            noiseFloor * 1.7
           )
         );
 
       const now =
         performance.now();
 
-      if (rms >= threshold) {
+      const voiced =
+        rms >= threshold ||
+        peak >=
+          Math.max(
+            0.010,
+            threshold * 2.0
+          );
+
+      if (voiced) {
         voicedFrames += 1;
 
         if (
