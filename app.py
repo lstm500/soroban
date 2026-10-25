@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V119-VOICE-STABLE-GAP-CUT"
+APP_VERSION = "CLEAN-V120-KUKU-MIC-LIFECYCLE-FIX"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -15471,17 +15471,68 @@ HTML = r"""
     );
   }
 
+  function detachKukuRecognitionHandlers(recognition) {
+    if (!recognition) return;
+
+    recognition.onstart = null;
+    recognition.onspeechstart = null;
+    recognition.onspeechend = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+  }
+
   function stopKukuRecognition() {
-    if (!kukuRecognition) {
+    const recognition = kukuRecognition;
+
+    if (!recognition) {
       kukuListening = false;
       kukuSpeechDetected = false;
       refreshBgmVolume();
       return;
     }
-    resetSpeechSegmentState(kukuRecognition);
-    setVoiceRecognitionProcessing(kukuRecognition, false);
-    try { kukuRecognition.onend = null; kukuRecognition.abort(); } catch (error) {}
+
+    // 先に現在の認識から切り離す。
+    // abort() 後に遅れて発生するイベントが次問の状態を書き換えないようにする。
     kukuRecognition = null;
+    resetSpeechSegmentState(recognition);
+    setVoiceRecognitionProcessing(recognition, false);
+    detachKukuRecognitionHandlers(recognition);
+
+    try {
+      recognition.abort();
+    } catch (error) {}
+
+    kukuListening = false;
+    kukuSpeechDetected = false;
+    refreshBgmVolume();
+  }
+
+  function finishKukuRecognitionAfterAnswer() {
+    const recognition = kukuRecognition;
+
+    if (!recognition) {
+      kukuListening = false;
+      kukuSpeechDetected = false;
+      refreshBgmVolume();
+      return;
+    }
+
+    // 回答確定時は abort() ではなく stop() で正常終了させる。
+    // Android/Chrome で次問の recognition.start() が塞がれるのを防ぐ。
+    kukuRecognition = null;
+    resetSpeechSegmentState(recognition);
+    setVoiceRecognitionProcessing(recognition, false);
+    detachKukuRecognitionHandlers(recognition);
+
+    try {
+      recognition.stop();
+    } catch (error) {
+      try {
+        recognition.abort();
+      } catch (innerError) {}
+    }
+
     kukuListening = false;
     kukuSpeechDetected = false;
     refreshBgmVolume();
@@ -15620,29 +15671,79 @@ HTML = r"""
   }
 
   function startKukuVoiceRecognition() {
-    if (!kukuVoiceEnabled || kukuLocked || kukuPromptSpeaking) return;
+    if (
+      !kukuVoiceEnabled ||
+      kukuLocked ||
+      kukuPromptSpeaking
+    ) {
+      return;
+    }
 
-    const Recognition = getSpeechRecognitionClass();
+    const Recognition =
+      getSpeechRecognitionClass();
+
     if (!Recognition) {
       kukuPrompt.textContent =
         "このブラウザでは音声回答を使えません。数字で答えてください。";
       return;
     }
 
+    // 同一問題内で古い認識が残っている場合も、
+    // ハンドラを切ってから完全に破棄する。
     stopKukuRecognition();
 
-    const recognition = new Recognition();
+    const recognition =
+      new Recognition();
+
+    const recognitionQuestionToken =
+      kukuRunToken;
+
     kukuRecognition = recognition;
 
-    let gotResult = false;
+    let answerAccepted = false;
     let retryAllowed = true;
+    let recognitionStarted = false;
 
     recognition.lang = "ja-JP";
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 10;
 
+    const isCurrentRecognition = () =>
+      kukuRecognition === recognition &&
+      recognitionQuestionToken === kukuRunToken;
+
+    const scheduleRetry = (
+      delay = 220
+    ) => {
+      if (
+        !retryAllowed ||
+        answerAccepted ||
+        !kukuVoiceEnabled ||
+        kukuLocked ||
+        kukuPromptSpeaking ||
+        recognitionQuestionToken !== kukuRunToken
+      ) {
+        return;
+      }
+
+      setTimeout(() => {
+        if (
+          kukuVoiceEnabled &&
+          !kukuLocked &&
+          !kukuPromptSpeaking &&
+          recognitionQuestionToken === kukuRunToken &&
+          !kukuRecognition
+        ) {
+          startKukuVoiceRecognition();
+        }
+      }, delay);
+    };
+
     recognition.onstart = () => {
+      if (!isCurrentRecognition()) return;
+
+      recognitionStarted = true;
       resetSpeechSegmentState(
         recognition
       );
@@ -15650,17 +15751,20 @@ HTML = r"""
         recognition
       );
 
-      // 新しい発話セッション開始時に、前回の音声回答を必ず破棄する。
+      // 新しい認識セッションでは、前回の回答を必ず破棄する。
       kukuAnswerBuffer = "";
       updateKukuAnswerDisplay();
 
       kukuListening = true;
       kukuSpeechDetected = false;
       refreshBgmVolume();
-      kukuPrompt.textContent = "🎤 答えを言ってね";
+      kukuPrompt.textContent =
+        "🎤 答えを言ってね";
     };
 
     recognition.onspeechstart = () => {
+      if (!isCurrentRecognition()) return;
+
       noteSpeechSegmentStart(
         recognition,
         () => {
@@ -15678,10 +15782,13 @@ HTML = r"""
 
       kukuSpeechDetected = true;
       refreshBgmVolume();
-      kukuPrompt.textContent = "🎤 聞いています…";
+      kukuPrompt.textContent =
+        "🎤 聞いています…";
     };
 
     recognition.onspeechend = () => {
+      if (!isCurrentRecognition()) return;
+
       noteSpeechSegmentEnd(
         recognition
       );
@@ -15691,10 +15798,15 @@ HTML = r"""
         true
       );
 
-      kukuPrompt.textContent = "🎤 確認中…";
+      kukuPrompt.textContent =
+        "🎤 確認中…";
     };
 
-    recognition.onresult = (event) => {
+    recognition.onresult = (
+      event
+    ) => {
+      if (!isCurrentRecognition()) return;
+
       setVoiceRecognitionProcessing(
         recognition,
         false
@@ -15712,29 +15824,33 @@ HTML = r"""
         return;
       }
 
-      gotResult = true;
-
       const selected =
         selectBestNumericSpeech(
           result
         );
 
-      if (selected) {
-        retryAllowed = false;
-        kukuAnswerBuffer =
-          String(selected.value);
-        updateKukuAnswerDisplay();
-        submitKukuAnswer();
-      } else {
+      if (!selected) {
+        // 数字として採用できない結果が1回返っても、
+        // 「結果取得済み」にはしない。onend後に必ず聞き直す。
         kukuPrompt.textContent =
           "数字だけを、もう一度言ってね。";
+        return;
       }
+
+      answerAccepted = true;
+      retryAllowed = false;
+
+      kukuAnswerBuffer =
+        String(selected.value);
+      updateKukuAnswerDisplay();
+      submitKukuAnswer();
     };
 
-    recognition.onerror = (event) => {
-      resetSpeechSegmentState(
-        recognition
-      );
+    recognition.onerror = (
+      event
+    ) => {
+      if (!isCurrentRecognition()) return;
+
       setVoiceRecognitionProcessing(
         recognition,
         false
@@ -15747,11 +15863,7 @@ HTML = r"""
       const errorName =
         event?.error || "";
 
-      // ユーザー操作による停止や権限エラーは自動再試行しない。
       if (
-        (
-          errorName === "aborted" 
-        ) ||
         errorName === "not-allowed" ||
         errorName === "service-not-allowed" ||
         errorName === "audio-capture"
@@ -15762,16 +15874,25 @@ HTML = r"""
       kukuPrompt.textContent =
         errorName === "no-speech"
           ? "🎤 もう一度、答えを言ってね"
-          : "うまく聞き取れませんでした。もう一度言ってね。";
+          : retryAllowed
+            ? "うまく聞き取れませんでした。もう一度言ってね。"
+            : "マイクを利用できません。数字で答えてください。";
     };
 
     recognition.onend = () => {
+      if (!isCurrentRecognition()) return;
+
+      // この認識を終了済みにしてから再試行する。
+      kukuRecognition = null;
       resetSpeechSegmentState(
         recognition
       );
       setVoiceRecognitionProcessing(
         recognition,
         false
+      );
+      detachKukuRecognitionHandlers(
+        recognition
       );
 
       kukuListening = false;
@@ -15780,34 +15901,70 @@ HTML = r"""
 
       if (
         retryAllowed &&
-        !gotResult &&
-        kukuVoiceEnabled &&
-        !kukuLocked &&
-        !kukuPromptSpeaking
+        !answerAccepted
       ) {
         kukuAnswerBuffer = "";
         updateKukuAnswerDisplay();
-
-        setTimeout(
-          () => {
-            if (
-              kukuVoiceEnabled &&
-              !kukuLocked &&
-              !kukuPromptSpeaking
-            ) {
-              startKukuVoiceRecognition();
-            }
-          },
-          140
-        );
+        scheduleRetry(220);
       }
     };
 
     try {
       recognition.start();
+
+      // Android/Chromeでstart()が例外を出さず、onstartも来ない場合の保険。
+      setTimeout(() => {
+        if (
+          !recognitionStarted &&
+          isCurrentRecognition() &&
+          !kukuLocked
+        ) {
+          kukuRecognition = null;
+          resetSpeechSegmentState(
+            recognition
+          );
+          setVoiceRecognitionProcessing(
+            recognition,
+            false
+          );
+          detachKukuRecognitionHandlers(
+            recognition
+          );
+
+          try {
+            recognition.abort();
+          } catch (error) {}
+
+          kukuListening = false;
+          kukuSpeechDetected = false;
+          kukuPrompt.textContent =
+            "🎤 マイクを再接続しています…";
+          scheduleRetry(260);
+        }
+      }, 900);
     } catch (error) {
+      if (
+        kukuRecognition === recognition
+      ) {
+        kukuRecognition = null;
+      }
+
+      resetSpeechSegmentState(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+      detachKukuRecognitionHandlers(
+        recognition
+      );
+
+      kukuListening = false;
+      kukuSpeechDetected = false;
       kukuPrompt.textContent =
-        "音声回答を開始できませんでした。数字で答えてください。";
+        "🎤 マイクを再接続しています…";
+      scheduleRetry(260);
     }
   }
 
@@ -15829,7 +15986,7 @@ HTML = r"""
     kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
     kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${kukuQuestions.length}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
     kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = getKukuSpokenPrompt(question);
-    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 60); else kukuPrompt.textContent = "数字をタップして答えてね"; });
+    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 180); else kukuPrompt.textContent = "数字をタップして答えてね"; });
   }
 
   function submitKukuAnswer() {
@@ -15837,7 +15994,7 @@ HTML = r"""
     const raw = String(kukuAnswerBuffer || "").trim();
     if (!raw) { kukuFeedback.textContent = "答えを入力してください"; kukuFeedback.className = "kuku-feedback bad"; return; }
     const user = Number(raw); if (!Number.isFinite(user)) return;
-    kukuLocked = true; stopKukuRecognition();
+    kukuLocked = true; finishKukuRecognitionAfterAnswer();
     const question = kukuQuestions[kukuQuestionIndex]; const ok = user === question.answer;
     if (ok) { kukuCorrect += 1; kukuStreak += 1; kukuFeedback.textContent = "お見事！"; kukuFeedback.className = "kuku-feedback good"; }
     else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
