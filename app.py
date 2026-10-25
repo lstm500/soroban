@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V114-VOICE-SESSION-RESET"
+APP_VERSION = "CLEAN-V115-VOICE-1S-RESET-TIMER-PAUSE-KUKU-NOBGM"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3733,7 +3733,6 @@ HTML = r"""
       <div id="kukuPrompt" class="kuku-prompt">問題を読み上げます</div>
       <div class="kuku-controls">
         <button type="button" id="kukuVoiceBtn">🎤 音声回答 OFF</button>
-        <button type="button" id="kukuBgmBtn">♪ BGM ON</button>
       </div>
       <div id="kukuAnswerDisplay" class="kuku-answer-display">&nbsp;</div>
       <div id="kukuKeypad" class="kuku-keypad">
@@ -4727,7 +4726,6 @@ HTML = r"""
   const kukuEquation = $("#kukuEquation");
   const kukuPrompt = $("#kukuPrompt");
   const kukuVoiceBtn = $("#kukuVoiceBtn");
-  const kukuBgmBtn = $("#kukuBgmBtn");
   const kukuAnswerDisplay = $("#kukuAnswerDisplay");
   const kukuFeedback = $("#kukuFeedback");
   const kukuResultScore = $("#kukuResultScore");
@@ -5489,6 +5487,8 @@ HTML = r"""
   const MIC_RESULT_GUARD_MS = 350;
   const HINT_MIC_AFTER_TTS_MS = 70;
   const HINT_MIC_RETRY_MS = 180;
+  // 発話が途切れて1秒続いたら、その発話セッションを破棄する。
+  const VOICE_SILENCE_RESET_MS = 1000;
 
   const BGM_VOLUME_NORMAL = 0.68;
   const BGM_VOLUME_APP_SPEECH = 0.09;
@@ -10586,6 +10586,14 @@ HTML = r"""
     if (
       hintQuestionRecognition
     ) {
+      clearSpeechSilenceReset(
+        hintQuestionRecognition
+      );
+      setVoiceRecognitionProcessing(
+        hintQuestionRecognition,
+        false
+      );
+
       try {
         hintQuestionRecognition.onend =
           null;
@@ -10844,6 +10852,14 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       hintQuestionSpeechDetected =
         true;
 
@@ -10858,6 +10874,25 @@ HTML = r"""
     };
 
     recognition.onspeechend = () => {
+      setVoiceRecognitionProcessing(
+        recognition,
+        true
+      );
+
+      armSpeechSilenceReset(
+        recognition,
+        () => {
+          if (step) {
+            step.pendingHintAnswer = null;
+          }
+
+          setHintVoiceStatus(
+            "1秒以上途切れたため、もう一度答えてね。",
+            "wrong"
+          );
+        }
+      );
+
       setHintVoiceStatus(
         "🎤 確認中…",
         "listening"
@@ -10867,6 +10902,14 @@ HTML = r"""
     recognition.onresult = (
       event
     ) => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       const result =
         getLatestRecognitionResult(
           event
@@ -10941,6 +10984,14 @@ HTML = r"""
     recognition.onerror = (
       event
     ) => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       const code =
         event?.error || "";
 
@@ -10963,6 +11014,14 @@ HTML = r"""
     };
 
     recognition.onend = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       hintQuestionListening =
         false;
       hintQuestionListeningStartedAt =
@@ -12132,6 +12191,104 @@ HTML = r"""
     );
   }
 
+  const speechSilenceResetTimers =
+    new WeakMap();
+
+  const voiceRecognitionProcessing =
+    new Set();
+
+  function clearSpeechSilenceReset(
+    recognition
+  ) {
+    if (!recognition) {
+      return;
+    }
+
+    const timer =
+      speechSilenceResetTimers.get(
+        recognition
+      );
+
+    if (timer) {
+      clearTimeout(timer);
+      speechSilenceResetTimers.delete(
+        recognition
+      );
+    }
+  }
+
+  function setVoiceRecognitionProcessing(
+    recognition,
+    active
+  ) {
+    if (!recognition) {
+      return;
+    }
+
+    if (active) {
+      voiceRecognitionProcessing.add(
+        recognition
+      );
+    } else {
+      voiceRecognitionProcessing.delete(
+        recognition
+      );
+    }
+  }
+
+  function isVoiceRecognitionProcessing() {
+    return (
+      voiceRecognitionProcessing.size >
+      0
+    );
+  }
+
+  function armSpeechSilenceReset(
+    recognition,
+    onReset
+  ) {
+    if (!recognition) {
+      return;
+    }
+
+    clearSpeechSilenceReset(
+      recognition
+    );
+
+    const timer =
+      setTimeout(() => {
+        speechSilenceResetTimers.delete(
+          recognition
+        );
+
+        recognition.__silenceReset =
+          true;
+
+        setVoiceRecognitionProcessing(
+          recognition,
+          false
+        );
+
+        try {
+          if (
+            typeof onReset ===
+            "function"
+          ) {
+            onReset();
+          }
+        } catch (error) {}
+
+        try {
+          recognition.abort();
+        } catch (error) {}
+      }, VOICE_SILENCE_RESET_MS);
+
+    speechSilenceResetTimers.set(
+      recognition,
+      timer
+    );
+  }
+
   function getLatestRecognitionResult(event) {
     const results = event?.results;
 
@@ -12756,6 +12913,14 @@ HTML = r"""
   function handleRecognizedSpeech(
     event
   ) {
+    clearSpeechSilenceReset(
+      voiceRecognition
+    );
+    setVoiceRecognitionProcessing(
+      voiceRecognition,
+      false
+    );
+
     if (
       locked ||
       !voiceAnswerEnabled ||
@@ -12878,6 +13043,14 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       // ブラウザが人の発話を検知した瞬間だけBGMを消す。
       voiceSpeechDetected = true;
       refreshBgmVolume();
@@ -12888,6 +13061,22 @@ HTML = r"""
     };
 
     recognition.onspeechend = () => {
+      // 発話終了後のブラウザ解析中はタイマーを止める。
+      setVoiceRecognitionProcessing(
+        recognition,
+        true
+      );
+
+      armSpeechSilenceReset(
+        recognition,
+        () => {
+          answerInput.value = "";
+          updateVoiceUi(
+            "音声回答：1秒以上途切れたため、もう一度話してください"
+          );
+        }
+      );
+
       // 結果確定まではBGMを戻さず、語尾をBGMで汚さない。
       updateVoiceUi(
         "音声回答：確認中…"
@@ -12898,6 +13087,14 @@ HTML = r"""
       handleRecognizedSpeech;
 
     recognition.onend = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       voiceRecognitionRunning = false;
       voiceListeningStartedAt = 0;
       voiceSpeechDetected = false;
@@ -12927,6 +13124,14 @@ HTML = r"""
     recognition.onerror = (
       event
     ) => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       voiceRecognitionRunning = false;
       voiceListeningStartedAt = 0;
       voiceSpeechDetected = false;
@@ -15013,6 +15218,8 @@ HTML = r"""
       refreshBgmVolume();
       return;
     }
+    clearSpeechSilenceReset(kukuRecognition);
+    setVoiceRecognitionProcessing(kukuRecognition, false);
     try { kukuRecognition.onend = null; kukuRecognition.abort(); } catch (error) {}
     kukuRecognition = null;
     kukuListening = false;
@@ -15075,7 +15282,6 @@ HTML = r"""
   function updateKukuButtons() {
     kukuVoiceBtn.textContent = kukuVoiceEnabled ? "🎤 音声回答 ON" : "🎤 音声回答 OFF";
     kukuVoiceBtn.classList.toggle("on", kukuVoiceEnabled);
-    kukuBgmBtn.textContent = bgmOn ? "♪ BGM ON" : "♪ BGM OFF";
   }
 
   function updateKukuTimer() {
@@ -15092,7 +15298,21 @@ HTML = r"""
     if (kukuLevel === 1) return;
     kukuSeconds = kukuLevel === 4 ? 90 : kukuLevel === 5 ? 240 : 60;
     updateKukuTimer();
-    kukuTimerHandle = setInterval(() => { kukuSeconds = Math.max(0, kukuSeconds - 1); updateKukuTimer(); if (kukuSeconds <= 0) { stopKukuTimer(); finishKukuMode(true); } }, 1000);
+    kukuTimerHandle = setInterval(() => {
+      // 発話後にブラウザが音声解析している時間は制限時間に含めない。
+      if (isVoiceRecognitionProcessing()) {
+        updateKukuTimer();
+        return;
+      }
+
+      kukuSeconds = Math.max(0, kukuSeconds - 1);
+      updateKukuTimer();
+
+      if (kukuSeconds <= 0) {
+        stopKukuTimer();
+        finishKukuMode(true);
+      }
+    }, 1000);
   }
 
   const KUKU_CHANT_STEMS = {
@@ -15174,16 +15394,47 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       kukuSpeechDetected = true;
       refreshBgmVolume();
       kukuPrompt.textContent = "🎤 聞いています…";
     };
 
     recognition.onspeechend = () => {
+      setVoiceRecognitionProcessing(
+        recognition,
+        true
+      );
+
+      armSpeechSilenceReset(
+        recognition,
+        () => {
+          kukuAnswerBuffer = "";
+          updateKukuAnswerDisplay();
+          kukuPrompt.textContent =
+            "🎤 1秒以上途切れたため、もう一度答えてね";
+        }
+      );
+
       kukuPrompt.textContent = "🎤 確認中…";
     };
 
     recognition.onresult = (event) => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       gotResult = true;
 
       const selected =
@@ -15206,6 +15457,14 @@ HTML = r"""
     };
 
     recognition.onerror = (event) => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       kukuListening = false;
       kukuSpeechDetected = false;
       refreshBgmVolume();
@@ -15215,7 +15474,10 @@ HTML = r"""
 
       // ユーザー操作による停止や権限エラーは自動再試行しない。
       if (
-        errorName === "aborted" ||
+        (
+          errorName === "aborted" &&
+          !recognition.__silenceReset
+        ) ||
         errorName === "not-allowed" ||
         errorName === "service-not-allowed" ||
         errorName === "audio-capture"
@@ -15230,6 +15492,14 @@ HTML = r"""
     };
 
     recognition.onend = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       kukuListening = false;
       kukuSpeechDetected = false;
       refreshBgmVolume();
@@ -15273,7 +15543,8 @@ HTML = r"""
     kukuQuestions = buildKukuQuestions(kukuLevel); kukuQuestionIndex = 0; kukuCorrect = 0; kukuStreak = 0; kukuAnswerBuffer = ""; kukuVoiceEnabled = preferredVoiceAnswerEnabled; kukuLocked = true;
     kukuMenuView.classList.add("hidden"); kukuResultView.classList.add("hidden"); kukuGameView.classList.remove("hidden");
     updateKukuButtons(); updateKukuAnswerDisplay();
-    if (bgmOn) { bgmEngine.ensureContext(); playBgmForStreak(0, true); }
+    // 九九即答チャレンジではBGMを使用しない。
+    stopBgm();
     startKukuTimer(); runKukuQuestion();
   }
 
@@ -15296,7 +15567,7 @@ HTML = r"""
     const question = kukuQuestions[kukuQuestionIndex]; const ok = user === question.answer;
     if (ok) { kukuCorrect += 1; kukuStreak += 1; kukuFeedback.textContent = "お見事！"; kukuFeedback.className = "kuku-feedback good"; }
     else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
-    kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; playBgmForStreak(kukuStreak);
+    kukuCorrectCount.textContent = `正解 ${kukuCorrect}`;
     const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= kukuQuestions.length) finishKukuMode(false); else runKukuQuestion(); };
     speakAnswerFeedback(ok, kukuStreak, advance, ok ? "お見事！" : "残念！");
   }
@@ -15348,6 +15619,14 @@ HTML = r"""
       refreshBgmVolume();
       return;
     }
+
+    clearSpeechSilenceReset(
+      anzanRecognition
+    );
+    setVoiceRecognitionProcessing(
+      anzanRecognition,
+      false
+    );
 
     try {
       anzanRecognition.onend = null;
@@ -15761,6 +16040,14 @@ HTML = r"""
     };
 
     recognition.onspeechstart = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       anzanSpeechDetected = true;
       refreshBgmVolume();
 
@@ -15769,12 +16056,35 @@ HTML = r"""
     };
 
     recognition.onspeechend = () => {
+      setVoiceRecognitionProcessing(
+        recognition,
+        true
+      );
+
+      armSpeechSilenceReset(
+        recognition,
+        () => {
+          anzanAnswerBuffer = "";
+          updateAnzanAnswerDisplay();
+          anzanVoiceStatus.textContent =
+            "🎤 1秒以上途切れたため、もう一度答えてね";
+        }
+      );
+
       anzanVoiceStatus.textContent =
         "🎤 確認中…";
     };
 
     recognition.onresult =
       (event) => {
+        clearSpeechSilenceReset(
+          recognition
+        );
+        setVoiceRecognitionProcessing(
+          recognition,
+          false
+        );
+
         const result =
           getLatestRecognitionResult(
             event
@@ -15811,6 +16121,14 @@ HTML = r"""
       };
 
     recognition.onerror = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       anzanListening = false;
       anzanListeningStartedAt = 0;
       anzanSpeechDetected = false;
@@ -15820,6 +16138,14 @@ HTML = r"""
     };
 
     recognition.onend = () => {
+      clearSpeechSilenceReset(
+        recognition
+      );
+      setVoiceRecognitionProcessing(
+        recognition,
+        false
+      );
+
       anzanListening = false;
       anzanListeningStartedAt = 0;
       anzanSpeechDetected = false;
@@ -18008,6 +18334,14 @@ HTML = r"""
     updateTimer();
 
     timerHandle = setInterval(() => {
+      // 発話終了後の「確認中…」だけは回答時間に含めない。
+      if (
+        isVoiceRecognitionProcessing()
+      ) {
+        updateTimer();
+        return;
+      }
+
       seconds = Math.max(
         0,
         seconds - 1
@@ -19456,10 +19790,6 @@ HTML = r"""
     kukuVoiceEnabled = !kukuVoiceEnabled; updateKukuButtons();
     if (kukuVoiceEnabled && !kukuLocked && !kukuPromptSpeaking) startKukuVoiceRecognition();
     else if (!kukuVoiceEnabled) { stopKukuRecognition(); kukuPrompt.textContent = "数字をタップして答えてね"; }
-  });
-  kukuBgmBtn.addEventListener("click", () => {
-    bgmOn = !bgmOn; saveBooleanSetting(BGM_SETTING_KEY, bgmOn); updateKukuButtons(); updateSettingsUi();
-    if (bgmOn) { bgmEngine.ensureContext(); playBgmForStreak(kukuStreak, true); } else stopBgm();
   });
   $("#kukuRetryBtn").addEventListener("click", () => startKukuMode(kukuLevel));
   $("#kukuMenuBtn").addEventListener("click", showKukuHome);
