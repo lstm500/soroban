@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V132-KUKU-COIN-MEDALS"
+APP_VERSION = "CLEAN-V133-HOME-COIN-MEDAL"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -374,6 +374,49 @@ HTML = r"""
     margin-top: 2px;
     font-size: 22px;
     font-weight: 1000;
+  }
+
+  /* TOPの現在階級メダルは、九九と同じひもなしの丸いコイン型。 */
+  .home-rank-medal-coin {
+    position: relative;
+    width: 78px;
+    height: 78px;
+    flex: 0 0 78px;
+    display: grid;
+    place-items: center;
+  }
+
+  .home-rank-medal-image {
+    display: block;
+    width: 78px;
+    height: 78px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 5px rgba(55, 42, 27, .28));
+  }
+
+  .home-rank-medal-placeholder {
+    display: none;
+    width: 68px;
+    height: 68px;
+    place-items: center;
+    border: 3px solid #aaa297;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 28%, #f0ece4 0%, #d8d3ca 62%, #b8b1a6 100%);
+    color: #6f685f;
+    box-shadow:
+      inset 0 0 0 4px rgba(255,255,255,.32),
+      0 3px 5px rgba(55,45,34,.13);
+    font-size: 22px;
+    font-weight: 1000;
+  }
+
+  .home-rank-medal-coin.no-rank .home-rank-medal-image {
+    display: none;
+  }
+
+  .home-rank-medal-coin.no-rank .home-rank-medal-placeholder {
+    display: grid;
   }
 
   .rank-medal {
@@ -3162,6 +3205,22 @@ HTML = r"""
       font-size: 19px;
     }
 
+    .home-rank-medal-coin {
+      width: 68px;
+      height: 68px;
+      flex-basis: 68px;
+    }
+
+    .home-rank-medal-image {
+      width: 68px;
+      height: 68px;
+    }
+
+    .home-rank-medal-placeholder {
+      width: 60px;
+      height: 60px;
+    }
+
     .rank-celebration {
       position: absolute;
       align-items: flex-start;
@@ -3668,8 +3727,15 @@ HTML = r"""
   </div>
 
   <div class="home-rank-card">
-    <div id="homeRankMedal" class="rank-medal">
-      <span class="rank-medal-text">－</span>
+    <div
+      id="homeRankMedal"
+      class="home-rank-medal-coin no-rank"
+      data-gold-src="__KUKU_GOLD_MEDAL__"
+      data-silver-src="__KUKU_SILVER_MEDAL__"
+      data-bronze-src="__KUKU_BRONZE_MEDAL__"
+    >
+      <img id="homeRankMedalImage" class="home-rank-medal-image" alt="現在の階級メダル">
+      <span class="home-rank-medal-placeholder">－</span>
     </div>
     <div class="home-rank-copy">
       <div class="home-rank-label">あなたの階級</div>
@@ -4867,6 +4933,7 @@ HTML = r"""
   const appRankSub = $("#appRankSub");
   const appRankNext = $("#appRankNext");
   const homeRankMedal = $("#homeRankMedal");
+  const homeRankMedalImage = $("#homeRankMedalImage");
   const homeRankName = $("#homeRankName");
   const homeRankNext = $("#homeRankNext");
   const medalCollectionGrid = $("#medalCollectionGrid");
@@ -8094,11 +8161,14 @@ HTML = r"""
           : null
       );
 
-    if (
-      !rankName ||
-      rankName === "見習い" ||
-      !effectiveTier
-    ) {
+    const hasRank =
+      Boolean(
+        rankName &&
+        rankName !== "見習い" &&
+        effectiveTier
+      );
+
+    if (!hasRank) {
       element.classList.add(
         "no-rank"
       );
@@ -8113,6 +8183,54 @@ HTML = r"""
           tierClass
         );
       }
+    }
+
+    // TOPだけは、九九と同じ画像の丸メダルへ切り替える。
+    if (
+      element.classList.contains(
+        "home-rank-medal-coin"
+      )
+    ) {
+      const image =
+        element.querySelector(
+          ".home-rank-medal-image"
+        );
+
+      const sourceMap = {
+        gold:
+          element.dataset.goldSrc,
+        silver:
+          element.dataset.silverSrc,
+        bronze:
+          element.dataset.bronzeSrc
+      };
+
+      if (
+        hasRank &&
+        image &&
+        sourceMap[effectiveTier]
+      ) {
+        image.src =
+          sourceMap[effectiveTier];
+
+        image.alt =
+          `${getMedalTierDefinition(effectiveTier).label}メダル`;
+
+        element.title =
+          `${rankName}・${getMedalTierDefinition(effectiveTier).label}メダル`;
+      } else if (image) {
+        image.removeAttribute(
+          "src"
+        );
+
+        image.alt =
+          "未獲得";
+
+        element.title =
+          "まだメダルを獲得していません";
+      }
+
+      return;
     }
 
     const textNode =
