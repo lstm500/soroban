@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V129-KUKU-STABLE-ROLLBACK"
+APP_VERSION = "CLEAN-V130-KUKU-LEVEL-COUNT-VOICE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -6239,6 +6239,182 @@ HTML = r"""
     updateModeChallengeCountLabels();
 
     return next;
+  }
+
+  const KUKU_LEVEL_NAMES = Object.freeze({
+    1: "初級",
+    2: "中級",
+    3: "上級",
+    4: "特級",
+    5: "名人"
+  });
+
+  function kukuLevelName(level) {
+    return (
+      KUKU_LEVEL_NAMES[
+        Number(level)
+      ] || "九九"
+    );
+  }
+
+  function kukuChallengeCountKey(
+    level
+  ) {
+    return `kuku-level-${Math.max(
+      1,
+      Math.min(
+        5,
+        Number(level) || 1
+      )
+    )}`;
+  }
+
+  function getKukuChallengeCount(
+    level
+  ) {
+    return getChallengeCount(
+      kukuChallengeCountKey(
+        level
+      )
+    );
+  }
+
+  function incrementKukuChallengeCount(
+    level
+  ) {
+    return incrementChallengeCount(
+      kukuChallengeCountKey(
+        level
+      )
+    );
+  }
+
+  function randomKukuEncouragement() {
+    // 約3回に1回だけ、固定ではない応援コメントを加える。
+    if (Math.random() >= 1 / 3) {
+      return "";
+    }
+
+    const messages = [
+      "くり返し挑戦できていますね。",
+      "少しずつ力を積み重ねていますね。",
+      "今日もよく取り組みました。",
+      "続ける力がついていますね。",
+      "この調子で練習を重ねていきましょう。",
+      "九九をすばやく答える練習ができていますね。"
+    ];
+
+    return messages[
+      Math.floor(
+        Math.random() *
+        messages.length
+      )
+    ];
+  }
+
+  function speakKukuFinishSummary({
+    level,
+    challengeCount,
+    perfect = false
+  }) {
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance ===
+        "undefined"
+    ) {
+      return;
+    }
+
+    const levelName =
+      kukuLevelName(level);
+
+    const encouragement =
+      randomKukuEncouragement();
+
+    const messages = [];
+
+    if (perfect) {
+      messages.push(
+        "お見事！パーフェクト！"
+      );
+    }
+
+    messages.push(
+      `${levelName}は、今回で${challengeCount}回目のチャレンジでした。`
+    );
+
+    if (encouragement) {
+      messages.push(
+        encouragement
+      );
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+    } catch (error) {}
+
+    waitForJapaneseVoice(1000)
+      .then((voice) => {
+        let messageIndex = 0;
+
+        const speakNext = () => {
+          if (
+            messageIndex >=
+            messages.length
+          ) {
+            return;
+          }
+
+          const utterance =
+            new SpeechSynthesisUtterance(
+              messages[messageIndex]
+            );
+
+          utterance.lang = "ja-JP";
+          utterance.rate = 0.96;
+          utterance.pitch = 1.03;
+          utterance.volume = 1.0;
+
+          if (voice) {
+            utterance.voice = voice;
+          }
+
+          utterance.onend = () => {
+            messageIndex += 1;
+
+            setTimeout(
+              speakNext,
+              120
+            );
+          };
+
+          utterance.onerror =
+            utterance.onend;
+
+          window.speechSynthesis.speak(
+            utterance
+          );
+        };
+
+        speakNext();
+      })
+      .catch(() => {
+        try {
+          const utterance =
+            new SpeechSynthesisUtterance(
+              messages.join(" ")
+            );
+
+          utterance.lang = "ja-JP";
+          utterance.rate = 0.96;
+          utterance.pitch = 1.03;
+          utterance.volume = 1.0;
+
+          window.speechSynthesis.speak(
+            utterance
+          );
+        } catch (error) {}
+      });
   }
 
   function modeVoiceName(mode) {
@@ -15382,42 +15558,70 @@ HTML = r"""
   }
 
   function finishKukuMode(timeup = false) {
-    if (!kukuResultView.classList.contains("hidden")) return;
-    stopKukuRecognition(); stopKukuTimer(); kukuPromptSpeaking = false; kukuLocked = true; refreshBgmVolume();
-    try { window.speechSynthesis.cancel(); } catch (error) {}
-    stopBgm(); kukuGameView.classList.add("hidden"); kukuResultView.classList.remove("hidden");
-    kukuResultScore.textContent = `${kukuCorrect} / ${kukuQuestions.length}`;
-
-    const kukuPerfect = kukuCorrect === kukuQuestions.length;
-
-    if (kukuPerfect) {
-      kukuResultText.textContent = "お見事！パーフェクト！全問正解です。";
-
-      if (
-        "speechSynthesis" in window &&
-        typeof SpeechSynthesisUtterance !== "undefined"
-      ) {
-        try {
-          const utterance = new SpeechSynthesisUtterance("お見事！パーフェクト！");
-          utterance.lang = "ja-JP";
-          utterance.rate = 0.96;
-          utterance.pitch = 1.03;
-          utterance.volume = 1.0;
-          const voice = getJapaneseVoice();
-          if (voice) utterance.voice = voice;
-          window.speechSynthesis.speak(utterance);
-        } catch (error) {}
-      }
-
+    if (
+      !kukuResultView.classList.contains(
+        "hidden"
+      )
+    ) {
       return;
     }
 
-    if (timeup) {
-      const limitLabel = kukuLevel === 4 ? "90秒" : kukuLevel === 5 ? "240秒" : "60秒";
-      kukuResultText.textContent = `${limitLabel}終了。${kukuCorrect}問正解でした。`;
+    stopKukuRecognition();
+    stopKukuTimer();
+    kukuPromptSpeaking = false;
+    kukuLocked = true;
+    refreshBgmVolume();
+
+    try {
+      window.speechSynthesis.cancel();
+    } catch (error) {}
+
+    stopBgm();
+
+    kukuGameView.classList.add(
+      "hidden"
+    );
+
+    kukuResultView.classList.remove(
+      "hidden"
+    );
+
+    kukuResultScore.textContent =
+      `${kukuCorrect} / ${kukuQuestions.length}`;
+
+    const kukuPerfect =
+      kukuCorrect ===
+      kukuQuestions.length;
+
+    const challengeCount =
+      incrementKukuChallengeCount(
+        kukuLevel
+      );
+
+    if (kukuPerfect) {
+      kukuResultText.textContent =
+        `お見事！パーフェクト！全問正解です。${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
+    } else if (timeup) {
+      const limitLabel =
+        kukuLevel === 4
+          ? "90秒"
+          : kukuLevel === 5
+            ? "240秒"
+            : "60秒";
+
+      kukuResultText.textContent =
+        `${limitLabel}終了。${kukuCorrect}問正解でした。${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
     } else {
-      kukuResultText.textContent = "間違えた九九を確認して、もう一度挑戦しましょう。";
+      kukuResultText.textContent =
+        `間違えた九九を確認して、もう一度挑戦しましょう。${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
     }
+
+    // 終了するたびに、該当レベルの累計挑戦回数を必ず読み上げる。
+    speakKukuFinishSummary({
+      level: kukuLevel,
+      challengeCount,
+      perfect: kukuPerfect
+    });
   }
 
   function stopAnzanRecognition() {
