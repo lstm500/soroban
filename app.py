@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V130-KUKU-LEVEL-COUNT-VOICE"
+APP_VERSION = "CLEAN-V131-KUKU-X10-MEDALS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -583,11 +583,18 @@ HTML = r"""
   .kuku-hero h2 { margin: 0 0 7px; font-size: clamp(24px, 4vw, 34px); }
   .kuku-hero p { margin: 0; color: #6b655d; font-size: 13px; line-height: 1.7; }
   .kuku-level-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
-  .kuku-level-card { display: flex; flex-direction: column; min-height: 205px; padding: 16px; border: 1px solid #ddd7ca; border-radius: 18px; background: #fff; }
+  .kuku-level-card { display: flex; flex-direction: column; min-height: 220px; padding: 16px; border: 1px solid #ddd7ca; border-radius: 18px; background: #fff; }
+  .kuku-level-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .kuku-level-no { color: #77889a; font-size: 11px; font-weight: 950; letter-spacing: .08em; }
   .kuku-level-name { margin: 7px 0; font-size: 20px; font-weight: 1000; }
   .kuku-level-desc { flex: 1; color: #6d675f; font-size: 12px; line-height: 1.6; }
   .kuku-level-meta { margin: 9px 0; color: #49657d; font-size: 11px; font-weight: 950; }
+  .kuku-medal-strip { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: nowrap; margin-left: auto; }
+  .kuku-medal-chip { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border: 1px solid #ded7ca; border-radius: 999px; background: #f6f1e8; color: #5c554c; font-size: 11px; font-weight: 950; line-height: 1; }
+  .kuku-medal-chip .count { min-width: 1.4em; text-align: right; font-variant-numeric: tabular-nums; }
+  .kuku-medal-chip.gold { background: #fff6d8; border-color: #e2ca7d; color: #7a6117; }
+  .kuku-medal-chip.silver { background: #f2f4f7; border-color: #c7ced5; color: #4d5862; }
+  .kuku-medal-chip.bronze { background: #f9ede1; border-color: #d8b396; color: #82502a; }
   .kuku-game-card, .kuku-result-card { margin-top: 14px; padding: 18px; border: 2px solid #ddd7ca; border-radius: 22px; background: #fff; text-align: center; }
   .kuku-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; color: #6e685f; font-size: 12px; font-weight: 900; }
   .kuku-status > :first-child { text-align: left; }
@@ -3685,39 +3692,74 @@ HTML = r"""
       <p>問題は「○掛ける○は？」と読み上げます。音声回答ONなら声で、OFFならスマホの数字ボタンで答えます。</p>
     </div>
     <div class="kuku-level-grid">
-      <article class="kuku-level-card">
-        <div class="kuku-level-no">LEVEL 1｜初級</div>
+      <article class="kuku-level-card" data-kuku-level-card="1">
+        <div class="kuku-level-head">
+          <div class="kuku-level-no">LEVEL 1｜初級</div>
+          <div class="kuku-medal-strip" aria-label="初級のメダル獲得数">
+            <span class="kuku-medal-chip gold">🥇<span class="count" data-kuku-medal="gold">0</span></span>
+            <span class="kuku-medal-chip silver">🥈<span class="count" data-kuku-medal="silver">0</span></span>
+            <span class="kuku-medal-chip bronze">🥉<span class="count" data-kuku-medal="bronze">0</span></span>
+          </div>
+        </div>
         <div class="kuku-level-name">1つの段を昇順</div>
-        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1から×9まで順番に9問出題します。</div>
-        <div class="kuku-level-meta">9問・時間制限なし</div>
+        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1から×10まで順番に10問出題します。</div>
+        <div class="kuku-level-meta">10問・時間制限なし</div>
         <button type="button" class="primary start-kuku" data-kuku-level="1">はじめる</button>
       </article>
-      <article class="kuku-level-card">
-        <div class="kuku-level-no">LEVEL 2｜中級</div>
+      <article class="kuku-level-card" data-kuku-level-card="2">
+        <div class="kuku-level-head">
+          <div class="kuku-level-no">LEVEL 2｜中級</div>
+          <div class="kuku-medal-strip" aria-label="中級のメダル獲得数">
+            <span class="kuku-medal-chip gold">🥇<span class="count" data-kuku-medal="gold">0</span></span>
+            <span class="kuku-medal-chip silver">🥈<span class="count" data-kuku-medal="silver">0</span></span>
+            <span class="kuku-medal-chip bronze">🥉<span class="count" data-kuku-medal="bronze">0</span></span>
+          </div>
+        </div>
         <div class="kuku-level-name">昇順または降順</div>
-        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1→×9または×9→×1で9問出題します。音声は一般的な九九の唱え方です。</div>
-        <div class="kuku-level-meta">9問・60秒</div>
+        <div class="kuku-level-desc">1〜9の段から1つをランダムに選び、×1→×10または×10→×1で10問出題します。音声は一般的な九九の唱え方です。</div>
+        <div class="kuku-level-meta">10問・60秒</div>
         <button type="button" class="primary start-kuku" data-kuku-level="2">はじめる</button>
       </article>
-      <article class="kuku-level-card">
-        <div class="kuku-level-no">LEVEL 3｜上級</div>
-        <div class="kuku-level-name">完全ランダム9問</div>
-        <div class="kuku-level-desc">1×1〜9×9から重複なしでランダムに9問出題します。音声は一般的な九九の唱え方です。</div>
-        <div class="kuku-level-meta">9問・60秒</div>
+      <article class="kuku-level-card" data-kuku-level-card="3">
+        <div class="kuku-level-head">
+          <div class="kuku-level-no">LEVEL 3｜上級</div>
+          <div class="kuku-medal-strip" aria-label="上級のメダル獲得数">
+            <span class="kuku-medal-chip gold">🥇<span class="count" data-kuku-medal="gold">0</span></span>
+            <span class="kuku-medal-chip silver">🥈<span class="count" data-kuku-medal="silver">0</span></span>
+            <span class="kuku-medal-chip bronze">🥉<span class="count" data-kuku-medal="bronze">0</span></span>
+          </div>
+        </div>
+        <div class="kuku-level-name">完全ランダム10問</div>
+        <div class="kuku-level-desc">1×1〜9×10から重複なしでランダムに10問出題します。音声は一般的な九九の唱え方です。</div>
+        <div class="kuku-level-meta">10問・60秒</div>
         <button type="button" class="primary start-kuku" data-kuku-level="3">はじめる</button>
       </article>
-      <article class="kuku-level-card">
-        <div class="kuku-level-no">LEVEL 4｜特級</div>
-        <div class="kuku-level-name">完全ランダム27問</div>
-        <div class="kuku-level-desc">1×1〜9×9から重複なしでランダムに27問出題します。音声は一般的な九九の唱え方です。</div>
-        <div class="kuku-level-meta">27問・90秒</div>
+      <article class="kuku-level-card" data-kuku-level-card="4">
+        <div class="kuku-level-head">
+          <div class="kuku-level-no">LEVEL 4｜特級</div>
+          <div class="kuku-medal-strip" aria-label="特級のメダル獲得数">
+            <span class="kuku-medal-chip gold">🥇<span class="count" data-kuku-medal="gold">0</span></span>
+            <span class="kuku-medal-chip silver">🥈<span class="count" data-kuku-medal="silver">0</span></span>
+            <span class="kuku-medal-chip bronze">🥉<span class="count" data-kuku-medal="bronze">0</span></span>
+          </div>
+        </div>
+        <div class="kuku-level-name">完全ランダム30問</div>
+        <div class="kuku-level-desc">1×1〜9×10から重複なしでランダムに30問出題します。音声は一般的な九九の唱え方です。</div>
+        <div class="kuku-level-meta">30問・90秒</div>
         <button type="button" class="primary start-kuku" data-kuku-level="4">はじめる</button>
       </article>
-      <article class="kuku-level-card">
-        <div class="kuku-level-no">LEVEL 5｜名人</div>
-        <div class="kuku-level-name">九九81問すべて</div>
-        <div class="kuku-level-desc">1×1〜9×9の全81問を、それぞれ1回ずつ完全ランダムで出題します。音声は一般的な九九の唱え方です。</div>
-        <div class="kuku-level-meta">81問・240秒</div>
+      <article class="kuku-level-card" data-kuku-level-card="5">
+        <div class="kuku-level-head">
+          <div class="kuku-level-no">LEVEL 5｜名人</div>
+          <div class="kuku-medal-strip" aria-label="名人のメダル獲得数">
+            <span class="kuku-medal-chip gold">🥇<span class="count" data-kuku-medal="gold">0</span></span>
+            <span class="kuku-medal-chip silver">🥈<span class="count" data-kuku-medal="silver">0</span></span>
+            <span class="kuku-medal-chip bronze">🥉<span class="count" data-kuku-medal="bronze">0</span></span>
+          </div>
+        </div>
+        <div class="kuku-level-name">九九90問すべて</div>
+        <div class="kuku-level-desc">1×1〜9×10の全90問を、それぞれ1回ずつ完全ランダムで出題します。音声は一般的な九九の唱え方です。</div>
+        <div class="kuku-level-meta">90問・240秒</div>
         <button type="button" class="primary start-kuku" data-kuku-level="5">はじめる</button>
       </article>
     </div>
@@ -3725,7 +3767,7 @@ HTML = r"""
   <div id="kukuGameView" class="hidden">
     <div class="kuku-game-card">
       <div class="kuku-status">
-        <span id="kukuQCount">1 / 9</span>
+        <span id="kukuQCount">1 / 10</span>
         <span id="kukuTimer" class="kuku-timer">--:--</span>
         <span id="kukuCorrectCount">正解 0</span>
       </div>
@@ -5339,7 +5381,13 @@ HTML = r"""
   let sessionQuestionMarks = [];
   let reviewClipEndSec = null;
 
-  const KUKU_TOTAL_QUESTIONS = 9;
+  const KUKU_TOTAL_QUESTIONS = 10;
+  const KUKU_MEDAL_STORAGE_KEY = "soroban_kuku_medal_counts_v1";
+  const KUKU_MEDAL_DEFS = Object.freeze([
+    { key: "gold", label: "金", icon: "🥇", minRate: 0.95 },
+    { key: "silver", label: "銀", icon: "🥈", minRate: 0.90 },
+    { key: "bronze", label: "銅", icon: "🥉", minRate: 0.80 }
+  ]);
   let kukuLevel = 1;
   let kukuQuestions = [];
   let kukuQuestionIndex = 0;
@@ -5442,6 +5490,7 @@ HTML = r"""
   let learningStats = loadLearningStats();
   let scoreRankings = loadScoreRankings();
   let challengeCounts = loadChallengeCounts();
+  let kukuMedalStats = loadKukuMedalStats();
   let sessionHistory = loadSessionHistory();
   let sessionWeakAsked = 0;
   let sessionWeakCorrect = 0;
@@ -6287,6 +6336,89 @@ HTML = r"""
         level
       )
     );
+  }
+
+  function createEmptyKukuMedalEntry() {
+    return { gold: 0, silver: 0, bronze: 0 };
+  }
+
+  function createEmptyKukuMedalStats() {
+    const stats = {};
+    for (let level = 1; level <= 5; level += 1) {
+      stats[level] = createEmptyKukuMedalEntry();
+    }
+    return stats;
+  }
+
+  function normalizeKukuLevel(level) {
+    return Math.max(1, Math.min(5, Number(level) || 1));
+  }
+
+  function loadKukuMedalStats() {
+    const base = createEmptyKukuMedalStats();
+    try {
+      const raw = localStorage.getItem(KUKU_MEDAL_STORAGE_KEY);
+      if (!raw) return base;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return base;
+      for (let level = 1; level <= 5; level += 1) {
+        const source = parsed[level] || parsed[String(level)] || {};
+        for (const def of KUKU_MEDAL_DEFS) {
+          base[level][def.key] = Math.max(0, Math.floor(Number(source?.[def.key]) || 0));
+        }
+      }
+      return base;
+    } catch (error) {
+      return base;
+    }
+  }
+
+  function saveKukuMedalStats() {
+    try {
+      localStorage.setItem(KUKU_MEDAL_STORAGE_KEY, JSON.stringify(kukuMedalStats));
+    } catch (error) {}
+  }
+
+  function ensureKukuMedalEntry(level) {
+    const normalized = normalizeKukuLevel(level);
+    if (!kukuMedalStats || typeof kukuMedalStats !== "object") {
+      kukuMedalStats = createEmptyKukuMedalStats();
+    }
+    if (!kukuMedalStats[normalized]) {
+      kukuMedalStats[normalized] = createEmptyKukuMedalEntry();
+    }
+    return kukuMedalStats[normalized];
+  }
+
+  function getKukuMedalCount(level, tierKey) {
+    const entry = ensureKukuMedalEntry(level);
+    return Math.max(0, Math.floor(Number(entry?.[tierKey]) || 0));
+  }
+
+  function renderKukuMedalSummaries() {
+    root.querySelectorAll("[data-kuku-level-card]").forEach((card) => {
+      const level = normalizeKukuLevel(card.dataset.kukuLevelCard);
+      for (const def of KUKU_MEDAL_DEFS) {
+        const node = card.querySelector(`[data-kuku-medal="${def.key}"]`);
+        if (node) node.textContent = String(getKukuMedalCount(level, def.key));
+      }
+    });
+  }
+
+  function awardKukuMedal(level, correct, total) {
+    const safeTotal = Math.max(1, Number(total) || 0);
+    const accuracy = Math.max(0, Number(correct) || 0) / safeTotal;
+    const tier = accuracy >= 0.95 ? "gold" : accuracy >= 0.90 ? "silver" : accuracy >= 0.80 ? "bronze" : null;
+    if (!tier) return null;
+    const entry = ensureKukuMedalEntry(level);
+    entry[tier] = getKukuMedalCount(level, tier) + 1;
+    saveKukuMedalStats();
+    renderKukuMedalSummaries();
+    return tier;
+  }
+
+  function kukuMedalLabel(tierKey) {
+    return KUKU_MEDAL_DEFS.find((def) => def.key === tierKey)?.label || "";
   }
 
   function randomKukuEncouragement() {
@@ -15134,6 +15266,7 @@ HTML = r"""
     stopTimer(); stopBgm(); hideSorobanHint(); stopLearningAnimation(); stopAnzanSession(); stopKukuSession(); setVoiceAnswerEnabled(false);
     homeView.classList.add("hidden"); menuView.classList.add("hidden"); learningView.classList.remove("show"); anzanView.classList.remove("show"); settingsView.classList.remove("show"); weaknessView.classList.remove("show"); workspace.classList.remove("show"); results.classList.remove("show");
     kukuView.classList.add("show"); kukuMenuView.classList.remove("hidden"); kukuGameView.classList.add("hidden"); kukuResultView.classList.add("hidden");
+    renderKukuMedalSummaries();
   }
 
   function shuffleKuku(items) {
@@ -15146,24 +15279,21 @@ HTML = r"""
     if (level === 1 || level === 2) {
       const dan = randomInt(1, 9);
       const ascending = level === 1 ? true : Math.random() < 0.5;
-      const multipliers = Array.from({ length: 9 }, (_, index) => index + 1);
+      const multipliers = Array.from({ length: 10 }, (_, index) => index + 1);
       if (!ascending) multipliers.reverse();
       return multipliers.map((value) => ({ a: dan, b: value, answer: dan * value, direction: ascending ? "昇順" : "降順" }));
     }
 
     const all = [];
     for (let a = 1; a <= 9; a += 1) {
-      for (let b = 1; b <= 9; b += 1) {
+      for (let b = 1; b <= 10; b += 1) {
         all.push({ a, b, answer: a * b, direction: "ランダム" });
       }
     }
 
     const shuffled = shuffleKuku(all);
-
-    if (level === 3) return shuffled.slice(0, 9);
-    if (level === 4) return shuffled.slice(0, 27);
-
-    // 名人は81問すべてを1回ずつ。
+    if (level === 3) return shuffled.slice(0, 10);
+    if (level === 4) return shuffled.slice(0, 30);
     return shuffled;
   }
 
@@ -15598,9 +15728,19 @@ HTML = r"""
         kukuLevel
       );
 
+    const earnedMedal = awardKukuMedal(
+      kukuLevel,
+      kukuCorrect,
+      kukuQuestions.length
+    );
+
+    const medalText = earnedMedal
+      ? `${kukuMedalLabel(earnedMedal)}メダルを1枚獲得しました。`
+      : "";
+
     if (kukuPerfect) {
       kukuResultText.textContent =
-        `お見事！パーフェクト！全問正解です。${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
+        `お見事！パーフェクト！全問正解です。${medalText}${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
     } else if (timeup) {
       const limitLabel =
         kukuLevel === 4
@@ -15610,10 +15750,10 @@ HTML = r"""
             : "60秒";
 
       kukuResultText.textContent =
-        `${limitLabel}終了。${kukuCorrect}問正解でした。${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
+        `${limitLabel}終了。${kukuCorrect}問正解でした。${medalText}${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
     } else {
       kukuResultText.textContent =
-        `間違えた九九を確認して、もう一度挑戦しましょう。${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
+        `間違えた九九を確認して、もう一度挑戦しましょう。${medalText}${kukuLevelName(kukuLevel)}は今回で${challengeCount}回目です。`;
     }
 
     // 終了するたびに、該当レベルの累計挑戦回数を必ず読み上げる。
@@ -20199,6 +20339,7 @@ HTML = r"""
   } catch (error) {}
 
   renderLearningCategories();
+  renderKukuMedalSummaries();
   refreshChallengeMenuUi();
   installInAppBackGuard();
   updateBgmButton();
