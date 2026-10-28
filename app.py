@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V133-HOME-COIN-MEDAL"
+APP_VERSION = "CLEAN-V134-MULTI-TERM-ADD-SUB-STAGES"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1877,6 +1877,16 @@ HTML = r"""
     letter-spacing: .03em;
   }
 
+  .equation.multi-term {
+    font-size: clamp(28px, 5vw, 48px);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+
+  .equation.multi-term.long-sequence {
+    font-size: clamp(22px, 4vw, 38px);
+  }
+
   .hint-launch {
     display: flex;
     justify-content: center;
@@ -3668,6 +3678,15 @@ HTML = r"""
       line-height: 1.05;
     }
 
+    .equation.multi-term {
+      font-size: clamp(24px, 7vw, 36px);
+      line-height: 1.2;
+    }
+
+    .equation.multi-term.long-sequence {
+      font-size: clamp(20px, 5.6vw, 30px);
+    }
+
     .hint-launch {
       margin: 0 0 10px;
     }
@@ -4195,7 +4214,7 @@ HTML = r"""
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 1</div>
       <div class="mode-name">1桁・繰り上がりなし</div>
-      <div class="mode-desc">1〜9同士の足し算。一の位から十の位への繰り上がりがない12問です。</div>
+      <div class="mode-desc">1〜9同士。一の位から十の位への繰り上がりがない12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba1">はじめる</button>
     </article>
@@ -4203,13 +4222,21 @@ HTML = r"""
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 2</div>
       <div class="mode-name">1桁・繰り上がりあり</div>
-      <div class="mode-desc">1〜9同士の足し算。一の位から十の位へ必ず繰り上がる12問です。</div>
+      <div class="mode-desc">1〜9同士。一の位から十の位へ必ず繰り上がる12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba2">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER ADD 3</div>
+      <div class="mode-name">1桁の数を4つ足す</div>
+      <div class="mode-desc">1桁の数を4つ、左から順番に足す連続足し算です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
+      <button type="button" class="primary start-mode" data-mode="ba2x4">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER ADD 4</div>
       <div class="mode-name">2桁・繰り上がりなし</div>
       <div class="mode-desc">10〜99同士。一の位から十の位への繰り上がりがない2桁レベルです。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
@@ -4217,7 +4244,7 @@ HTML = r"""
     </article>
 
     <article class="mode-card">
-      <div class="mode-no">BEGINNER ADD 4</div>
+      <div class="mode-no">BEGINNER ADD 5</div>
       <div class="mode-name">2桁・繰り上がりあり</div>
       <div class="mode-desc">10〜99同士。一の位から十の位へ必ず繰り上がる2桁レベルです。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
@@ -4225,11 +4252,27 @@ HTML = r"""
     </article>
 
     <article class="mode-card">
-      <div class="mode-no">BEGINNER ADD 5</div>
+      <div class="mode-no">BEGINNER ADD 6</div>
+      <div class="mode-name">2桁の数を4つ足す</div>
+      <div class="mode-desc">2桁の数を4つ、左から順番に足す連続足し算です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
+      <button type="button" class="primary start-mode" data-mode="ba4x4">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER ADD 7</div>
       <div class="mode-name">3桁の足し算</div>
-      <div class="mode-desc">100〜999同士の足し算。従来の3桁レベルです。</div>
+      <div class="mode-desc">100〜999同士を足す3桁の足し算です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="ba5">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER ADD 8</div>
+      <div class="mode-name">3桁の数を4つ足す</div>
+      <div class="mode-desc">3桁の数を4つ、左から順番に足す連続足し算です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
+      <button type="button" class="primary start-mode" data-mode="ba5x4">はじめる</button>
     </article>
   </div>
 
@@ -4246,13 +4289,21 @@ HTML = r"""
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 2</div>
       <div class="mode-name">1桁を引く・繰り下がりあり</div>
-      <div class="mode-desc">10〜18から1〜9を引き、一の位の不足で十の位から必ず繰り下がる12問です。</div>
+      <div class="mode-desc">10〜18から1〜9を引き、十の位から必ず繰り下がる12問です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="bs2">はじめる</button>
     </article>
 
     <article class="mode-card">
       <div class="mode-no">BEGINNER SUB 3</div>
+      <div class="mode-name">1桁の数を4つ使う引き算</div>
+      <div class="mode-desc">1桁の数4つを使い、左から順番に引きます。途中と答えは0以上です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
+      <button type="button" class="primary start-mode" data-mode="bs2x4">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER SUB 4</div>
       <div class="mode-name">2桁・繰り下がりなし</div>
       <div class="mode-desc">10〜99同士。一の位から十の位への繰り下がりがない2桁レベルです。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
@@ -4260,7 +4311,7 @@ HTML = r"""
     </article>
 
     <article class="mode-card">
-      <div class="mode-no">BEGINNER SUB 4</div>
+      <div class="mode-no">BEGINNER SUB 5</div>
       <div class="mode-name">2桁・繰り下がりあり</div>
       <div class="mode-desc">10〜99同士。一の位の不足で十の位から必ず繰り下がる2桁レベルです。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
@@ -4268,11 +4319,27 @@ HTML = r"""
     </article>
 
     <article class="mode-card">
-      <div class="mode-no">BEGINNER SUB 5</div>
+      <div class="mode-no">BEGINNER SUB 6</div>
+      <div class="mode-name">2桁の数を4つ使う引き算</div>
+      <div class="mode-desc">2桁の数4つを使い、左から順番に引きます。途中と答えは0以上です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
+      <button type="button" class="primary start-mode" data-mode="bs4x4">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER SUB 7</div>
       <div class="mode-name">3桁の引き算</div>
-      <div class="mode-desc">100〜999同士の引き算。従来の3桁レベルです。答えは0以上です。</div>
+      <div class="mode-desc">100〜999同士の引き算です。答えは0以上です。</div>
       <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
       <button type="button" class="primary start-mode" data-mode="bs5">はじめる</button>
+    </article>
+
+    <article class="mode-card">
+      <div class="mode-no">BEGINNER SUB 8</div>
+      <div class="mode-name">3桁から2桁を4回引く</div>
+      <div class="mode-desc">大きい3桁の数から、2桁の数を4回続けて引きます。途中と答えは0以上です。</div>
+      <div class="chips"><span class="chip">12問</span><span class="chip time-chip">金:5分以内</span></div>
+      <button type="button" class="primary start-mode" data-mode="bs5x4">はじめる</button>
     </article>
   </div>
 
@@ -5010,14 +5077,20 @@ HTML = r"""
   const modeInfo = {
     ba1: { title: "初級・足し算1｜1桁・繰り上がりなし" },
     ba2: { title: "初級・足し算2｜1桁・繰り上がりあり" },
-    ba3: { title: "初級・足し算3｜2桁・繰り上がりなし" },
-    ba4: { title: "初級・足し算4｜2桁・繰り上がりあり" },
-    ba5: { title: "初級・足し算5｜3桁の足し算" },
+    ba2x4: { title: "初級・足し算3｜1桁の数を4つ足す" },
+    ba3: { title: "初級・足し算4｜2桁・繰り上がりなし" },
+    ba4: { title: "初級・足し算5｜2桁・繰り上がりあり" },
+    ba4x4: { title: "初級・足し算6｜2桁の数を4つ足す" },
+    ba5: { title: "初級・足し算7｜3桁の足し算" },
+    ba5x4: { title: "初級・足し算8｜3桁の数を4つ足す" },
     bs1: { title: "初級・引き算1｜1桁・繰り下がりなし" },
     bs2: { title: "初級・引き算2｜1桁を引く・繰り下がりあり" },
-    bs3: { title: "初級・引き算3｜2桁・繰り下がりなし" },
-    bs4: { title: "初級・引き算4｜2桁・繰り下がりあり" },
-    bs5: { title: "初級・引き算5｜3桁の引き算" },
+    bs2x4: { title: "初級・引き算3｜1桁の数を4つ使う引き算" },
+    bs3: { title: "初級・引き算4｜2桁・繰り下がりなし" },
+    bs4: { title: "初級・引き算5｜2桁・繰り下がりあり" },
+    bs4x4: { title: "初級・引き算6｜2桁の数を4つ使う引き算" },
+    bs5: { title: "初級・引き算7｜3桁の引き算" },
+    bs5x4: { title: "初級・引き算8｜3桁から2桁を4回引く" },
     mm1: { title: "中級・掛け算1｜1桁×1桁" },
     mm2: { title: "中級・掛け算2｜2桁×1桁" },
     mm3: { title: "中級・掛け算3｜2桁×2桁" },
@@ -5030,8 +5103,8 @@ HTML = r"""
   };
 
   const MODE_GROUPS = Object.freeze([
-    { key: "add", title: "足し算", modes: ["ba1", "ba2", "ba3", "ba4", "ba5"] },
-    { key: "sub", title: "引き算", modes: ["bs1", "bs2", "bs3", "bs4", "bs5"] },
+    { key: "add", title: "足し算", modes: ["ba1", "ba2", "ba2x4", "ba3", "ba4", "ba4x4", "ba5", "ba5x4"] },
+    { key: "sub", title: "引き算", modes: ["bs1", "bs2", "bs2x4", "bs3", "bs4", "bs4x4", "bs5", "bs5x4"] },
     { key: "mul", title: "掛け算", modes: ["mm1", "mm2", "mm3"] },
     { key: "div", title: "割り算", modes: ["md1", "md2", "md3"] },
     { key: "advanced", title: "上級総合", modes: ["a1", "a2", "a3"] }
@@ -5548,7 +5621,7 @@ HTML = r"""
   const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
   const RANK_CERTIFICATION_STORAGE_KEY = "soroban_rank_certification_v2";
   const CHALLENGE_RESUME_STORAGE_KEY = "soroban_challenge_resume_v2";
-  const CHALLENGE_CURRICULUM_VERSION = "medal-tier-hint-outcome-v2";
+  const CHALLENGE_CURRICULUM_VERSION = "multi-term-add-sub-v3";
   const MAX_SESSION_HISTORY = 200;
   const MAX_RANKING_ENTRIES_PER_MODE = 100;
 
@@ -5563,13 +5636,19 @@ HTML = r"""
   // 同じ種類の学習内でのみ自動レベルアップする。
   const NEXT_MODE = Object.freeze({
     ba1: "ba2",
-    ba2: "ba3",
+    ba2: "ba2x4",
+    ba2x4: "ba3",
     ba3: "ba4",
-    ba4: "ba5",
+    ba4: "ba4x4",
+    ba4x4: "ba5",
+    ba5: "ba5x4",
     bs1: "bs2",
-    bs2: "bs3",
+    bs2: "bs2x4",
+    bs2x4: "bs3",
     bs3: "bs4",
-    bs4: "bs5",
+    bs4: "bs4x4",
+    bs4x4: "bs5",
+    bs5: "bs5x4",
     mm1: "mm2",
     mm2: "mm3",
     md1: "md2",
@@ -5990,16 +6069,128 @@ HTML = r"""
     return a / b;
   }
 
+  function questionTerms(q) {
+    if (
+      Array.isArray(q?.terms) &&
+      q.terms.length >= 2
+    ) {
+      return q.terms.map(Number);
+    }
+
+    return [
+      Number(q?.a),
+      Number(q?.b)
+    ];
+  }
+
+  function questionOperators(q) {
+    const terms = questionTerms(q);
+
+    if (
+      Array.isArray(q?.operators) &&
+      q.operators.length === terms.length - 1
+    ) {
+      return q.operators.map(String);
+    }
+
+    return Array.from(
+      { length: Math.max(0, terms.length - 1) },
+      () => String(q?.op || "")
+    );
+  }
+
+  function isMultiTermQuestion(q) {
+    return questionTerms(q).length > 2;
+  }
+
+  function calculateQuestionSequence(q) {
+    const terms = questionTerms(q);
+    const operators = questionOperators(q);
+
+    if (
+      terms.length < 2 ||
+      operators.length !== terms.length - 1 ||
+      terms.some((value) => !Number.isFinite(value))
+    ) {
+      return null;
+    }
+
+    let value = terms[0];
+
+    for (let i = 0; i < operators.length; i += 1) {
+      value = calculate(
+        value,
+        operators[i],
+        terms[i + 1]
+      );
+
+      if (!Number.isFinite(value)) {
+        return null;
+      }
+    }
+
+    return value;
+  }
+
+  function questionFormula(q, spaced = true) {
+    const terms = questionTerms(q);
+    const operators = questionOperators(q);
+
+    if (!terms.length) {
+      return "";
+    }
+
+    let formula = String(terms[0]);
+
+    for (let i = 0; i < operators.length; i += 1) {
+      formula += spaced
+        ? ` ${operators[i]} ${terms[i + 1]}`
+        : `${operators[i]}${terms[i + 1]}`;
+    }
+
+    return formula;
+  }
+
   function isValidQuestion(q) {
     if (!q) return false;
 
     if (q.op === "＋" || q.op === "－") {
-      if (q.a < RULES.addSubOperandMin) return false;
-      if (q.b < RULES.addSubOperandMin) return false;
-    }
+      const terms = questionTerms(q);
+      const operators = questionOperators(q);
 
-    if (q.op === "－" && q.answer < RULES.subtractionMinAnswer) {
-      return false;
+      if (
+        terms.length < 2 ||
+        operators.length !== terms.length - 1 ||
+        terms.some(
+          (value) =>
+            !Number.isInteger(value) ||
+            value < RULES.addSubOperandMin
+        )
+      ) {
+        return false;
+      }
+
+      let running = terms[0];
+
+      for (let i = 0; i < operators.length; i += 1) {
+        const op = operators[i];
+        const amount = terms[i + 1];
+
+        if (op !== "＋" && op !== "－") {
+          return false;
+        }
+
+        running = calculate(running, op, amount);
+
+        if (
+          op === "－" &&
+          running < RULES.subtractionMinAnswer
+        ) {
+          return false;
+        }
+      }
+
+      return running === Number(q.answer);
     }
 
     if (q.op === "÷") {
@@ -6027,6 +6218,38 @@ HTML = r"""
     if (!isValidQuestion(q)) {
       throw new Error(
         `禁止問題: raw=${rawA} ${op} ${rawB}, final=${a} ${op} ${b}`
+      );
+    }
+
+    return q;
+  }
+
+  function makeSequenceQuestion(terms, op) {
+    const safeTerms = terms.map(
+      (value) => Number(value)
+    );
+
+    const operators = Array.from(
+      { length: safeTerms.length - 1 },
+      () => op
+    );
+
+    const q = {
+      a: safeTerms[0],
+      b: safeTerms[1],
+      op,
+      terms: safeTerms,
+      operators,
+      answer: null,
+      isWeakness: false,
+      weaknessKey: null
+    };
+
+    q.answer = calculateQuestionSequence(q);
+
+    if (!isValidQuestion(q)) {
+      throw new Error(
+        `連続計算問題を生成できません: ${questionFormula(q)}`
       );
     }
 
@@ -6073,6 +6296,79 @@ HTML = r"""
     return makeQuestion(rawA, "－", rawB);
   }
 
+
+  function makeMultiAddition(
+    termCount,
+    minValue,
+    maxValue
+  ) {
+    const terms = Array.from(
+      { length: termCount },
+      () => randInt(minValue, maxValue)
+    );
+
+    return makeSequenceQuestion(
+      terms,
+      "＋"
+    );
+  }
+
+  function makeMultiSubtraction(
+    termCount,
+    firstMin,
+    firstMax,
+    subtractMin,
+    subtractMax
+  ) {
+    const subtractCount = termCount - 1;
+    const minimumRequired =
+      subtractMin * subtractCount;
+
+    for (let tries = 0; tries < 2000; tries += 1) {
+      const first = randInt(
+        Math.max(firstMin, minimumRequired),
+        firstMax
+      );
+
+      let remaining = first;
+      const subtractors = [];
+      let valid = true;
+
+      for (let i = 0; i < subtractCount; i += 1) {
+        const remainingSlots = subtractCount - i - 1;
+        const maxAllowed = Math.min(
+          subtractMax,
+          remaining - subtractMin * remainingSlots
+        );
+
+        if (maxAllowed < subtractMin) {
+          valid = false;
+          break;
+        }
+
+        const amount = randInt(
+          subtractMin,
+          maxAllowed
+        );
+
+        subtractors.push(amount);
+        remaining -= amount;
+      }
+
+      if (!valid) {
+        continue;
+      }
+
+      return makeSequenceQuestion(
+        [first, ...subtractors],
+        "－"
+      );
+    }
+
+    throw new Error(
+      `連続引き算を生成できません: count=${termCount}`
+    );
+  }
 
   function onesAdditionCarries(a, b) {
     return (
@@ -6198,109 +6494,93 @@ HTML = r"""
       return false;
     }
 
-    const a = Number(q.a);
-    const b = Number(q.b);
+    const terms = questionTerms(q);
+    const a = terms[0];
+    const b = terms[1];
+
+    const calculatedAnswer =
+      calculateQuestionSequence(q);
 
     if (
-      !Number.isFinite(a) ||
-      !Number.isFinite(b)
+      terms.some((value) => !Number.isFinite(value)) ||
+      !Number.isFinite(calculatedAnswer)
     ) {
       return false;
     }
 
-    if (mode === "ba1") {
-      return (
-        q.op === "＋" &&
-        a >= 1 && a <= 9 &&
-        b >= 1 && b <= 9 &&
-        !onesAdditionCarries(a, b)
+    const answer =
+      Number.isFinite(Number(q.answer))
+        ? Number(q.answer)
+        : calculatedAnswer;
+
+    const allInRange = (min, max) =>
+      terms.every(
+        (value) =>
+          value >= min && value <= max
       );
+
+    if (mode === "ba1") {
+      return q.op === "＋" && terms.length === 2 && allInRange(1, 9) && !onesAdditionCarries(a, b);
     }
 
     if (mode === "ba2") {
-      return (
-        q.op === "＋" &&
-        a >= 1 && a <= 9 &&
-        b >= 1 && b <= 9 &&
-        onesAdditionCarries(a, b)
-      );
+      return q.op === "＋" && terms.length === 2 && allInRange(1, 9) && onesAdditionCarries(a, b);
+    }
+
+    if (mode === "ba2x4") {
+      return q.op === "＋" && terms.length === 4 && allInRange(1, 9);
     }
 
     if (mode === "ba3") {
-      return (
-        q.op === "＋" &&
-        a >= 10 && a <= 99 &&
-        b >= 10 && b <= 99 &&
-        a + b <= 99 &&
-        !onesAdditionCarries(a, b)
-      );
+      return q.op === "＋" && terms.length === 2 && allInRange(10, 99) && a + b <= 99 && !onesAdditionCarries(a, b);
     }
 
     if (mode === "ba4") {
-      return (
-        q.op === "＋" &&
-        a >= 10 && a <= 99 &&
-        b >= 10 && b <= 99 &&
-        a + b <= 99 &&
-        onesAdditionCarries(a, b)
-      );
+      return q.op === "＋" && terms.length === 2 && allInRange(10, 99) && a + b <= 99 && onesAdditionCarries(a, b);
+    }
+
+    if (mode === "ba4x4") {
+      return q.op === "＋" && terms.length === 4 && allInRange(10, 99);
     }
 
     if (mode === "ba5") {
-      return (
-        q.op === "＋" &&
-        a >= 100 && a <= 999 &&
-        b >= 100 && b <= 999
-      );
+      return q.op === "＋" && terms.length === 2 && allInRange(100, 999);
+    }
+
+    if (mode === "ba5x4") {
+      return q.op === "＋" && terms.length === 4 && allInRange(100, 999);
     }
 
     if (mode === "bs1") {
-      return (
-        q.op === "－" &&
-        a >= 1 && a <= 9 &&
-        b >= 1 && b <= 9 &&
-        a >= b &&
-        !onesSubtractionBorrows(a, b)
-      );
+      return q.op === "－" && terms.length === 2 && allInRange(1, 9) && a >= b && !onesSubtractionBorrows(a, b);
     }
 
     if (mode === "bs2") {
-      return (
-        q.op === "－" &&
-        a >= 10 && a <= 18 &&
-        b >= 1 && b <= 9 &&
-        a >= b &&
-        onesSubtractionBorrows(a, b)
-      );
+      return q.op === "－" && terms.length === 2 && a >= 10 && a <= 18 && b >= 1 && b <= 9 && a >= b && onesSubtractionBorrows(a, b);
+    }
+
+    if (mode === "bs2x4") {
+      return q.op === "－" && terms.length === 4 && allInRange(1, 9) && answer >= 0;
     }
 
     if (mode === "bs3") {
-      return (
-        q.op === "－" &&
-        a >= 10 && a <= 99 &&
-        b >= 10 && b <= 99 &&
-        a >= b &&
-        !onesSubtractionBorrows(a, b)
-      );
+      return q.op === "－" && terms.length === 2 && allInRange(10, 99) && a >= b && !onesSubtractionBorrows(a, b);
     }
 
     if (mode === "bs4") {
-      return (
-        q.op === "－" &&
-        a >= 10 && a <= 99 &&
-        b >= 10 && b <= 99 &&
-        a >= b &&
-        onesSubtractionBorrows(a, b)
-      );
+      return q.op === "－" && terms.length === 2 && allInRange(10, 99) && a >= b && onesSubtractionBorrows(a, b);
+    }
+
+    if (mode === "bs4x4") {
+      return q.op === "－" && terms.length === 4 && allInRange(10, 99) && answer >= 0;
     }
 
     if (mode === "bs5") {
-      return (
-        q.op === "－" &&
-        a >= 100 && a <= 999 &&
-        b >= 100 && b <= 999 &&
-        a >= b
-      );
+      return q.op === "－" && terms.length === 2 && allInRange(100, 999) && a >= b;
+    }
+
+    if (mode === "bs5x4") {
+      return q.op === "－" && terms.length === 5 && a >= 500 && a <= 999 && terms.slice(1).every((value) => value >= 10 && value <= 99) && answer >= 0;
     }
 
     return true;
@@ -7342,6 +7622,12 @@ HTML = r"""
       return "add_direct";
     }
 
+    if (isMultiTermQuestion(q)) {
+      return q.op === "－"
+        ? "sub_multi"
+        : "add_multi";
+    }
+
     if (q.op === "＋") {
       if (
         digitLength(q.a) > 1 ||
@@ -7490,68 +7776,68 @@ HTML = r"""
       {
         name: "7級",
         type: "all",
+        modes: ["ba2x4", "bs2x4"],
+        requirement: "1桁の数を4つ使う足し算・引き算（両方）"
+      },
+      {
+        name: "6級",
+        type: "all",
         modes: ["ba3", "bs3"],
         requirement: "2桁・繰り上がり／繰り下がりなし（両方）"
       },
       {
-        name: "6級",
+        name: "5級",
         type: "all",
         modes: ["ba4", "bs4"],
         requirement: "2桁・繰り上がり／繰り下がりあり（両方）"
       },
       {
-        name: "5級",
+        name: "4級",
+        type: "all",
+        modes: ["ba4x4", "bs4x4"],
+        requirement: "2桁の数を4つ使う足し算・引き算（両方）"
+      },
+      {
+        name: "3級",
         type: "all",
         modes: ["ba5", "bs5"],
         requirement: "3桁の足し算・引き算（両方）"
       },
       {
-        name: "4級",
+        name: "2級",
+        type: "all",
+        modes: ["ba5x4", "bs5x4"],
+        requirement: "3桁の連続足し算・連続引き算（両方）"
+      },
+      {
+        name: "1級",
         type: "all",
         modes: ["mm1", "md1"],
         requirement: "1桁レベルの掛け算・割り算（両方）"
       },
       {
-        name: "3級",
+        name: "初段",
         type: "all",
         modes: ["mm2", "md2"],
         requirement: "中級2の掛け算・割り算（両方）"
       },
       {
-        name: "2級",
-        type: "all",
-        modes: ["mm3", "md3"],
-        requirement: "中級3の掛け算・割り算（両方）"
-      },
-      {
-        name: "1級",
-        type: "all",
-        modes: ["mm3", "md3"],
-        requirement: "中級3の掛け算・割り算（両方）"
-      },
-      {
-        name: "初段",
-        type: "any",
-        modes: ["a1"],
-        requirement: "上級1（4桁の足し算・引き算）"
-      },
-      {
         name: "二段",
-        type: "any",
-        modes: ["a1"],
-        requirement: "上級1（4桁の足し算・引き算）"
+        type: "all",
+        modes: ["mm3", "md3"],
+        requirement: "中級3の掛け算・割り算（両方）"
       },
       {
         name: "三段",
         type: "any",
-        modes: ["a2"],
-        requirement: "上級2（3桁×2桁 / 4桁÷2桁）"
+        modes: ["a1"],
+        requirement: "上級1（4桁の足し算・引き算）"
       },
       {
         name: "名人",
-        type: "any",
-        modes: ["a3"],
-        requirement: "上級3（3桁×3桁 / 5桁÷3桁）"
+        type: "all",
+        modes: ["a2", "a3"],
+        requirement: "上級2・上級3の総合計算"
       }
     ]);
 
@@ -8992,7 +9278,7 @@ HTML = r"""
   }
 
   function problemKey(mode, q) {
-    return `${mode}|${q.op}|${q.a}|${q.b}`;
+    return `${mode}|${questionOperators(q).join(",")}|${questionTerms(q).join(",")}`;
   }
 
   function getProblemStat(mode, q) {
@@ -9005,6 +9291,10 @@ HTML = r"""
         a: q.a,
         b: q.b,
         op: q.op,
+        terms: questionTerms(q),
+        operators: questionOperators(q),
+        formula: questionFormula(q, false),
+        answer: q.answer,
         attempts: 0,
         correct: 0,
         wrong: 0,
@@ -9015,7 +9305,17 @@ HTML = r"""
       };
     }
 
-    return learningStats.problems[key];
+    const stat =
+      learningStats.problems[key];
+
+    if (!Array.isArray(stat.terms)) {
+      stat.terms = questionTerms(q);
+      stat.operators = questionOperators(q);
+      stat.formula = questionFormula(q, false);
+      stat.answer = q.answer;
+    }
+
+    return stat;
   }
 
   function ensureQuestionTiming(
@@ -9446,7 +9746,8 @@ HTML = r"""
             .slice(0, 3)
             .map(
               (stat) =>
-                `${stat.a}${stat.op}${stat.b}`
+                stat.formula ||
+                questionFormula(stat, false)
             )
             .join("、");
 
@@ -9544,11 +9845,18 @@ HTML = r"""
   }
 
   function statToWeakQuestion(stat) {
-    const q = makeQuestionFromFinal(
-      stat.a,
-      stat.op,
-      stat.b
-    );
+    const q =
+      Array.isArray(stat.terms) &&
+      stat.terms.length > 2
+        ? makeSequenceQuestion(
+            stat.terms,
+            stat.op
+          )
+        : makeQuestionFromFinal(
+            stat.a,
+            stat.op,
+            stat.b
+          );
 
     q.isWeakness = true;
     q.weaknessKey = stat.key;
@@ -9821,15 +10129,21 @@ HTML = r"""
   function makeOneQuestion(mode) {
     if (mode === "ba1") return makeAdditionByOnesCarry(1, false);
     if (mode === "ba2") return makeAdditionByOnesCarry(1, true);
+    if (mode === "ba2x4") return makeMultiAddition(4, 1, 9);
     if (mode === "ba3") return makeAdditionByOnesCarry(2, false);
     if (mode === "ba4") return makeAdditionByOnesCarry(2, true);
+    if (mode === "ba4x4") return makeMultiAddition(4, 10, 99);
     if (mode === "ba5") return makeAdditionOnly(100, 999);
+    if (mode === "ba5x4") return makeMultiAddition(4, 100, 999);
 
     if (mode === "bs1") return makeSubtractionByOnesBorrow(1, false);
     if (mode === "bs2") return makeSubtractionByOnesBorrow(1, true);
+    if (mode === "bs2x4") return makeMultiSubtraction(4, 6, 9, 1, 9);
     if (mode === "bs3") return makeSubtractionByOnesBorrow(2, false);
     if (mode === "bs4") return makeSubtractionByOnesBorrow(2, true);
+    if (mode === "bs4x4") return makeMultiSubtraction(4, 40, 99, 10, 39);
     if (mode === "bs5") return makeSubtractionOnly(100, 999);
+    if (mode === "bs5x4") return makeMultiSubtraction(5, 500, 999, 10, 99);
 
     if (mode === "mm1") {
       return makeMul(1, 9, 1, 9);
@@ -10750,6 +11064,65 @@ HTML = r"""
     return steps;
   }
 
+  function buildMultiTermHintSteps(q) {
+    const terms = questionTerms(q);
+    const operators = questionOperators(q);
+    const steps = [
+      {
+        value: terms[0],
+        activePlace: null,
+        text: `まず、${terms[0]}をそろばんに置きます。`,
+        narrationText: `まず、${terms[0]}をそろばんに置きます。`,
+        highlightAllUsed: true
+      }
+    ];
+
+    let running = terms[0];
+
+    operators.forEach((op, index) => {
+      const amount = terms[index + 1];
+      const before = running;
+      running = calculate(
+        running,
+        op,
+        amount
+      );
+
+      steps.push({
+        value: before,
+        activePlace: null,
+        text: `${before} ${op} ${amount} を計算します。`,
+        narrationText: `${before} ${op} ${amount} を計算します。`
+      });
+
+      steps.push({
+        value: running,
+        activePlace: null,
+        text:
+          op === "＋"
+            ? `${amount}を足して、${running}です。`
+            : `${amount}を引いて、${running}です。`,
+        narrationText:
+          op === "＋"
+            ? `${amount}を足して、${running}です。`
+            : `${amount}を引いて、${running}です。`,
+        highlightAllUsed: true
+      });
+    });
+
+    steps.push({
+      value: q.answer,
+      activePlace: null,
+      text: "できました。答えはいくつになっていますか？",
+      narrationText: "できました。答えはいくつになっていますか？",
+      kind: "final-answer-question",
+      expectedAnswer: q.answer,
+      resolved: false
+    });
+
+    return steps;
+  }
+
   function buildResultPlacementSteps(q) {
     const answer = Math.max(0, Math.floor(q.answer));
     const parts = decomposeByPlace(answer);
@@ -10794,6 +11167,10 @@ HTML = r"""
   }
 
   function buildHintSteps(q) {
+    if (isMultiTermQuestion(q)) {
+      return buildMultiTermHintSteps(q);
+    }
+
     if (q.op === "＋" || q.op === "－") {
       return buildAddSubHintSteps(q);
     }
@@ -12313,8 +12690,9 @@ HTML = r"""
 
     const maxValue =
       Math.max(
-        q.a,
-        q.b,
+        ...questionTerms(q).map(
+          (value) => Math.abs(value)
+        ),
         Math.abs(q.answer),
         ...steps.map(
           (step) =>
@@ -17373,7 +17751,7 @@ HTML = r"""
         mode:
           currentMode,
         formula:
-          `${q.a} ${q.op} ${q.b}`,
+          questionFormula(q),
         expected:
           q.answer,
         isWeakness:
@@ -17589,6 +17967,9 @@ HTML = r"""
           a: entry.q.a,
           b: entry.q.b,
           op: entry.q.op,
+          terms: questionTerms(entry.q),
+          operators: questionOperators(entry.q),
+          formula: questionFormula(entry.q, false),
           answer: entry.q.answer,
           user: entry.user,
           ok: Boolean(entry.ok),
@@ -17812,7 +18193,8 @@ HTML = r"""
         ) {
           if (item.examples.length < 2) {
             item.examples.push(
-              `${question.a}${question.op}${question.b}`
+              question.formula ||
+              questionFormula(question, false)
             );
           }
         }
@@ -18636,6 +19018,10 @@ HTML = r"""
 
       // 前の問題が一瞬見えないように表示内容も消しておく。
       equation.textContent = "";
+      equation.classList.remove(
+        "multi-term",
+        "long-sequence"
+      );
       answerInput.value = "";
       feedback.textContent = "";
       feedback.className = "feedback";
@@ -18676,7 +19062,7 @@ HTML = r"""
 
     if (!isValidQuestion(q)) {
       throw new Error(
-        `表示禁止問題を検出: ${q.a} ${q.op} ${q.b}`
+        `表示禁止問題を検出: ${questionFormula(q)}`
       );
     }
 
@@ -18693,8 +19079,20 @@ HTML = r"""
     bar.style.width =
       `${(index / sessionTotalQuestions) * 100}%`;
 
+    const formula = questionFormula(q);
+
     equation.textContent =
-      `${q.a} ${q.op} ${q.b} ＝ ?`;
+      `${formula} ＝ ?`;
+
+    equation.classList.toggle(
+      "multi-term",
+      isMultiTermQuestion(q)
+    );
+
+    equation.classList.toggle(
+      "long-sequence",
+      formula.length >= 24
+    );
 
     markQuestionDisplayed(
       index
@@ -19678,7 +20076,7 @@ HTML = r"""
               : "不正解";
 
         div.textContent =
-          `${i + 1}. ${weakMark}${entry.q.a} ${entry.q.op} ${entry.q.b}` +
+          `${i + 1}. ${weakMark}${questionFormula(entry.q)}` +
           ` ＝ ${entry.q.answer}｜${outcomeLabel}｜` +
           (
             entry.user === null
