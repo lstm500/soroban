@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V134-MULTI-TERM-ADD-SUB-STAGES"
+APP_VERSION = "CLEAN-V136-FINAL-RANK-MASTER"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -345,18 +345,37 @@ HTML = r"""
   }
 
 
+  .home-rank-track-grid {
+    width: min(920px, 100%);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0 auto 34px;
+  }
+
   .home-rank-card {
-    width: min(680px, 100%);
+    width: 100%;
+    min-width: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 14px;
-    margin: 0 auto 34px;
-    padding: 12px 16px;
+    justify-content: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 12px 14px;
     border: 1px solid #d9cfb8;
     border-radius: 18px;
     background: linear-gradient(135deg, #fffdf7, #f4eddc);
     box-shadow: 0 8px 22px rgba(74, 60, 35, .08);
+  }
+
+  .home-rank-card.addsub-track {
+    border-color: #d6bd86;
+    background: linear-gradient(135deg, #fffdf7, #f7edd6);
+  }
+
+  .home-rank-card.muldiv-track {
+    border-color: #aebfd0;
+    background: linear-gradient(135deg, #fbfdff, #eaf1f7);
   }
 
   .home-rank-copy {
@@ -3009,6 +3028,30 @@ HTML = r"""
     color: #496c4d;
   }
 
+  .medal-track-heading {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #eee8dc;
+    font-size: 13px;
+    font-weight: 1000;
+  }
+
+  .rank-track-goal-section {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ded7cb;
+    border-radius: 13px;
+    background: #fff;
+  }
+
+  .rank-track-goal-title {
+    margin-bottom: 5px;
+    font-size: 13px;
+    font-weight: 1000;
+  }
+
   .medal-reset-box {
     margin-top: 14px;
     padding: 12px;
@@ -3206,13 +3249,37 @@ HTML = r"""
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .home-rank-track-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      margin-bottom: 30px;
+    }
+
     .home-rank-card {
+      min-height: 126px;
+      flex-direction: column;
       justify-content: flex-start;
-      margin-bottom: 40px;
+      align-items: center;
+      gap: 5px;
+      padding: 9px 6px;
+      text-align: center;
+    }
+
+    .home-rank-copy {
+      width: 100%;
+    }
+
+    .home-rank-label {
+      font-size: 9px;
     }
 
     .home-rank-name {
-      font-size: 19px;
+      font-size: 17px;
+    }
+
+    .home-rank-card .app-rank-next {
+      font-size: 9px;
+      line-height: 1.35;
     }
 
     .home-rank-medal-coin {
@@ -3745,21 +3812,41 @@ HTML = r"""
     チャレンジ・苦手克服・九九即答・暗算から練習方法を選んでください。
   </div>
 
-  <div class="home-rank-card">
-    <div
-      id="homeRankMedal"
-      class="home-rank-medal-coin no-rank"
-      data-gold-src="__KUKU_GOLD_MEDAL__"
-      data-silver-src="__KUKU_SILVER_MEDAL__"
-      data-bronze-src="__KUKU_BRONZE_MEDAL__"
-    >
-      <img id="homeRankMedalImage" class="home-rank-medal-image" alt="現在の階級メダル">
-      <span class="home-rank-medal-placeholder">－</span>
+  <div class="home-rank-track-grid">
+    <div class="home-rank-card addsub-track">
+      <div
+        id="homeAddSubMedal"
+        class="home-rank-medal-coin no-rank"
+        data-gold-src="__KUKU_GOLD_MEDAL__"
+        data-silver-src="__KUKU_SILVER_MEDAL__"
+        data-bronze-src="__KUKU_BRONZE_MEDAL__"
+      >
+        <img class="home-rank-medal-image" alt="足し算・引き算の階級メダル">
+        <span class="home-rank-medal-placeholder">－</span>
+      </div>
+      <div class="home-rank-copy">
+        <div class="home-rank-label">足し算・引き算</div>
+        <div id="homeAddSubRankName" class="home-rank-name">見習い</div>
+        <div id="homeAddSubRankNext" class="app-rank-next">最初の銅メダルを目指そう</div>
+      </div>
     </div>
-    <div class="home-rank-copy">
-      <div class="home-rank-label">あなたの階級</div>
-      <div id="homeRankName" class="home-rank-name">見習い</div>
-      <div id="homeRankNext" class="app-rank-next">チャレンジでメダルを獲得しよう</div>
+
+    <div class="home-rank-card muldiv-track">
+      <div
+        id="homeMulDivMedal"
+        class="home-rank-medal-coin no-rank"
+        data-gold-src="__KUKU_GOLD_MEDAL__"
+        data-silver-src="__KUKU_SILVER_MEDAL__"
+        data-bronze-src="__KUKU_BRONZE_MEDAL__"
+      >
+        <img class="home-rank-medal-image" alt="掛け算・割り算の階級メダル">
+        <span class="home-rank-medal-placeholder">－</span>
+      </div>
+      <div class="home-rank-copy">
+        <div class="home-rank-label">掛け算・割り算</div>
+        <div id="homeMulDivRankName" class="home-rank-name">見習い</div>
+        <div id="homeMulDivRankNext" class="app-rank-next">最初の銅メダルを目指そう</div>
+      </div>
     </div>
   </div>
 
@@ -4099,7 +4186,7 @@ HTML = r"""
   <div class="app-rank-card">
     <div class="app-rank-head">
       <div>
-        <div class="app-rank-title">現在のアプリ内階級</div>
+        <div class="app-rank-title">現在のアプリ内階級（2系統）</div>
         <div id="appRankSub" class="app-rank-next">クリアした難易度と正答数から自動認定します。</div>
       </div>
       <div id="appRankBadge" class="app-rank-badge">見習い</div>
@@ -4109,7 +4196,7 @@ HTML = r"""
     </div>
     <div id="appRankNext" class="app-rank-next"></div>
     <div class="app-rank-note">
-      簡単な問題を繰り返すだけでは昇格しません。対応する難易度のチャレンジを認定水準でクリアした場合だけ級・段が上がります。公式の珠算検定とは別のアプリ内称号です。
+      足し算・引き算と、掛け算・割り算を別々に認定します。上位の級・段へ進むには、それ以前の全モードで金条件を満たす必要があります。公式の珠算検定とは別のアプリ内称号です。
     </div>
   </div>
 
@@ -4999,10 +5086,12 @@ HTML = r"""
   const appRankMeterFill = $("#appRankMeterFill");
   const appRankSub = $("#appRankSub");
   const appRankNext = $("#appRankNext");
-  const homeRankMedal = $("#homeRankMedal");
-  const homeRankMedalImage = $("#homeRankMedalImage");
-  const homeRankName = $("#homeRankName");
-  const homeRankNext = $("#homeRankNext");
+  const homeAddSubMedal = $("#homeAddSubMedal");
+  const homeAddSubRankName = $("#homeAddSubRankName");
+  const homeAddSubRankNext = $("#homeAddSubRankNext");
+  const homeMulDivMedal = $("#homeMulDivMedal");
+  const homeMulDivRankName = $("#homeMulDivRankName");
+  const homeMulDivRankNext = $("#homeMulDivRankNext");
   const medalCollectionGrid = $("#medalCollectionGrid");
   const medalConditionList = $("#medalConditionList");
   const medalResetBtn = $("#medalResetBtn");
@@ -5621,7 +5710,7 @@ HTML = r"""
   const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
   const RANK_CERTIFICATION_STORAGE_KEY = "soroban_rank_certification_v2";
   const CHALLENGE_RESUME_STORAGE_KEY = "soroban_challenge_resume_v2";
-  const CHALLENGE_CURRICULUM_VERSION = "multi-term-add-sub-v3";
+  const CHALLENGE_CURRICULUM_VERSION = "split-cumulative-rank-tracks-v1";
   const MAX_SESSION_HISTORY = 200;
   const MAX_RANKING_ENTRIES_PER_MODE = 100;
 
@@ -7753,93 +7842,161 @@ HTML = r"""
     return evidence;
   }
 
-  const APP_RANK_CERTIFICATIONS =
-    Object.freeze([
-      {
-        name: "10級",
-        type: "any",
-        modes: ["ba1", "bs1"],
-        requirement: "1桁・繰り上がり／繰り下がりなし（どちらか）"
-      },
-      {
-        name: "9級",
-        type: "all",
-        modes: ["ba1", "bs1"],
-        requirement: "1桁・繰り上がり／繰り下がりなし（両方）"
-      },
-      {
-        name: "8級",
-        type: "all",
-        modes: ["ba2", "bs2"],
-        requirement: "1桁・繰り上がり／繰り下がりあり（両方）"
-      },
-      {
-        name: "7級",
-        type: "all",
-        modes: ["ba2x4", "bs2x4"],
-        requirement: "1桁の数を4つ使う足し算・引き算（両方）"
-      },
-      {
-        name: "6級",
-        type: "all",
-        modes: ["ba3", "bs3"],
-        requirement: "2桁・繰り上がり／繰り下がりなし（両方）"
-      },
-      {
-        name: "5級",
-        type: "all",
-        modes: ["ba4", "bs4"],
-        requirement: "2桁・繰り上がり／繰り下がりあり（両方）"
-      },
-      {
-        name: "4級",
-        type: "all",
-        modes: ["ba4x4", "bs4x4"],
-        requirement: "2桁の数を4つ使う足し算・引き算（両方）"
-      },
-      {
-        name: "3級",
-        type: "all",
-        modes: ["ba5", "bs5"],
-        requirement: "3桁の足し算・引き算（両方）"
-      },
-      {
-        name: "2級",
-        type: "all",
-        modes: ["ba5x4", "bs5x4"],
-        requirement: "3桁の連続足し算・連続引き算（両方）"
-      },
-      {
-        name: "1級",
-        type: "all",
-        modes: ["mm1", "md1"],
-        requirement: "1桁レベルの掛け算・割り算（両方）"
-      },
-      {
-        name: "初段",
-        type: "all",
-        modes: ["mm2", "md2"],
-        requirement: "中級2の掛け算・割り算（両方）"
-      },
-      {
-        name: "二段",
-        type: "all",
-        modes: ["mm3", "md3"],
-        requirement: "中級3の掛け算・割り算（両方）"
-      },
-      {
-        name: "三段",
-        type: "any",
-        modes: ["a1"],
-        requirement: "上級1（4桁の足し算・引き算）"
-      },
-      {
-        name: "名人",
-        type: "all",
-        modes: ["a2", "a3"],
-        requirement: "上級2・上級3の総合計算"
+  function buildRankTrack(
+    key,
+    label,
+    shortLabel,
+    definitions
+  ) {
+    const previousModes = [];
+
+    const ranks = definitions.map(
+      (definition, index) => {
+        const stageModes = [
+          ...definition.stageModes
+        ];
+
+        const rule = Object.freeze({
+          id: `${key}:${definition.code}`,
+          trackKey: key,
+          trackLabel: label,
+          trackShortLabel: shortLabel,
+          index,
+          name: definition.name,
+          stageModes: Object.freeze(stageModes),
+          priorModes: Object.freeze([
+            ...previousModes
+          ]),
+          requirement: definition.requirement
+        });
+
+        previousModes.push(
+          ...stageModes
+        );
+
+        return rule;
       }
-    ]);
+    );
+
+    return Object.freeze({
+      key,
+      label,
+      shortLabel,
+      ranks: Object.freeze(ranks)
+    });
+  }
+
+  const RANK_TRACKS = Object.freeze({
+    addsub: buildRankTrack(
+      "addsub",
+      "足し算・引き算",
+      "足・引",
+      [
+        {
+          code: "8kyu",
+          name: "8級",
+          stageModes: ["ba1", "bs1"],
+          requirement: "1桁・繰り上がり／繰り下がりなし"
+        },
+        {
+          code: "7kyu",
+          name: "7級",
+          stageModes: ["ba2", "bs2"],
+          requirement: "1桁・繰り上がり／繰り下がりあり"
+        },
+        {
+          code: "6kyu",
+          name: "6級",
+          stageModes: ["ba2x4", "bs2x4"],
+          requirement: "1桁の数を4つ使う足し算・引き算"
+        },
+        {
+          code: "5kyu",
+          name: "5級",
+          stageModes: ["ba3", "bs3"],
+          requirement: "2桁・繰り上がり／繰り下がりなし"
+        },
+        {
+          code: "4kyu",
+          name: "4級",
+          stageModes: ["ba4", "bs4"],
+          requirement: "2桁・繰り上がり／繰り下がりあり"
+        },
+        {
+          code: "3kyu",
+          name: "3級",
+          stageModes: ["ba4x4", "bs4x4"],
+          requirement: "2桁の数を4つ使う足し算・引き算"
+        },
+        {
+          code: "2kyu",
+          name: "2級",
+          stageModes: ["ba5", "bs5"],
+          requirement: "3桁の足し算・引き算"
+        },
+        {
+          code: "1kyu",
+          name: "1級",
+          stageModes: ["ba5x4", "bs5x4"],
+          requirement: "3桁の連続足し算・連続引き算"
+        },
+        {
+          code: "shodan",
+          name: "名人",
+          stageModes: ["a1"],
+          requirement: "4桁の足し算・引き算"
+        }
+      ]
+    ),
+    muldiv: buildRankTrack(
+      "muldiv",
+      "掛け算・割り算",
+      "掛・割",
+      [
+        {
+          code: "4kyu",
+          name: "4級",
+          stageModes: ["mm1", "md1"],
+          requirement: "1桁レベルの掛け算・割り算"
+        },
+        {
+          code: "3kyu",
+          name: "3級",
+          stageModes: ["mm2", "md2"],
+          requirement: "2桁×1桁・3桁÷1桁"
+        },
+        {
+          code: "2kyu",
+          name: "2級",
+          stageModes: ["mm3", "md3"],
+          requirement: "2桁×2桁・3桁÷2桁"
+        },
+        {
+          code: "1kyu",
+          name: "1級",
+          stageModes: ["a2"],
+          requirement: "3桁×2桁・4桁÷2桁"
+        },
+        {
+          code: "shodan",
+          name: "名人",
+          stageModes: ["a3"],
+          requirement: "3桁×3桁・5桁÷3桁"
+        }
+      ]
+    )
+  });
+
+  const ALL_RANK_RULES = Object.freeze([
+    ...RANK_TRACKS.addsub.ranks,
+    ...RANK_TRACKS.muldiv.ranks
+  ]);
+
+  const RANK_RULE_BY_ID = new Map(
+    ALL_RANK_RULES.map(
+      (rule) => [rule.id, rule]
+    )
+  );
 
   const MEDAL_TIERS = Object.freeze([
     {
@@ -7865,21 +8022,209 @@ HTML = r"""
     }
   ]);
 
+  const MEDAL_TIER_ORDER = Object.freeze({
+    bronze: 0,
+    silver: 1,
+    gold: 2
+  });
+
+  const LEGACY_RANK_TRACK_MAP = Object.freeze({
+    "10級": [{ trackKey: "addsub", rankIndex: 0 }],
+    "9級": [{ trackKey: "addsub", rankIndex: 0 }],
+    "8級": [{ trackKey: "addsub", rankIndex: 1 }],
+    "7級": [{ trackKey: "addsub", rankIndex: 2 }],
+    "6級": [{ trackKey: "addsub", rankIndex: 3 }],
+    "5級": [{ trackKey: "addsub", rankIndex: 4 }],
+    "4級": [{ trackKey: "addsub", rankIndex: 5 }],
+    "3級": [{ trackKey: "addsub", rankIndex: 6 }],
+    "2級": [{ trackKey: "addsub", rankIndex: 7 }],
+    "1級": [{ trackKey: "muldiv", rankIndex: 0 }],
+    "初段": [{ trackKey: "muldiv", rankIndex: 1 }],
+    "二段": [{ trackKey: "muldiv", rankIndex: 2 }],
+    "三段": [{ trackKey: "addsub", rankIndex: 8 }],
+    "名人": [{ trackKey: "muldiv", rankIndex: 4 }]
+  });
+
+  function trackForKey(trackKey) {
+    return RANK_TRACKS[trackKey] || null;
+  }
+
+  function ruleForId(ruleId) {
+    return RANK_RULE_BY_ID.get(ruleId) || null;
+  }
+
+  function trackKeyForMode(mode) {
+    const value = String(mode || "");
+
+    if (
+      value.startsWith("ba") ||
+      value.startsWith("bs") ||
+      value === "a1"
+    ) {
+      return "addsub";
+    }
+
+    if (
+      value.startsWith("mm") ||
+      value.startsWith("md") ||
+      value === "a2" ||
+      value === "a3"
+    ) {
+      return "muldiv";
+    }
+
+    return null;
+  }
+
+  function emptyLegacyFloorByTrack() {
+    return {
+      addsub: null,
+      muldiv: null
+    };
+  }
+
+  function normalizeTierKey(tierKey) {
+    return Object.prototype.hasOwnProperty.call(
+      MEDAL_TIER_ORDER,
+      tierKey
+    )
+      ? tierKey
+      : "bronze";
+  }
+
+  function tierKeyFromMedalRecord(record) {
+    if (!record || typeof record !== "object") {
+      return null;
+    }
+
+    if (record.gold) return "gold";
+    if (record.silver) return "silver";
+    if (record.bronze) return "bronze";
+    return null;
+  }
+
+  function normalizeLegacyFloorByTrack(raw) {
+    const normalized = emptyLegacyFloorByTrack();
+
+    if (!raw || typeof raw !== "object") {
+      return normalized;
+    }
+
+    Object.keys(normalized).forEach(
+      (trackKey) => {
+        const floor = raw[trackKey];
+        const track = trackForKey(trackKey);
+
+        if (
+          !floor ||
+          !track ||
+          !Number.isInteger(Number(floor.rankIndex))
+        ) {
+          return;
+        }
+
+        normalized[trackKey] = {
+          rankIndex: Math.max(
+            0,
+            Math.min(
+              track.ranks.length - 1,
+              Number(floor.rankIndex)
+            )
+          ),
+          tierKey: normalizeTierKey(floor.tierKey),
+          sourceRank:
+            typeof floor.sourceRank === "string"
+              ? floor.sourceRank
+              : "旧認定"
+        };
+      }
+    );
+
+    return normalized;
+  }
+
+  function strongerFloor(current, candidate) {
+    if (!candidate) return current || null;
+    if (!current) return candidate;
+
+    if (candidate.rankIndex !== current.rankIndex) {
+      return candidate.rankIndex > current.rankIndex
+        ? candidate
+        : current;
+    }
+
+    return (
+      MEDAL_TIER_ORDER[candidate.tierKey] >
+      MEDAL_TIER_ORDER[current.tierKey]
+    )
+      ? candidate
+      : current;
+  }
+
+  function deriveLegacyFloorByTrack(rawMedals) {
+    const floors = emptyLegacyFloorByTrack();
+
+    if (!rawMedals || typeof rawMedals !== "object") {
+      return floors;
+    }
+
+    Object.entries(rawMedals).forEach(
+      ([rankName, record]) => {
+        const tierKey = tierKeyFromMedalRecord(record);
+        const mappings = LEGACY_RANK_TRACK_MAP[rankName];
+
+        if (!tierKey || !Array.isArray(mappings)) {
+          return;
+        }
+
+        mappings.forEach((mapping) => {
+          const candidate = {
+            rankIndex: mapping.rankIndex,
+            tierKey,
+            sourceRank: rankName
+          };
+
+          floors[mapping.trackKey] = strongerFloor(
+            floors[mapping.trackKey],
+            candidate
+          );
+        });
+      }
+    );
+
+    return floors;
+  }
+
+  function mergeLegacyFloors(primary, secondary) {
+    const result = emptyLegacyFloorByTrack();
+
+    Object.keys(result).forEach((trackKey) => {
+      result[trackKey] = strongerFloor(
+        primary?.[trackKey] || null,
+        secondary?.[trackKey] || null
+      );
+    });
+
+    return result;
+  }
+
   function emptyRankCertificationState(
-    resetAt = null
+    resetAt = null,
+    legacyFloorByTrack = null
   ) {
     return {
       bestByMode: {},
       medalAchievedAt: {},
+      legacyFloorByTrack:
+        legacyFloorByTrack ||
+        emptyLegacyFloorByTrack(),
       resetAt,
       curriculumVersion:
         CHALLENGE_CURRICULUM_VERSION
     };
   }
 
-  function normalizeMedalAchievedAt(
-    raw
-  ) {
+  function normalizeAllMedalRecords(raw) {
     const normalized = {};
 
     if (!raw || typeof raw !== "object") {
@@ -7887,13 +8232,13 @@ HTML = r"""
     }
 
     Object.entries(raw).forEach(
-      ([rankName, value]) => {
+      ([rankKey, value]) => {
         if (
           value &&
           typeof value === "object" &&
           !Array.isArray(value)
         ) {
-          normalized[rankName] = {
+          normalized[rankKey] = {
             bronze:
               typeof value.bronze === "string"
                 ? value.bronze
@@ -7914,12 +8259,26 @@ HTML = r"""
     return normalized;
   }
 
+  function normalizeNewMedalRecords(raw) {
+    const all = normalizeAllMedalRecords(raw);
+    const normalized = {};
+
+    Object.entries(all).forEach(
+      ([rankId, value]) => {
+        if (RANK_RULE_BY_ID.has(rankId)) {
+          normalized[rankId] = value;
+        }
+      }
+    );
+
+    return normalized;
+  }
+
   function loadRankCertificationState() {
     try {
-      const raw =
-        localStorage.getItem(
-          RANK_CERTIFICATION_STORAGE_KEY
-        );
+      const raw = localStorage.getItem(
+        RANK_CERTIFICATION_STORAGE_KEY
+      );
 
       if (!raw) {
         return emptyRankCertificationState();
@@ -7927,49 +8286,52 @@ HTML = r"""
 
       const parsed = JSON.parse(raw);
 
-      if (
-        !parsed ||
-        typeof parsed !== "object"
-      ) {
+      if (!parsed || typeof parsed !== "object") {
         return emptyRankCertificationState();
       }
 
       const resetAt =
         parsed.resetAt &&
-        !Number.isNaN(
-          Date.parse(parsed.resetAt)
-        )
+        !Number.isNaN(Date.parse(parsed.resetAt))
           ? parsed.resetAt
           : null;
 
-      // 新しい「銅・銀・金＋珠ヒント別集計」基準では、
-      // 旧bestByModeをそのまま使わず履歴から再計算する。
-      if (
-        parsed.curriculumVersion !==
-        CHALLENGE_CURRICULUM_VERSION
-      ) {
-        return emptyRankCertificationState(
-          resetAt
-        );
-      }
+      const allOldMedals = normalizeAllMedalRecords(
+        parsed.medalAchievedAt
+      );
 
-      if (
-        !parsed.bestByMode ||
-        typeof parsed.bestByMode !== "object"
-      ) {
-        parsed.bestByMode = {};
-      }
+      const migratedFloors = deriveLegacyFloorByTrack(
+        allOldMedals
+      );
 
-      parsed.medalAchievedAt =
-        normalizeMedalAchievedAt(
-          parsed.medalAchievedAt
-        );
+      const savedFloors = normalizeLegacyFloorByTrack(
+        parsed.legacyFloorByTrack
+      );
 
-      parsed.resetAt = resetAt;
-      parsed.curriculumVersion =
+      const legacyFloorByTrack = mergeLegacyFloors(
+        savedFloors,
+        migratedFloors
+      );
+
+      const sameCurriculum =
+        parsed.curriculumVersion ===
         CHALLENGE_CURRICULUM_VERSION;
 
-      return parsed;
+      return {
+        bestByMode:
+          parsed.bestByMode &&
+          typeof parsed.bestByMode === "object"
+            ? parsed.bestByMode
+            : {},
+        medalAchievedAt:
+          sameCurriculum
+            ? normalizeNewMedalRecords(allOldMedals)
+            : {},
+        legacyFloorByTrack,
+        resetAt,
+        curriculumVersion:
+          CHALLENGE_CURRICULUM_VERSION
+      };
     } catch (error) {
       return emptyRankCertificationState();
     }
@@ -7982,21 +8344,15 @@ HTML = r"""
     try {
       localStorage.setItem(
         RANK_CERTIFICATION_STORAGE_KEY,
-        JSON.stringify(
-          rankCertificationState
-        )
+        JSON.stringify(rankCertificationState)
       );
     } catch (error) {}
   }
 
-  function recordTimestampAfterReset(
-    record
-  ) {
+  function recordTimestampAfterReset(record) {
     const resetTimestamp =
       rankCertificationState.resetAt
-        ? Date.parse(
-            rankCertificationState.resetAt
-          )
+        ? Date.parse(rankCertificationState.resetAt)
         : NaN;
 
     if (!Number.isFinite(resetTimestamp)) {
@@ -8014,13 +8370,10 @@ HTML = r"""
     );
   }
 
-  function certificationCorrectFromRecord(
-    record
-  ) {
-    const qs =
-      Array.isArray(record?.questions)
-        ? record.questions
-        : [];
+  function certificationCorrectFromRecord(record) {
+    const qs = Array.isArray(record?.questions)
+      ? record.questions
+      : [];
 
     if (qs.length) {
       return qs.filter(
@@ -8039,17 +8392,14 @@ HTML = r"""
     );
   }
 
-  function updateRankCertificationState(
-    record
-  ) {
+  function updateRankCertificationState(record) {
     if (
       !record ||
       !recordTimestampAfterReset(record) ||
       record.remedialSkillId ||
       record.weaknessChallengeMode ||
       !record.mode ||
-      Number(record.totalQuestions) !==
-        TOTAL_QUESTIONS
+      Number(record.totalQuestions) !== TOTAL_QUESTIONS
     ) {
       return;
     }
@@ -8058,21 +8408,13 @@ HTML = r"""
       Array.isArray(record.questions) &&
       record.questions.length > 0 &&
       !record.questions.every(
-        (q) =>
-          questionMatchesMode(
-            record.mode,
-            q
-          )
+        (q) => questionMatchesMode(record.mode, q)
       )
     ) {
       return;
     }
 
-    const correct =
-      certificationCorrectFromRecord(
-        record
-      );
-
+    const correct = certificationCorrectFromRecord(record);
     const timedCompleted =
       record.timeLimitEnabled === true &&
       !record.timeup;
@@ -8082,18 +8424,12 @@ HTML = r"""
       timedCorrect: 0,
       achievedAt: null,
       timedAchievedAt: null,
-      ...(
-        rankCertificationState
-          .bestByMode[record.mode] || {}
-      )
+      ...(rankCertificationState.bestByMode[record.mode] || {})
     };
 
     let changed = false;
 
-    if (
-      correct >
-      Number(current.correct || 0)
-    ) {
+    if (correct > Number(current.correct || 0)) {
       current.correct = correct;
       current.achievedAt =
         record.finishedAt ||
@@ -8103,8 +8439,7 @@ HTML = r"""
 
     if (
       timedCompleted &&
-      correct >
-        Number(current.timedCorrect || 0)
+      correct > Number(current.timedCorrect || 0)
     ) {
       current.timedCorrect = correct;
       current.timedAchievedAt =
@@ -8114,22 +8449,15 @@ HTML = r"""
     }
 
     if (changed) {
-      rankCertificationState
-        .bestByMode[record.mode] =
-          current;
+      rankCertificationState.bestByMode[record.mode] = current;
       saveRankCertificationState();
     }
   }
 
   function rebuildRankCertificationStateFromHistory() {
-    (sessionHistory || [])
-      .forEach(
-        (record) => {
-          updateRankCertificationState(
-            record
-          );
-        }
-      );
+    (sessionHistory || []).forEach(
+      (record) => updateRankCertificationState(record)
+    );
   }
 
   function bestCorrectForMode(
@@ -8137,8 +8465,7 @@ HTML = r"""
     timedOnly = false
   ) {
     const entry =
-      rankCertificationState
-        .bestByMode[mode] || {};
+      rankCertificationState.bestByMode[mode] || {};
 
     const raw = timedOnly
       ? entry.timedCorrect
@@ -8153,132 +8480,118 @@ HTML = r"""
     );
   }
 
-  function getMedalTierDefinition(
-    tierKey
-  ) {
+  function getMedalTierDefinition(tierKey) {
     return MEDAL_TIERS.find(
       (tier) => tier.key === tierKey
     ) || MEDAL_TIERS[0];
+  }
+
+  function modeMeetsTier(mode, tierKey) {
+    const tier = getMedalTierDefinition(tierKey);
+
+    return (
+      bestCorrectForMode(mode, tier.timedOnly) >=
+      tier.minCorrect
+    );
   }
 
   function certificationRuleSatisfied(
     rule,
     tierKey = "bronze"
   ) {
-    if (
-      !rule ||
-      !Array.isArray(rule.modes) ||
-      !rule.modes.length
-    ) {
-      return false;
-    }
+    if (!rule) return false;
 
-    const tier =
-      getMedalTierDefinition(
-        tierKey
-      );
-
-    const checks =
-      rule.modes.map(
-        (mode) =>
-          bestCorrectForMode(
-            mode,
-            tier.timedOnly
-          ) >= tier.minCorrect
-      );
-
-    return (
-      rule.type === "all"
-        ? checks.every(Boolean)
-        : checks.some(Boolean)
+    const priorGold = rule.priorModes.every(
+      (mode) => modeMeetsTier(mode, "gold")
     );
+
+    const currentTier = rule.stageModes.every(
+      (mode) => modeMeetsTier(mode, tierKey)
+    );
+
+    return priorGold && currentTier;
+  }
+
+  function goalRequirementRows(rule, tierKey) {
+    if (!rule) return [];
+
+    return [
+      ...rule.priorModes.map((mode) => ({
+        mode,
+        tierKey: "gold",
+        prerequisite: true
+      })),
+      ...rule.stageModes.map((mode) => ({
+        mode,
+        tierKey,
+        prerequisite: false
+      }))
+    ];
   }
 
   function certificationRuleProgress(
     rule,
     tierKey = "bronze"
   ) {
-    if (
-      !rule ||
-      !Array.isArray(rule.modes) ||
-      !rule.modes.length
-    ) {
-      return 0;
-    }
+    const rows = goalRequirementRows(rule, tierKey);
 
-    const tier =
-      getMedalTierDefinition(
-        tierKey
+    if (!rows.length) return 0;
+
+    const ratios = rows.map((row) => {
+      const tier = getMedalTierDefinition(row.tierKey);
+
+      return Math.max(
+        0,
+        Math.min(
+          1,
+          bestCorrectForMode(
+            row.mode,
+            tier.timedOnly
+          ) / tier.minCorrect
+        )
       );
+    });
 
-    const ratios =
-      rule.modes.map(
-        (mode) =>
-          Math.max(
-            0,
-            Math.min(
-              1,
-              bestCorrectForMode(
-                mode,
-                tier.timedOnly
-              ) /
-              tier.minCorrect
-            )
-          )
-      );
-
-    if (rule.type === "all") {
-      return (
-        ratios.reduce(
-          (sum, value) =>
-            sum + value,
-          0
-        ) /
-        ratios.length *
-        100
-      );
-    }
-
-    return Math.max(...ratios) * 100;
+    return (
+      ratios.reduce((sum, value) => sum + value, 0) /
+      ratios.length *
+      100
+    );
   }
 
   function shortModeName(mode) {
-    const title =
-      modeInfo[mode]?.title || mode;
-
-    const pieces =
-      String(title).split("｜");
-
-    return (
-      pieces[pieces.length - 1] || title
-    );
+    const title = modeInfo[mode]?.title || mode;
+    const pieces = String(title).split("｜");
+    return pieces[pieces.length - 1] || title;
   }
 
   function certificationEvidenceText(
     rule,
     tierKey = "bronze"
   ) {
-    if (!rule) {
-      return "";
-    }
+    if (!rule) return "";
 
-    const tier =
-      getMedalTierDefinition(
-        tierKey
-      );
+    return goalRequirementRows(rule, tierKey)
+      .map((row) => {
+        const tier = getMedalTierDefinition(row.tierKey);
+        const score = bestCorrectForMode(
+          row.mode,
+          tier.timedOnly
+        );
 
-    return rule.modes.map(
-      (mode) =>
-        `${shortModeName(mode)} ${bestCorrectForMode(mode, tier.timedOnly)}/12`
-    ).join("・");
+        return `${shortModeName(row.mode)} ${score}/12`;
+      })
+      .join("・");
   }
 
-  function medalRecordForRank(
-    rankName
-  ) {
+  function medalRecordForRule(ruleOrId) {
+    const ruleId =
+      typeof ruleOrId === "string"
+        ? ruleOrId
+        : ruleOrId?.id;
+
     const raw =
-      rankCertificationState
-        .medalAchievedAt[rankName];
+      rankCertificationState.medalAchievedAt[ruleId];
 
     if (
       !raw ||
@@ -8308,11 +8621,8 @@ HTML = r"""
     };
   }
 
-  function highestMedalTierForRank(
-    rankName
-  ) {
-    const record =
-      medalRecordForRank(rankName);
+  function highestMedalTierForRule(ruleOrId) {
+    const record = medalRecordForRule(ruleOrId);
 
     if (record.gold) return "gold";
     if (record.silver) return "silver";
@@ -8320,12 +8630,11 @@ HTML = r"""
     return null;
   }
 
-  function isMedalEarned(
-    rankName,
+  function isRuleMedalEarned(
+    ruleOrId,
     tierKey = null
   ) {
-    const record =
-      medalRecordForRank(rankName);
+    const record = medalRecordForRule(ruleOrId);
 
     if (tierKey) {
       return Boolean(record[tierKey]);
@@ -8347,42 +8656,31 @@ HTML = r"""
 
     const newlyEarned = [];
 
-    APP_RANK_CERTIFICATIONS.forEach(
-      (rule) => {
-        const current =
-          medalRecordForRank(
-            rule.name
-          );
+    ALL_RANK_RULES.forEach((rule) => {
+      const current = medalRecordForRule(rule);
 
-        MEDAL_TIERS.forEach(
-          (tier) => {
-            if (
-              !current[tier.key] &&
-              certificationRuleSatisfied(
-                rule,
-                tier.key
-              )
-            ) {
-              current[tier.key] = stamp;
-              newlyEarned.push({
-                rankName: rule.name,
-                tierKey: tier.key
-              });
-            }
-          }
-        );
-
+      MEDAL_TIERS.forEach((tier) => {
         if (
-          current.bronze ||
-          current.silver ||
-          current.gold
+          !current[tier.key] &&
+          certificationRuleSatisfied(rule, tier.key)
         ) {
-          rankCertificationState
-            .medalAchievedAt[rule.name] =
-              current;
+          current[tier.key] = stamp;
+          newlyEarned.push({
+            rankId: rule.id,
+            trackKey: rule.trackKey,
+            tierKey: tier.key
+          });
         }
+      });
+
+      if (
+        current.bronze ||
+        current.silver ||
+        current.gold
+      ) {
+        rankCertificationState.medalAchievedAt[rule.id] = current;
       }
-    );
+    });
 
     if (newlyEarned.length) {
       saveRankCertificationState();
@@ -8395,21 +8693,10 @@ HTML = r"""
     return syncEarnedMedalsFromEvidence();
   }
 
-  function medalClassForTier(
-    tierKey
-  ) {
-    if (tierKey === "gold") {
-      return "medal-gold";
-    }
-
-    if (tierKey === "silver") {
-      return "medal-silver";
-    }
-
-    if (tierKey === "bronze") {
-      return "medal-bronze";
-    }
-
+  function medalClassForTier(tierKey) {
+    if (tierKey === "gold") return "medal-gold";
+    if (tierKey === "silver") return "medal-silver";
+    if (tierKey === "bronze") return "medal-bronze";
     return "";
   }
 
@@ -8418,9 +8705,7 @@ HTML = r"""
     rankName,
     tierKey = null
   ) {
-    if (!element) {
-      return;
-    }
+    if (!element) return;
 
     element.classList.remove(
       "rank-kyu-low",
@@ -8436,59 +8721,33 @@ HTML = r"""
       "no-rank"
     );
 
-    const effectiveTier =
-      tierKey ||
-      (
-        rankName &&
-        rankName !== "見習い"
-          ? highestMedalTierForRank(
-              rankName
-            )
-          : null
-      );
-
-    const hasRank =
-      Boolean(
-        rankName &&
-        rankName !== "見習い" &&
-        effectiveTier
-      );
+    const effectiveTier = tierKey || null;
+    const hasRank = Boolean(
+      rankName &&
+      rankName !== "見習い" &&
+      effectiveTier
+    );
 
     if (!hasRank) {
-      element.classList.add(
-        "no-rank"
-      );
+      element.classList.add("no-rank");
     } else {
-      const tierClass =
-        medalClassForTier(
-          effectiveTier
-        );
-
-      if (tierClass) {
-        element.classList.add(
-          tierClass
-        );
-      }
+      const tierClass = medalClassForTier(effectiveTier);
+      if (tierClass) element.classList.add(tierClass);
     }
 
-    // TOPだけは、九九と同じ画像の丸メダルへ切り替える。
     if (
       element.classList.contains(
         "home-rank-medal-coin"
       )
     ) {
-      const image =
-        element.querySelector(
-          ".home-rank-medal-image"
-        );
+      const image = element.querySelector(
+        ".home-rank-medal-image"
+      );
 
       const sourceMap = {
-        gold:
-          element.dataset.goldSrc,
-        silver:
-          element.dataset.silverSrc,
-        bronze:
-          element.dataset.bronzeSrc
+        gold: element.dataset.goldSrc,
+        silver: element.dataset.silverSrc,
+        bronze: element.dataset.bronzeSrc
       };
 
       if (
@@ -8496,99 +8755,287 @@ HTML = r"""
         image &&
         sourceMap[effectiveTier]
       ) {
-        image.src =
-          sourceMap[effectiveTier];
-
-        image.alt =
-          `${getMedalTierDefinition(effectiveTier).label}メダル`;
-
-        element.title =
-          `${rankName}・${getMedalTierDefinition(effectiveTier).label}メダル`;
+        image.src = sourceMap[effectiveTier];
+        image.alt = `${getMedalTierDefinition(effectiveTier).label}メダル`;
+        element.title = `${rankName}・${getMedalTierDefinition(effectiveTier).label}メダル`;
       } else if (image) {
-        image.removeAttribute(
-          "src"
-        );
-
-        image.alt =
-          "未獲得";
-
-        element.title =
-          "まだメダルを獲得していません";
+        image.removeAttribute("src");
+        image.alt = "未獲得";
+        element.title = "まだメダルを獲得していません";
       }
 
       return;
     }
 
-    const textNode =
-      element.querySelector(
-        ".rank-medal-text"
-      );
+    const textNode = element.querySelector(
+      ".rank-medal-text"
+    );
 
     if (textNode) {
       textNode.textContent =
-        rankName === "見習い" ||
-        !rankName
+        rankName === "見習い" || !rankName
           ? "－"
           : rankName;
     }
   }
 
   function formatMedalDate(iso) {
-    if (!iso) {
-      return "";
-    }
+    if (!iso) return "";
 
     try {
-      return new Date(iso)
-        .toLocaleDateString(
-          "ja-JP",
-          {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric"
-          }
-        );
+      return new Date(iso).toLocaleDateString(
+        "ja-JP",
+        {
+          year: "numeric",
+          month: "numeric",
+          day: "numeric"
+        }
+      );
     } catch (error) {
       return "";
     }
   }
 
-  function renderMedalCollection() {
-    if (!medalCollectionGrid) {
-      return;
+  function actualTrackPosition(trackKey) {
+    const track = trackForKey(trackKey);
+    let rankIndex = -1;
+    let tierKey = null;
+
+    track?.ranks.forEach((rule, index) => {
+      const tier = highestMedalTierForRule(rule);
+
+      if (tier) {
+        rankIndex = index;
+        tierKey = tier;
+      }
+    });
+
+    return { rankIndex, tierKey };
+  }
+
+  function compareTrackPositions(a, b) {
+    const left = a || { rankIndex: -1, tierKey: null };
+    const right = b || { rankIndex: -1, tierKey: null };
+
+    if (left.rankIndex !== right.rankIndex) {
+      return left.rankIndex - right.rankIndex;
     }
+
+    return (
+      (MEDAL_TIER_ORDER[left.tierKey] ?? -1) -
+      (MEDAL_TIER_ORDER[right.tierKey] ?? -1)
+    );
+  }
+
+  function nextTrackMedalGoal(trackKey, current) {
+    const track = trackForKey(trackKey);
+
+    if (!track) return null;
+
+    if (!current || current.rankIndex < 0) {
+      return {
+        track,
+        rule: track.ranks[0],
+        tier: getMedalTierDefinition("bronze"),
+        catchup: false
+      };
+    }
+
+    const currentRule = track.ranks[current.rankIndex];
+    const currentTierKey = normalizeTierKey(current.tierKey);
+
+    if (
+      !certificationRuleSatisfied(
+        currentRule,
+        currentTierKey
+      )
+    ) {
+      return {
+        track,
+        rule: currentRule,
+        tier: getMedalTierDefinition(currentTierKey),
+        catchup: true
+      };
+    }
+
+    if (currentTierKey === "bronze") {
+      return {
+        track,
+        rule: currentRule,
+        tier: getMedalTierDefinition("silver"),
+        catchup: false
+      };
+    }
+
+    if (currentTierKey === "silver") {
+      return {
+        track,
+        rule: currentRule,
+        tier: getMedalTierDefinition("gold"),
+        catchup: false
+      };
+    }
+
+    const nextRule = track.ranks[current.rankIndex + 1];
+
+    if (!nextRule) return null;
+
+    return {
+      track,
+      rule: nextRule,
+      tier: getMedalTierDefinition("bronze"),
+      catchup: false
+    };
+  }
+
+  function calculateTrackRank(trackKey) {
+    const track = trackForKey(trackKey);
+    const actual = actualTrackPosition(trackKey);
+    const legacy =
+      rankCertificationState.legacyFloorByTrack?.[trackKey] ||
+      null;
+
+    const legacyPosition = legacy
+      ? {
+          rankIndex: legacy.rankIndex,
+          tierKey: legacy.tierKey
+        }
+      : {
+          rankIndex: -1,
+          tierKey: null
+        };
+
+    const useLegacy =
+      compareTrackPositions(
+        legacyPosition,
+        actual
+      ) > 0;
+
+    const current = useLegacy
+      ? legacyPosition
+      : actual;
+
+    const currentRule =
+      current.rankIndex >= 0
+        ? track.ranks[current.rankIndex]
+        : null;
+
+    const nextGoal = nextTrackMedalGoal(
+      trackKey,
+      current
+    );
+
+    return {
+      track,
+      rankIndex: current.rankIndex,
+      name: currentRule?.name || "見習い",
+      currentRule,
+      currentTierKey: current.tierKey,
+      currentTierLabel: current.tierKey
+        ? getMedalTierDefinition(current.tierKey).label
+        : null,
+      legacyRetained: useLegacy,
+      legacySourceRank:
+        useLegacy
+          ? legacy?.sourceRank || "旧認定"
+          : null,
+      currentEvidence:
+        currentRule && current.tierKey
+          ? certificationEvidenceText(
+              currentRule,
+              current.tierKey
+            )
+          : "",
+      nextGoal,
+      nextProgress:
+        nextGoal
+          ? certificationRuleProgress(
+              nextGoal.rule,
+              nextGoal.tier.key
+            )
+          : 100
+    };
+  }
+
+  function displayTrackRankLabel(rank) {
+    return rank.currentTierLabel
+      ? `${rank.name}（${rank.currentTierLabel}）`
+      : rank.name;
+  }
+
+  function trackNextText(rank) {
+    const goal = rank.nextGoal;
+
+    if (!goal) {
+      return "この系統の全金条件を達成しています";
+    }
+
+    if (goal.catchup) {
+      return `旧認定を維持中｜次へ進むには${goal.rule.name} ${goal.tier.label}条件を補完`;
+    }
+
+    return `次は ${goal.rule.name} ${goal.tier.label}メダル`;
+  }
+
+  function displayedTierForRule(rule) {
+    const actualTier = highestMedalTierForRule(rule);
+    const legacy =
+      rankCertificationState.legacyFloorByTrack?.[
+        rule.trackKey
+      ];
+
+    if (
+      legacy &&
+      legacy.rankIndex === rule.index
+    ) {
+      const legacyTier = normalizeTierKey(
+        legacy.tierKey
+      );
+
+      if (
+        !actualTier ||
+        MEDAL_TIER_ORDER[legacyTier] >
+          MEDAL_TIER_ORDER[actualTier]
+      ) {
+        return {
+          tierKey: legacyTier,
+          legacy: true
+        };
+      }
+    }
+
+    return {
+      tierKey: actualTier,
+      legacy: false
+    };
+  }
+
+  function renderMedalCollection() {
+    if (!medalCollectionGrid) return;
 
     medalCollectionGrid.innerHTML = "";
 
-    APP_RANK_CERTIFICATIONS
-      .forEach((rank) => {
-        const tierKey =
-          highestMedalTierForRank(
-            rank.name
-          );
-        const earned =
-          Boolean(tierKey);
-        const record =
-          medalRecordForRank(
-            rank.name
-          );
+    Object.values(RANK_TRACKS).forEach((track) => {
+      const heading = document.createElement("div");
+      heading.className = "medal-track-heading";
+      heading.textContent = track.label;
+      medalCollectionGrid.appendChild(heading);
+
+      track.ranks.forEach((rank) => {
+        const display = displayedTierForRule(rank);
+        const tierKey = display.tierKey;
+        const earned = Boolean(tierKey);
+        const record = medalRecordForRule(rank);
         const tier = tierKey
-          ? getMedalTierDefinition(
-              tierKey
-            )
+          ? getMedalTierDefinition(tierKey)
           : null;
 
-        const slot =
-          document.createElement("div");
+        const slot = document.createElement("div");
+        slot.className = `medal-slot ${earned ? "earned" : "locked"}`;
 
-        slot.className =
-          `medal-slot ${earned ? "earned" : "locked"}`;
-
-        const medal =
-          document.createElement("div");
+        const medal = document.createElement("div");
         medal.className = "rank-medal";
-        medal.innerHTML =
-          `<span class="rank-medal-text">${rank.name}</span>`;
+        medal.innerHTML = `<span class="rank-medal-text">${rank.name}</span>`;
 
         setMedalVisual(
           medal,
@@ -8596,85 +9043,94 @@ HTML = r"""
           tierKey
         );
 
-        const name =
-          document.createElement("div");
-        name.className =
-          "medal-slot-name";
-        name.textContent =
-          tier
-            ? `${rank.name}・${tier.label}`
-            : rank.name;
+        const name = document.createElement("div");
+        name.className = "medal-slot-name";
+        name.textContent = tier
+          ? `${rank.name}・${tier.label}`
+          : rank.name;
 
-        const status =
-          document.createElement("div");
-        status.className =
-          "medal-slot-status";
-        status.textContent =
-          tier
-            ? `${tier.label}メダル獲得 ${formatMedalDate(record[tier.key])}`
-            : "未獲得";
+        const status = document.createElement("div");
+        status.className = "medal-slot-status";
+
+        if (display.legacy) {
+          status.textContent =
+            `旧認定引継ぎ｜次へ進むには新体系の金条件を補完`;
+        } else if (tier) {
+          status.textContent =
+            `${tier.label}メダル獲得 ${formatMedalDate(record[tier.key])}`;
+        } else {
+          status.textContent = "未獲得";
+        }
 
         slot.appendChild(medal);
         slot.appendChild(name);
         slot.appendChild(status);
-        medalCollectionGrid.appendChild(
-          slot
-        );
+        medalCollectionGrid.appendChild(slot);
       });
+    });
+  }
+
+  function medalRequirementText(rankRule, tierKey) {
+    const tier = getMedalTierDefinition(tierKey);
+    const priorText = rankRule?.priorModes?.length
+      ? "それ以前の全モードを金条件で達成し、"
+      : "";
+
+    return tier.timedOnly
+      ? `${priorText}現在の対象モードを5分以内に${tier.minCorrect}/12以上`
+      : `${priorText}現在の対象モードを${tier.minCorrect}/12以上`;
   }
 
   function renderMedalConditions() {
-    if (!medalConditionList) {
-      return;
-    }
+    if (!medalConditionList) return;
 
     medalConditionList.innerHTML = "";
 
-    APP_RANK_CERTIFICATIONS
-      .forEach((rule) => {
-        const tierKey =
-          highestMedalTierForRank(
-            rule.name
-          );
+    Object.values(RANK_TRACKS).forEach((track) => {
+      const heading = document.createElement("div");
+      heading.className = "medal-track-heading";
+      heading.textContent = track.label;
+      medalConditionList.appendChild(heading);
+
+      track.ranks.forEach((rule) => {
+        const display = displayedTierForRule(rule);
+        const tierKey = display.tierKey;
         const tier = tierKey
-          ? getMedalTierDefinition(
-              tierKey
-            )
+          ? getMedalTierDefinition(tierKey)
           : null;
 
-        const row =
-          document.createElement("div");
+        const row = document.createElement("div");
         row.className =
           `medal-condition-row ${tier ? "earned" : ""}`;
 
-        const rank =
-          document.createElement("div");
-        rank.className =
-          "medal-condition-rank";
+        const rank = document.createElement("div");
+        rank.className = "medal-condition-rank";
         rank.textContent = rule.name;
 
-        const condition =
-          document.createElement("div");
-        condition.className =
-          "medal-condition-text";
+        const condition = document.createElement("div");
+        condition.className = "medal-condition-text";
         condition.textContent =
-          `${rule.requirement}｜銅 10/12以上・銀 11/12以上・金 5分モードで11/12以上`;
+          `${rule.requirement}｜上位認定には、それ以前の全モードで金が必要`;
 
-        const status =
-          document.createElement("div");
-        status.className =
-          "medal-condition-status";
-        status.textContent = tier
-          ? `${tier.label}獲得済み`
-          : `銅まで ${Math.round(certificationRuleProgress(rule, "bronze"))}%`;
+        const status = document.createElement("div");
+        status.className = "medal-condition-status";
+        status.textContent = display.legacy
+          ? `${tier?.label || "銅"}・旧認定引継ぎ`
+          : tier
+            ? `${tier.label}獲得済み`
+            : `銅まで ${Math.round(
+                certificationRuleProgress(
+                  rule,
+                  "bronze"
+                )
+              )}%`;
 
         row.appendChild(rank);
         row.appendChild(condition);
         row.appendChild(status);
-        medalConditionList.appendChild(
-          row
-        );
+        medalConditionList.appendChild(row);
       });
+    });
   }
 
   let medalResetArmedUntil = 0;
@@ -8690,15 +9146,13 @@ HTML = r"""
         armed
       );
 
-      medalResetBtn.textContent =
-        armed
-          ? "もう一度押してリセット"
-          : "メダルをリセット";
+      medalResetBtn.textContent = armed
+        ? "もう一度押してリセット"
+        : "メダルをリセット";
     }
 
     if (medalResetStatus) {
-      medalResetStatus.textContent =
-        message;
+      medalResetStatus.textContent = message;
     }
   }
 
@@ -8706,9 +9160,7 @@ HTML = r"""
     medalResetArmedUntil = 0;
 
     if (medalResetDisarmTimer) {
-      clearTimeout(
-        medalResetDisarmTimer
-      );
+      clearTimeout(medalResetDisarmTimer);
       medalResetDisarmTimer = null;
     }
 
@@ -8716,13 +9168,10 @@ HTML = r"""
   }
 
   function resetMedalProgress() {
-    const stamp =
-      new Date().toISOString();
+    const stamp = new Date().toISOString();
 
     rankCertificationState =
-      emptyRankCertificationState(
-        stamp
-      );
+      emptyRankCertificationState(stamp);
 
     saveRankCertificationState();
     closeRankCelebration();
@@ -8730,15 +9179,13 @@ HTML = r"""
 
     setMedalResetUi(
       false,
-      "リセットしました。次のチャレンジから銅メダルを取り直せます。"
+      "2系統のメダルと旧認定引継ぎをリセットしました。"
     );
 
     medalResetArmedUntil = 0;
 
     if (medalResetDisarmTimer) {
-      clearTimeout(
-        medalResetDisarmTimer
-      );
+      clearTimeout(medalResetDisarmTimer);
       medalResetDisarmTimer = null;
     }
   }
@@ -8746,9 +9193,7 @@ HTML = r"""
   function handleMedalResetClick() {
     const now = Date.now();
 
-    if (
-      medalResetArmedUntil > now
-    ) {
+    if (medalResetArmedUntil > now) {
       resetMedalProgress();
       return;
     }
@@ -8761,21 +9206,17 @@ HTML = r"""
     );
 
     if (medalResetDisarmTimer) {
-      clearTimeout(
-        medalResetDisarmTimer
-      );
+      clearTimeout(medalResetDisarmTimer);
     }
 
-    medalResetDisarmTimer =
-      setTimeout(() => {
-        disarmMedalReset();
-      }, 6200);
+    medalResetDisarmTimer = setTimeout(
+      disarmMedalReset,
+      6200
+    );
   }
 
   function buildRankConfetti() {
-    if (!rankConfettiLayer) {
-      return;
-    }
+    if (!rankConfettiLayer) return;
 
     rankConfettiLayer.innerHTML = "";
 
@@ -8789,14 +9230,10 @@ HTML = r"""
     ];
 
     for (let i = 0; i < 42; i += 1) {
-      const piece =
-        document.createElement("div");
-      piece.className =
-        "rank-confetti";
-      piece.style.left =
-        `${(i * 37) % 100}%`;
-      piece.style.background =
-        colors[i % colors.length];
+      const piece = document.createElement("div");
+      piece.className = "rank-confetti";
+      piece.style.left = `${(i * 37) % 100}%`;
+      piece.style.background = colors[i % colors.length];
       piece.style.setProperty(
         "--delay",
         `${(i % 9) * -0.23}s`
@@ -8809,20 +9246,14 @@ HTML = r"""
         "--drift",
         `${-55 + (i % 11) * 11}px`
       );
-      rankConfettiLayer.appendChild(
-        piece
-      );
+      rankConfettiLayer.appendChild(piece);
     }
   }
 
   function closeRankCelebration() {
-    if (!rankCelebration) {
-      return;
-    }
+    if (!rankCelebration) return;
 
-    rankCelebration.classList.remove(
-      "show"
-    );
+    rankCelebration.classList.remove("show");
     rankCelebration.setAttribute(
       "aria-hidden",
       "true"
@@ -8833,66 +9264,31 @@ HTML = r"""
     }
   }
 
-  function medalRequirementText(
-    rankRule,
-    tierKey
-  ) {
-    const tier =
-      getMedalTierDefinition(
-        tierKey
-      );
-
-    const modePart =
-      rankRule?.type === "all"
-        ? "対象モードをすべて"
-        : "対象モードのどれか1つを";
-
-    return tier.timedOnly
-      ? `${modePart}5分モードで${tier.minCorrect}/12以上、時間内に完了`
-      : `${modePart}${tier.minCorrect}/12以上`;
-  }
-
   function showRankCelebration(
-    rankName,
+    rankId,
     tierKey,
     newlyEarned = []
   ) {
-    if (
-      !rankCelebration ||
-      !rankName ||
-      rankName === "見習い"
-    ) {
-      return;
-    }
+    const rule = ruleForId(rankId);
 
-    const tier =
-      getMedalTierDefinition(
-        tierKey
-      );
+    if (!rankCelebration || !rule) return;
+
+    const tier = getMedalTierDefinition(tierKey);
 
     setMedalVisual(
       rankCelebrationMedal,
-      rankName,
+      rule.name,
       tier.key
     );
 
-    rankCelebrationMedalText.textContent =
-      rankName;
+    rankCelebrationMedalText.textContent = rule.name;
     rankCelebrationTitle.textContent =
-      `${rankName} ${tier.label}メダル獲得！`;
+      `${rule.trackLabel} ${rule.name} ${tier.label}メダル獲得！`;
 
-    const earnedRule =
-      APP_RANK_CERTIFICATIONS.find(
-        (rule) => rule.name === rankName
-      );
-
-    const conditionText =
-      earnedRule
-        ? medalRequirementText(
-            earnedRule,
-            tier.key
-          )
-        : "";
+    const conditionText = medalRequirementText(
+      rule,
+      tier.key
+    );
 
     rankCelebrationSub.textContent =
       newlyEarned.length > 1
@@ -8900,9 +9296,7 @@ HTML = r"""
         : `${conditionText}を達成しました。`;
 
     buildRankConfetti();
-    rankCelebration.classList.add(
-      "show"
-    );
+    rankCelebration.classList.add("show");
     rankCelebration.setAttribute(
       "aria-hidden",
       "false"
@@ -8910,115 +9304,25 @@ HTML = r"""
 
     if (
       "speechSynthesis" in window &&
-      typeof SpeechSynthesisUtterance !==
-        "undefined"
+      typeof SpeechSynthesisUtterance !== "undefined"
     ) {
       try {
         const utterance =
           new SpeechSynthesisUtterance(
-            `メダル獲得！${rankName}、${tier.label}メダル、おめでとう！`
+            `メダル獲得！${rule.trackLabel}、${rule.name}、${tier.label}メダル、おめでとう！`
           );
+
         utterance.lang = "ja-JP";
         utterance.rate = 0.95;
         utterance.pitch = 1.08;
         utterance.volume = 1.0;
+
         const voice = getJapaneseVoice();
         if (voice) utterance.voice = voice;
-        window.speechSynthesis.speak(
-          utterance
-        );
+
+        window.speechSynthesis.speak(utterance);
       } catch (error) {}
     }
-  }
-
-  function calculateAppRank() {
-    let currentRule = null;
-    let currentIndex = -1;
-    let currentTierKey = null;
-
-    APP_RANK_CERTIFICATIONS
-      .forEach((rule, index) => {
-        const tierKey =
-          highestMedalTierForRank(
-            rule.name
-          );
-
-        if (tierKey) {
-          currentRule = rule;
-          currentIndex = index;
-          currentTierKey = tierKey;
-        }
-      });
-
-    const nextGoal =
-      nextMedalGoal();
-
-    return {
-      name:
-        currentRule
-          ? currentRule.name
-          : "見習い",
-      currentRule,
-      currentIndex,
-      currentTierKey,
-      currentTierLabel:
-        currentTierKey
-          ? getMedalTierDefinition(
-              currentTierKey
-            ).label
-          : null,
-      currentEvidence:
-        currentRule && currentTierKey
-          ? certificationEvidenceText(
-              currentRule,
-              currentTierKey
-            )
-          : "",
-      nextGoal,
-      nextName:
-        nextGoal?.rank.name || null,
-      nextTierKey:
-        nextGoal?.tier.key || null,
-      nextTierLabel:
-        nextGoal?.tier.label || null,
-      nextRequirement:
-        nextGoal
-          ? medalRequirementText(
-              nextGoal.rank,
-              nextGoal.tier.key
-            )
-          : null,
-      nextProgress:
-        nextGoal
-          ? certificationRuleProgress(
-              nextGoal.rank,
-              nextGoal.tier.key
-            )
-          : 100
-    };
-  }
-
-  function nextMedalGoal() {
-    for (
-      const rank of APP_RANK_CERTIFICATIONS
-    ) {
-      for (const tier of MEDAL_TIERS) {
-        if (
-          !isMedalEarned(
-            rank.name,
-            tier.key
-          )
-        ) {
-          return { rank, tier };
-        }
-      }
-    }
-
-    return null;
-  }
-
-  function nextRankRule() {
-    return nextMedalGoal()?.rank || null;
   }
 
   function refreshNextRankGuide() {
@@ -9033,215 +9337,218 @@ HTML = r"""
     root.querySelectorAll(
       ".mode-card.rank-recommended"
     ).forEach((card) => {
-      card.classList.remove(
-        "rank-recommended"
-      );
+      card.classList.remove("rank-recommended");
     });
 
     root.querySelectorAll(
       ".rank-recommend-chip"
-    ).forEach((chip) => {
-      chip.remove();
-    });
-
-    const goal = nextMedalGoal();
-    nextRankGuideText.innerHTML = "";
-
-    if (!goal) {
-      nextRankGuideTitle.textContent =
-        "すべての金メダルを獲得しています";
-      nextRankGuideText.textContent =
-        "現在、次のメダル条件はありません。";
-      return;
-    }
-
-    const rule = goal.rank;
-    const tier = goal.tier;
+    ).forEach((chip) => chip.remove());
 
     nextRankGuideTitle.textContent =
-      `${rule.name}・${tier.label}メダルまで`;
+      "次の級・段まで";
 
-    const summary =
-      document.createElement("div");
-    summary.className =
-      "rank-goal-summary";
+    nextRankGuideText.innerHTML = "";
 
-    const typeText =
-      rule.type === "all"
-        ? "下の条件をすべて達成"
-        : "下のどれか1つを達成";
+    Object.keys(RANK_TRACKS).forEach((trackKey) => {
+      const rank = calculateTrackRank(trackKey);
+      const goal = rank.nextGoal;
+      const section = document.createElement("section");
+      section.className = "rank-track-goal-section";
 
-    summary.textContent =
-      tier.timedOnly
-        ? `${typeText}。5分モードで11/12以上を時間内にクリアすると金メダルです。珠ヒント使用問題は正解数に入りません。`
-        : `${typeText}。${tier.minCorrect}/12以上で${tier.label}メダルです。珠ヒント使用問題は正解数に入りません。`;
+      const title = document.createElement("div");
+      title.className = "rank-track-goal-title";
+      title.textContent = goal
+        ? `${rank.track.label}：${goal.rule.name} ${goal.tier.label}メダルまで`
+        : `${rank.track.label}：全金条件達成`;
 
-    const list =
-      document.createElement("div");
-    list.className =
-      "rank-goal-list";
+      section.appendChild(title);
 
-    rule.modes.forEach((mode) => {
-      const best =
-        bestCorrectForMode(
-          mode,
+      if (!goal) {
+        const complete = document.createElement("div");
+        complete.className = "rank-goal-summary";
+        complete.textContent =
+          "この系統の全モードで金条件を達成しています。";
+        section.appendChild(complete);
+        nextRankGuideText.appendChild(section);
+        return;
+      }
+
+      const summary = document.createElement("div");
+      summary.className = "rank-goal-summary";
+      summary.textContent = goal.catchup
+        ? `旧認定は維持します。次の級・段へ進むには、追加されたモードを含め${goal.rule.name}までの条件を補完してください。`
+        : medalRequirementText(
+            goal.rule,
+            goal.tier.key
+          );
+
+      const list = document.createElement("div");
+      list.className = "rank-goal-list";
+
+      const rows = goalRequirementRows(
+        goal.rule,
+        goal.tier.key
+      );
+
+      rows.forEach((rowInfo) => {
+        const tier = getMedalTierDefinition(
+          rowInfo.tierKey
+        );
+
+        const best = bestCorrectForMode(
+          rowInfo.mode,
           tier.timedOnly
         );
-      const done =
-        best >= tier.minCorrect;
 
-      const row =
-        document.createElement("div");
-      row.className =
-        `rank-goal-row ${done ? "done" : ""}`;
+        const done = best >= tier.minCorrect;
+        const row = document.createElement("div");
+        row.className =
+          `rank-goal-row ${done ? "done" : ""}`;
 
-      const op =
-        document.createElement("div");
-      op.className = "rank-goal-op";
-      op.textContent =
-        operationLabelForMode(mode);
-
-      const modeText =
-        document.createElement("div");
-      modeText.className =
-        "rank-goal-mode";
-      modeText.textContent =
-        shortModeName(mode);
-
-      const status =
-        document.createElement("div");
-      status.className =
-        "rank-goal-status";
-      status.textContent = done
-        ? `達成済み ${best}/12`
-        : `最高${best}/12 → ${tier.minCorrect}/12以上`;
-
-      row.appendChild(op);
-      row.appendChild(modeText);
-      row.appendChild(status);
-      list.appendChild(row);
-    });
-
-    nextRankGuideText.appendChild(summary);
-    nextRankGuideText.appendChild(list);
-
-    const outstanding =
-      rule.modes.filter(
-        (mode) =>
-          bestCorrectForMode(
-            mode,
-            tier.timedOnly
-          ) < tier.minCorrect
-      );
-
-    const recommendModes =
-      outstanding.length
-        ? outstanding
-        : rule.modes;
-
-    recommendModes.forEach((mode) => {
-      const button =
-        root.querySelector(
-          `.start-mode[data-mode="${mode}"]`
+        const op = document.createElement("div");
+        op.className = "rank-goal-op";
+        op.textContent = operationLabelForMode(
+          rowInfo.mode
         );
-      const card =
-        button?.closest(".mode-card");
 
-      if (!card) return;
+        const modeText = document.createElement("div");
+        modeText.className = "rank-goal-mode";
+        modeText.textContent = shortModeName(
+          rowInfo.mode
+        );
 
-      card.classList.add(
-        "rank-recommended"
-      );
+        const status = document.createElement("div");
+        status.className = "rank-goal-status";
+        status.textContent = done
+          ? `達成済み ${best}/12`
+          : `最高${best}/12 → ${tier.label} ${tier.minCorrect}/12以上${tier.timedOnly ? "・5分以内" : ""}`;
 
-      const chips =
-        card.querySelector(".chips");
+        row.appendChild(op);
+        row.appendChild(modeText);
+        row.appendChild(status);
+        list.appendChild(row);
 
-      if (
-        chips &&
-        !chips.querySelector(
-          ".rank-recommend-chip"
-        )
-      ) {
-        const chip =
-          document.createElement("span");
-        chip.className =
-          "chip rank-recommend-chip";
-        chip.textContent =
-          `${rule.name} ${tier.label}におすすめ`;
-        chips.prepend(chip);
-      }
+        if (!done) {
+          const button = root.querySelector(
+            `.start-mode[data-mode="${rowInfo.mode}"]`
+          );
+          const card = button?.closest(".mode-card");
+
+          if (card) {
+            card.classList.add("rank-recommended");
+
+            const chips = card.querySelector(".chips");
+
+            if (
+              chips &&
+              !chips.querySelector(
+                `.rank-recommend-chip[data-track="${trackKey}"]`
+              )
+            ) {
+              const chip = document.createElement("span");
+              chip.className = "chip rank-recommend-chip";
+              chip.dataset.track = trackKey;
+              chip.textContent =
+                `${rank.track.shortLabel} ${goal.rule.name} ${goal.tier.label}に必要`;
+              chips.prepend(chip);
+            }
+          }
+        }
+      });
+
+      section.appendChild(summary);
+      section.appendChild(list);
+      nextRankGuideText.appendChild(section);
     });
   }
 
   function updateRankUi() {
-    const rank = calculateAppRank();
+    const addsub = calculateTrackRank("addsub");
+    const muldiv = calculateTrackRank("muldiv");
 
-    const currentLabel =
-      rank.currentTierLabel
-        ? `${rank.name}（${rank.currentTierLabel}）`
-        : rank.name;
+    const addsubLabel = displayTrackRankLabel(addsub);
+    const muldivLabel = displayTrackRankLabel(muldiv);
 
     if (appRankBadge) {
       appRankBadge.textContent =
-        currentLabel;
+        `足・引 ${addsubLabel}｜掛・割 ${muldivLabel}`;
     }
 
     if (appRankMeterFill) {
       appRankMeterFill.style.width =
-        `${rank.nextProgress.toFixed(1)}%`;
+        `${(
+          (addsub.nextProgress + muldiv.nextProgress) /
+          2
+        ).toFixed(1)}%`;
     }
 
     if (appRankSub) {
       appRankSub.textContent =
-        rank.currentRule
-          ? `現在：${currentLabel}｜${rank.currentEvidence}`
-          : "まだ銅メダルの条件を満たしていません。";
+        `足し算・引き算：${addsubLabel}｜掛け算・割り算：${muldivLabel}`;
     }
 
     if (appRankNext) {
       appRankNext.textContent =
-        rank.nextName
-          ? `次：${rank.nextName} ${rank.nextTierLabel}｜${rank.nextRequirement}`
-          : "すべての金メダルを獲得しています。";
+        `足・引：${trackNextText(addsub)} ／ 掛・割：${trackNextText(muldiv)}`;
     }
+
+    const activeTrackKey =
+      trackKeyForMode(currentMode) ||
+      "addsub";
+
+    const activeRank =
+      activeTrackKey === "muldiv"
+        ? muldiv
+        : addsub;
 
     if (resultRankTitle) {
       resultRankTitle.textContent =
-        currentLabel;
+        `${activeRank.track.label} ${displayTrackRankLabel(activeRank)}`;
     }
 
     if (resultRankProgress) {
       resultRankProgress.textContent =
-        rank.nextName
-          ? `次：${rank.nextName} ${rank.nextTierLabel}`
-          : "全メダル達成";
+        activeRank.nextGoal
+          ? `${activeRank.nextGoal.rule.name} ${activeRank.nextGoal.tier.label}まで`
+          : "全金条件達成";
     }
 
-    if (homeRankName) {
-      homeRankName.textContent =
-        currentLabel;
+    if (homeAddSubRankName) {
+      homeAddSubRankName.textContent = addsubLabel;
     }
 
-    if (homeRankNext) {
-      homeRankNext.textContent =
-        rank.nextName
-          ? `次は ${rank.nextName} ${rank.nextTierLabel}メダル`
-          : rank.name === "見習い"
-            ? "チャレンジで最初の銅メダルを獲得しよう"
-            : "すべての金メダルを獲得しています";
+    if (homeAddSubRankNext) {
+      homeAddSubRankNext.textContent = trackNextText(addsub);
+    }
+
+    if (homeMulDivRankName) {
+      homeMulDivRankName.textContent = muldivLabel;
+    }
+
+    if (homeMulDivRankNext) {
+      homeMulDivRankNext.textContent = trackNextText(muldiv);
     }
 
     setMedalVisual(
-      homeRankMedal,
-      rank.name,
-      rank.currentTierKey
+      homeAddSubMedal,
+      addsub.name,
+      addsub.currentTierKey
+    );
+
+    setMedalVisual(
+      homeMulDivMedal,
+      muldiv.name,
+      muldiv.currentTierKey
     );
 
     renderMedalCollection();
     renderMedalConditions();
     refreshNextRankGuide();
 
-    return rank;
+    return {
+      addsub,
+      muldiv
+    };
   }
 
   function loadLearningStats() {
@@ -18298,35 +18605,39 @@ HTML = r"""
     renderChallengeResumeCard();
 
     if (newlyEarned.length) {
-      const rankIndex = (name) =>
-        APP_RANK_CERTIFICATIONS
-          .findIndex(
-            (rule) =>
-              rule.name === name
-          );
-      const tierIndex = (key) =>
-        MEDAL_TIERS.findIndex(
-          (tier) => tier.key === key
-        );
+      const activeTrackKey =
+        trackKeyForMode(record.mode);
+
+      const candidates = activeTrackKey
+        ? newlyEarned.filter(
+            (award) =>
+              award.trackKey === activeTrackKey
+          )
+        : newlyEarned;
+
+      const pool = candidates.length
+        ? candidates
+        : newlyEarned;
 
       const highestAward =
-        [...newlyEarned].sort(
-          (a, b) =>
-            (
-              rankIndex(a.rankName) -
-              rankIndex(b.rankName)
-            ) ||
-            (
-              tierIndex(a.tierKey) -
-              tierIndex(b.tierKey)
-            )
-        ).pop();
+        [...pool].sort((a, b) => {
+          const ruleA = ruleForId(a.rankId);
+          const ruleB = ruleForId(b.rankId);
+
+          return (
+            (ruleA?.index ?? -1) -
+            (ruleB?.index ?? -1)
+          ) || (
+            MEDAL_TIER_ORDER[a.tierKey] -
+            MEDAL_TIER_ORDER[b.tierKey]
+          );
+        }).pop();
 
       if (highestAward) {
         setTimeout(
           () => {
             showRankCelebration(
-              highestAward.rankName,
+              highestAward.rankId,
               highestAward.tierKey,
               newlyEarned
             );
@@ -20694,7 +21005,10 @@ HTML = r"""
     // 階級・メダルの復元失敗でアプリ全体を停止させない。
     rankCertificationState =
       emptyRankCertificationState(
-        rankCertificationState?.resetAt || null
+        rankCertificationState?.resetAt || null,
+        normalizeLegacyFloorByTrack(
+          rankCertificationState?.legacyFloorByTrack
+        )
       );
   }
 
