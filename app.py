@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V138-KUKU-CHANT-FEEDBACK
+# VERSION: CLEAN-V139-KUKU-CONTINUOUS-CHANT
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V138-KUKU-CHANT-FEEDBACK"
+APP_VERSION = "CLEAN-V139-KUKU-CONTINUOUS-CHANT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -16303,7 +16303,7 @@ HTML = r"""
     const stem = KUKU_CHANT_STEMS?.[question.a]?.[question.b] ||
       (question.b === 10 ? tenStems[question.a] : "");
 
-    return `${stem}、${answerReading}。`;
+    return `${stem}${answerReading}。`;
   }
 
   function speakKukuQuestion(question, onDone) {
