@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V140-HOSU-MASTER
+# VERSION: CLEAN-V141-GLOBAL-VOLUME
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V140-HOSU-MASTER"
+APP_VERSION = "CLEAN-V141-GLOBAL-VOLUME"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3836,7 +3836,32 @@ HTML = r"""
     .hosu-digits { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 
+
+  .app-volume-control {
+    position: sticky;
+    top: 0;
+    z-index: 6000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background: #f7f5ef;
+    border: 1px solid #ddd7ca;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .04);
+  }
+  .app-volume-control label { font-size: 13px; font-weight: 800; white-space: nowrap; }
+  #appVolumeSlider { flex: 1; min-width: 0; max-width: 280px; height: 30px; margin: 0; accent-color: #315f86; cursor: pointer; }
+  #appVolumeValue { min-width: 4ch; font-size: 12px; color: #6d675f; font-variant-numeric: tabular-nums; }
+
 </style>
+<div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
+  <label for="appVolumeSlider">🔊 音量</label>
+  <input id="appVolumeSlider" type="range" min="0" max="100" step="1" value="100" aria-valuetext="100%">
+  <output id="appVolumeValue" for="appVolumeSlider">100%</output>
+</div>
+
 
 <div id="homeView" class="app-home">
   <div class="home-title">そろばん</div>
@@ -3910,7 +3935,7 @@ HTML = r"""
     <button type="button" id="homeHosuBtn" data-app-nav="hosu" class="home-mode-btn hosu-home">
       <span class="home-mode-kicker">COMPLEMENT</span>
       <span class="home-mode-name">補数名人</span>
-      <span class="home-mode-desc">足し算・引き算で使う補数を、1回・2回・3回以上の段階で練習します。</span>
+      <span class="home-mode-desc">1つの数字を足す・引くときの補数を、1回・2回・3回以上で練習します。</span>
     </button>
 
     <button type="button" id="homeAnzanBtn" data-app-nav="anzan" class="home-mode-btn anzan-home">
@@ -3941,7 +3966,7 @@ HTML = r"""
     <div class="subview-topbar-title">補数名人</div>
   </div>
   <div id="hosuMenu">
-    <div class="kuku-hero"><h2>補数を順番に使おう</h2><p>5と10の補数を、足し算・引き算で練習します。</p></div>
+    <div class="kuku-hero"><h2>補数を順番に使おう</h2><p>1つの数字を足す・引くときに、補数を続けて使う回数で選びます。</p></div>
     <div id="hosuModeGrid"></div>
   </div>
   <div id="hosuGame" class="hosu-panel hidden">
@@ -4932,6 +4957,85 @@ HTML = r"""
   const root = document.getElementById("soroban-app");
   const $ = (selector) => root.querySelector(selector);
 
+  const APP_VOLUME_STORAGE_KEY = "soroban_master_volume_v1";
+  let appMasterVolume = 1;
+  try {
+    const saved = localStorage.getItem(APP_VOLUME_STORAGE_KEY);
+    const number = saved === null || saved.trim() === "" ? NaN : Number(saved);
+    if (Number.isFinite(number) && number >= 0 && number <= 1) appMasterVolume = number;
+  } catch (error) {}
+  const appAudioOutputs = new Set();
+  const appSpeechQueue = new Set();
+
+  function connectAppAudioOutput(context, source) {
+    const output = context.createGain();
+    output.gain.value = appMasterVolume;
+    source.connect(output);
+    output.connect(context.destination);
+    const entry = { context, output };
+    appAudioOutputs.add(entry);
+    return entry;
+  }
+
+  function releaseAppAudioOutput(entry) {
+    if (!entry) return;
+    appAudioOutputs.delete(entry);
+    try { entry.output.disconnect(); } catch (error) {}
+  }
+
+  function speakWithAppVolume(utterance) {
+    utterance.volume = appMasterVolume;
+    appSpeechQueue.add(utterance);
+    const onEnd = utterance.onend;
+    const onError = utterance.onerror;
+    utterance.onend = function(event) {
+      appSpeechQueue.delete(utterance);
+      if (typeof onEnd === "function") onEnd.call(this, event);
+    };
+    utterance.onerror = function(event) {
+      appSpeechQueue.delete(utterance);
+      if (typeof onError === "function") onError.call(this, event);
+    };
+    try { window.speechSynthesis.speak(utterance); }
+    catch (error) { appSpeechQueue.delete(utterance); throw error; }
+  }
+
+  function cancelAppSpeech() {
+    appSpeechQueue.clear();
+    window.speechSynthesis.cancel();
+  }
+
+  function setAppMasterVolume(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return;
+    appMasterVolume = Math.max(0, Math.min(1, number));
+    const percent = Math.round(appMasterVolume * 100);
+    $("#appVolumeSlider").value = String(percent);
+    $("#appVolumeSlider").setAttribute("aria-valuetext", `${percent}%`);
+    $("#appVolumeValue").textContent = `${percent}%`;
+    for (const entry of appAudioOutputs) {
+      if (entry.context.state === "closed") { appAudioOutputs.delete(entry); continue; }
+      try {
+        const now = entry.context.currentTime;
+        const gain = entry.output.gain;
+        gain.cancelScheduledValues(now);
+        gain.setValueAtTime(gain.value, now);
+        gain.linearRampToValueAtTime(appMasterVolume, now + 0.03);
+      } catch (error) {}
+    }
+    // 再生中・待機中の発話にも反映。発話の中断や再回答は発生させない。
+    for (const utterance of appSpeechQueue) utterance.volume = appMasterVolume;
+    try { localStorage.setItem(APP_VOLUME_STORAGE_KEY, String(appMasterVolume)); } catch (error) {}
+  }
+
+  $("#appVolumeSlider").addEventListener("input", (event) => {
+    setAppMasterVolume(Number(event.target.value) / 100);
+  });
+  $("#appVolumeSlider").value = String(Math.round(appMasterVolume * 100));
+  $("#appVolumeSlider").setAttribute("aria-valuetext", `${Math.round(appMasterVolume * 100)}%`);
+  $("#appVolumeValue").textContent = `${Math.round(appMasterVolume * 100)}%`;
+
+
   window.addEventListener(
     "error",
     (event) => {
@@ -5778,14 +5882,28 @@ HTML = r"""
         }
       }
     };
-    decomposeByPlace(b).forEach((part) => apply(part.place, part.digit, op === "＋" ? 1 : -1));
+    const groups = decomposeByPlace(b).map((part) => {
+      const start = events.length;
+      apply(part.place, part.digit, op === "＋" ? 1 : -1);
+      const groupEvents = events.slice(start);
+      const prompts = groupEvents.filter((event) => event.kind === "question");
+      const chainCount = prompts.length;
+      groupEvents.forEach((event) => {
+        event.sourcePlace = part.place;
+        event.sourceDigit = part.digit;
+        event.chainCount = chainCount;
+      });
+      return { place: part.place, digit: part.digit, count: chainCount,
+        mixed: prompts.some((event) => event.base === 5) && prompts.some((event) => event.base === 10) };
+    });
     const answer = op === "＋" ? a + b : a - b;
     if (value !== answer) throw new Error("補数操作の結果が一致しません。");
     const prompts = events.filter((event) => event.kind === "question");
-    const count = prompts.length;
-    return { a, op, b, answer, events, count,
+    const totalCount = prompts.length;
+    const count = Math.max(0, ...groups.map((group) => group.count));
+    return { a, op, b, answer, events, count, totalCount, groups,
       level: count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3,
-      mixed: prompts.some((e) => e.base === 5) && prompts.some((e) => e.base === 10),
+      mixed: groups.some((group) => group.mixed),
       digits: String(Math.max(a, b, answer)).length };
   }
 
@@ -5853,7 +5971,7 @@ HTML = r"""
     clearTimeout(hosu.speechTimer);
     hosu.speaking = false;
     if ($("#hosuView")?.classList.contains("show") && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
     }
   }
 
@@ -5873,18 +5991,18 @@ HTML = r"""
     if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
       done(); return;
     }
-    window.speechSynthesis.cancel();
+    cancelAppSpeech();
     hosu.speechTimer = setTimeout(done, Math.max(5000, text.length * 240));
     waitForJapaneseVoice(1000).then((voice) => {
       if (token !== hosu.token || finished || !$("#hosuView").classList.contains("show")) return;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "ja-JP";
       utterance.rate = 0.82;
-      utterance.volume = 1;
+      utterance.volume = appMasterVolume;
       if (voice) utterance.voice = voice;
       utterance.onend = done;
       utterance.onerror = done;
-      try { window.speechSynthesis.resume(); window.speechSynthesis.speak(utterance); }
+      try { window.speechSynthesis.resume(); speakWithAppVolume(utterance); }
       catch (error) { done(); }
     }).catch(done);
   }
@@ -5905,7 +6023,7 @@ HTML = r"""
         card.className = "mode-card";
         const entry = hosu.stats[`${op}|${level}`] || {};
         const name = ["", "初級", "中級", "上級"][level];
-        card.innerHTML = `<div class="mode-name">${name}</div><div class="mode-desc">補数 ${level === 3 ? "3回以上" : `${level}回`}</div><div class="chips"><span class="chip">12問・時間なし</span></div><div class="hosu-record">挑戦 ${Number(entry.sessions) || 0}回｜最高 ${Number(entry.best) || 0}/12</div>`;
+        card.innerHTML = `<div class="mode-name">${name}</div><div class="mode-desc">補数の連鎖 ${level === 3 ? "3回以上" : `${level}回`}</div><div class="chips"><span class="chip">12問・時間なし</span></div><div class="hosu-record">挑戦 ${Number(entry.sessions) || 0}回｜最高 ${Number(entry.best) || 0}/12</div>`;
         const button = document.createElement("button");
         button.type = "button";
         button.className = "primary";
@@ -6004,7 +6122,7 @@ HTML = r"""
     $("#hosuExplanation").classList.add("hidden");
     $("#hosuProgress").textContent = `${hosu.index + 1} / 12｜自力正解 ${hosu.correct}`;
     $("#hosuEquation").textContent = `${q.a} ${q.op} ${q.b} ＝ ${hosu.complete ? q.answer : "?"}`;
-    $("#hosuCount").textContent = `補数 ${q.count}回｜${q.digits}桁${q.mixed ? "｜5と10を併用" : ""}`;
+    $("#hosuCount").textContent = `補数の連鎖 最大${q.count}回｜${q.digits}桁${q.mixed ? "｜5と10を併用" : ""}`;
     const prompt = !hosu.complete && event?.kind === "question";
     $("#hosuAnswerArea").classList.toggle("hidden", !prompt);
     $("#hosuHintBtn").classList.toggle("hidden", !prompt);
@@ -6402,9 +6520,8 @@ HTML = r"""
         this.masterGain.gain.value =
           this.targetVolume;
 
-        this.masterGain.connect(
-          this.ctx.destination
-        );
+        // 音声認識中の自動音量調整と、利用者の音量設定を別のGainで合成。
+        this.appVolumeOutput = connectAppAudioOutput(this.ctx, this.masterGain);
       }
 
       // resume() は非同期だが、ここでは呼び出し自体を
@@ -7499,7 +7616,7 @@ HTML = r"""
     }
 
     try {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
     } catch (error) {}
 
     waitForJapaneseVoice(1000)
@@ -7522,7 +7639,7 @@ HTML = r"""
           utterance.lang = "ja-JP";
           utterance.rate = 0.96;
           utterance.pitch = 1.03;
-          utterance.volume = 1.0;
+          utterance.volume = appMasterVolume;
 
           if (voice) {
             utterance.voice = voice;
@@ -7540,7 +7657,7 @@ HTML = r"""
           utterance.onerror =
             utterance.onend;
 
-          window.speechSynthesis.speak(
+          speakWithAppVolume(
             utterance
           );
         };
@@ -7557,9 +7674,9 @@ HTML = r"""
           utterance.lang = "ja-JP";
           utterance.rate = 0.96;
           utterance.pitch = 1.03;
-          utterance.volume = 1.0;
+          utterance.volume = appMasterVolume;
 
-          window.speechSynthesis.speak(
+          speakWithAppVolume(
             utterance
           );
         } catch (error) {}
@@ -9853,12 +9970,12 @@ HTML = r"""
         utterance.lang = "ja-JP";
         utterance.rate = 0.95;
         utterance.pitch = 1.08;
-        utterance.volume = 1.0;
+        utterance.volume = appMasterVolume;
 
         const voice = getJapaneseVoice();
         if (voice) utterance.voice = voice;
 
-        window.speechSynthesis.speak(utterance);
+        speakWithAppVolume(utterance);
       } catch (error) {}
     }
   }
@@ -12040,7 +12157,7 @@ HTML = r"""
       hintNarrationActive &&
       "speechSynthesis" in window
     ) {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
     }
   }
 
@@ -12315,7 +12432,7 @@ HTML = r"""
       return;
     }
 
-    window.speechSynthesis.cancel();
+    cancelAppSpeech();
 
     const narrationToken =
       ++hintNarrationToken;
@@ -12355,7 +12472,7 @@ HTML = r"""
       utterance.lang = "ja-JP";
       utterance.rate = 0.72;
       utterance.pitch = 1.02;
-      utterance.volume = 1.0;
+      utterance.volume = appMasterVolume;
 
       if (voice) {
         utterance.voice = voice;
@@ -12368,7 +12485,7 @@ HTML = r"""
         window.speechSynthesis.resume();
       } catch (error) {}
 
-      window.speechSynthesis.speak(
+      speakWithAppVolume(
         utterance
       );
     };
@@ -14722,7 +14839,7 @@ HTML = r"""
       return;
     }
 
-    window.speechSynthesis.cancel();
+    cancelAppSpeech();
 
     // Chrome/Androidでは getVoices() の準備が遅れることがある。
     // 日本語音声が得られてから発声し、英語系フォールバックを避ける。
@@ -14755,8 +14872,7 @@ HTML = r"""
       utterance.pitch =
         1.00;
 
-      utterance.volume =
-        1.0;
+      utterance.volume = appMasterVolume;
 
       if (voice) {
         utterance.voice =
@@ -14784,7 +14900,7 @@ HTML = r"""
         window.speechSynthesis.resume();
       } catch (error) {}
 
-      window.speechSynthesis.speak(
+      speakWithAppVolume(
         utterance
       );
     }).catch(() => {
@@ -14842,7 +14958,7 @@ HTML = r"""
         stopHintQuestionRecognition();
 
         if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
+          cancelAppSpeech();
         }
 
         updateVoiceUi(
@@ -14899,7 +15015,7 @@ HTML = r"""
     voicePauseForFeedback = false;
 
     if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
     }
 
     stopVoiceRecognition();
@@ -15164,7 +15280,7 @@ HTML = r"""
       );
 
     try {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
       window.speechSynthesis.resume();
     } catch (error) {}
 
@@ -15191,8 +15307,8 @@ HTML = r"""
       utterance.lang = "ja-JP";
       utterance.rate = 0.96;
       utterance.pitch = 1.03;
-      // Web Speech APIの最大音量。
-      utterance.volume = 1.0;
+      // すべての画面に共通の音量。
+      utterance.volume = appMasterVolume;
 
       if (voice) {
         utterance.voice = voice;
@@ -15210,7 +15326,7 @@ HTML = r"""
 
       try {
         window.speechSynthesis.resume();
-        window.speechSynthesis.speak(
+        speakWithAppVolume(
           utterance
         );
       } catch (error) {
@@ -15988,7 +16104,7 @@ HTML = r"""
     if (
       "speechSynthesis" in window
     ) {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
     }
   }
 
@@ -16047,7 +16163,7 @@ HTML = r"""
 
     // 前の説明が残っていたら止めて、
     // 現在の珠の動きだけを説明する。
-    window.speechSynthesis.cancel();
+    cancelAppSpeech();
 
     const token =
       ++learningNarrationToken;
@@ -16063,7 +16179,7 @@ HTML = r"""
     // 通常の読み上げよりかなりゆっくり。
     utterance.rate = 0.72;
     utterance.pitch = 1.18;
-    utterance.volume = 1.0;
+    utterance.volume = appMasterVolume;
 
     const voice =
       getJapaneseVoice();
@@ -16084,7 +16200,7 @@ HTML = r"""
     utterance.onerror =
       utterance.onend;
 
-    window.speechSynthesis.speak(
+    speakWithAppVolume(
       utterance
     );
   }
@@ -16852,13 +16968,13 @@ HTML = r"""
     const done = () => { if (finished) return; finished = true; kukuPromptSpeaking = false; refreshBgmVolume(); if (typeof onDone === "function") onDone(); };
     if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") { done(); return; }
     kukuPromptSpeaking = true; refreshBgmVolume();
-    try { window.speechSynthesis.cancel(); window.speechSynthesis.resume(); } catch (error) {}
+    try { cancelAppSpeech(); window.speechSynthesis.resume(); } catch (error) {}
     waitForJapaneseVoice(1000).then((voice) => {
       const utterance = new SpeechSynthesisUtterance(getKukuSpokenPrompt(question));
-      utterance.lang = "ja-JP"; utterance.rate = 1.18; utterance.pitch = 1.02; utterance.volume = 1.0;
+      utterance.lang = "ja-JP"; utterance.rate = 1.18; utterance.pitch = 1.02; utterance.volume = appMasterVolume;
       if (voice) utterance.voice = voice;
       utterance.onend = done; utterance.onerror = done;
-      window.speechSynthesis.speak(utterance);
+      speakWithAppVolume(utterance);
       setTimeout(done, 1900);
     }).catch(done);
   }
@@ -17116,7 +17232,7 @@ HTML = r"""
     refreshBgmVolume();
 
     try {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
     } catch (error) {}
 
     stopBgm();
@@ -20278,7 +20394,7 @@ HTML = r"""
         0.0001,
         now + 1.05
       );
-      master.connect(ctx.destination);
+      const appVolumeOutput = connectAppAudioOutput(ctx, master);
 
       const notes = [
         { freq: 196.00, start: 0.00, dur: .78 },
@@ -20344,6 +20460,7 @@ HTML = r"""
       drum.stop(now + .5);
 
       setTimeout(() => {
+        releaseAppAudioOutput(appVolumeOutput);
         ctx.close().catch(() => {});
       }, 1400);
     } catch (error) {
@@ -20401,7 +20518,7 @@ HTML = r"""
       return;
     }
 
-    window.speechSynthesis.cancel();
+    cancelAppSpeech();
 
     const points =
       scoreInfo.finalScore;
@@ -20451,7 +20568,7 @@ HTML = r"""
       utterance.lang = "ja-JP";
       utterance.rate = rate;
       utterance.pitch = pitch;
-      utterance.volume = 1.0;
+      utterance.volume = appMasterVolume;
 
       const voice =
         getJapaneseVoice();
@@ -20475,7 +20592,7 @@ HTML = r"""
           1.02
         );
 
-      window.speechSynthesis.speak(
+      speakWithAppVolume(
         challengeUtterance
       );
     };
@@ -20510,7 +20627,7 @@ HTML = r"""
           continueToChallenge;
       }
 
-      window.speechSynthesis.speak(
+      speakWithAppVolume(
         scoreUtterance
       );
     };
@@ -20543,7 +20660,7 @@ HTML = r"""
       openingUtterance.onerror =
         continueToScore;
 
-      window.speechSynthesis.speak(
+      speakWithAppVolume(
         openingUtterance
       );
 
@@ -20592,7 +20709,7 @@ HTML = r"""
       return;
     }
 
-    window.speechSynthesis.cancel();
+    cancelAppSpeech();
 
     const speakAt = (index) => {
       if (index >= messages.length) {
@@ -20607,7 +20724,7 @@ HTML = r"""
       utterance.lang = "ja-JP";
       utterance.rate = 0.96;
       utterance.pitch = 1.03;
-      utterance.volume = 1.0;
+      utterance.volume = appMasterVolume;
 
       const voice =
         getJapaneseVoice();
@@ -20625,7 +20742,7 @@ HTML = r"""
       utterance.onerror =
         utterance.onend;
 
-      window.speechSynthesis.speak(
+      speakWithAppVolume(
         utterance
       );
     };
@@ -20743,7 +20860,7 @@ HTML = r"""
       timeup &&
       "speechSynthesis" in window
     ) {
-      window.speechSynthesis.cancel();
+      cancelAppSpeech();
     }
 
     locked = true;
@@ -21147,7 +21264,7 @@ HTML = r"""
     runUiCleanup(() => setVoiceAnswerEnabled(false));
 
     if ("speechSynthesis" in window) {
-      runUiCleanup(() => window.speechSynthesis.cancel());
+      runUiCleanup(() => cancelAppSpeech());
     }
 
     questionCard.classList.remove("hidden");
