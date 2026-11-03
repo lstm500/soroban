@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V139-KUKU-CONTINUOUS-CHANT
+# VERSION: CLEAN-V140-HOSU-MASTER
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V139-KUKU-CONTINUOUS-CHANT"
+APP_VERSION = "CLEAN-V140-HOSU-MASTER"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3804,6 +3804,38 @@ HTML = r"""
       font-size: 17px;
     }
   }
+
+  .hosu-view { display: none; }
+  .hosu-view.show { display: block; }
+  .home-mode-btn.hosu-home { background: #f2f8ee; border-color: #a9bc92; }
+  .hosu-group h3 { margin: 20px 0 10px; font-size: 22px; }
+  .hosu-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .hosu-cards .mode-card { display: flex; flex-direction: column; gap: 8px; }
+  .hosu-cards button { width: 100%; margin-top: auto; }
+  .hosu-record { color: #6d675f; font-size: 12px; }
+  .hosu-panel { max-width: 760px; margin: 14px auto; padding: 20px; background: #fff; border: 1px solid #dcd5c8; border-radius: 18px; }
+  .hosu-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; }
+  .hosu-equation { text-align: center; font-size: clamp(28px, 7vw, 42px); font-weight: 900; margin: 16px 0 8px; }
+  .hosu-count { text-align: center; color: #547047; font-size: 13px; margin-bottom: 12px; }
+  .hosu-prompt { font-size: clamp(18px, 4.5vw, 24px); font-weight: 800; line-height: 1.65; margin: 14px 0; }
+  .hosu-explanation { background: #fff5de; border-radius: 12px; padding: 12px; line-height: 1.8; }
+  .hosu-answer { text-align: center; font-size: 30px; min-height: 40px; }
+  .hosu-digits { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .hosu-digits button { font-size: 23px; background: #eef4e8; min-height: 52px; }
+  #hosuNextBtn { width: 100%; margin-top: 14px; }
+  #hosuVoiceStatus { font-size: 12px; color: #6d675f; }
+  #hosuBoard { margin: 10px auto; max-width: 100%; }
+  .hosu-result-score { text-align: center; font-size: 48px; font-weight: 900; margin: 20px 0; }
+  @media(max-width: 620px) {
+    .hosu-cards { gap: 7px; }
+    .hosu-cards .mode-card { padding: 12px 8px; min-width: 0; }
+    .hosu-cards .mode-name { font-size: 18px; }
+    .hosu-cards .mode-desc, .hosu-cards .chip, .hosu-record { font-size: 11px; }
+    .hosu-cards .chips { display: block; }
+    .hosu-panel { padding: 14px; }
+    .hosu-digits { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+
 </style>
 
 <div id="homeView" class="app-home">
@@ -3875,6 +3907,12 @@ HTML = r"""
       </span>
     </button>
 
+    <button type="button" id="homeHosuBtn" data-app-nav="hosu" class="home-mode-btn hosu-home">
+      <span class="home-mode-kicker">COMPLEMENT</span>
+      <span class="home-mode-name">補数名人</span>
+      <span class="home-mode-desc">足し算・引き算で使う補数を、1回・2回・3回以上の段階で練習します。</span>
+    </button>
+
     <button type="button" id="homeAnzanBtn" data-app-nav="anzan" class="home-mode-btn anzan-home">
       <span class="home-mode-kicker">MENTAL</span>
       <span class="home-mode-name">暗算モード</span>
@@ -3895,6 +3933,40 @@ HTML = r"""
   <div id="versionLabel" class="home-version-footer"></div>
 </div>
 
+
+
+<div id="hosuView" class="hosu-view">
+  <div class="subview-topbar">
+    <button type="button" data-app-nav="home" class="top-back-btn">← TOPへ</button>
+    <div class="subview-topbar-title">補数名人</div>
+  </div>
+  <div id="hosuMenu">
+    <div class="kuku-hero"><h2>補数を順番に使おう</h2><p>5と10の補数を、足し算・引き算で練習します。</p></div>
+    <div id="hosuModeGrid"></div>
+  </div>
+  <div id="hosuGame" class="hosu-panel hidden">
+    <div class="hosu-toolbar"><strong id="hosuTitle"></strong><button type="button" id="hosuMenuBtn">モード選択へ</button></div>
+    <div id="hosuProgress" class="hosu-record"></div>
+    <div class="hosu-toolbar"><button type="button" id="hosuVoiceBtn">🎤 音声回答 OFF</button><span id="hosuVoiceStatus" aria-live="polite"></span></div>
+    <div id="hosuEquation" class="hosu-equation"></div>
+    <div id="hosuCount" class="hosu-count"></div>
+    <div id="hosuBoard" class="soroban-board"></div>
+    <div id="hosuPrompt" class="hosu-prompt" aria-live="polite"></div>
+    <button type="button" id="hosuHintBtn">考え方を見る</button>
+    <div id="hosuExplanation" class="hosu-explanation hidden"></div>
+    <div id="hosuAnswerArea" class="hidden">
+      <div id="hosuAnswer" class="hosu-answer" aria-live="polite"></div>
+      <div id="hosuDigits" class="hosu-digits"><button type="button" data-hosu-digit="1">1</button><button type="button" data-hosu-digit="2">2</button><button type="button" data-hosu-digit="3">3</button><button type="button" data-hosu-digit="4">4</button><button type="button" data-hosu-digit="5">5</button><button type="button" data-hosu-digit="6">6</button><button type="button" data-hosu-digit="7">7</button><button type="button" data-hosu-digit="8">8</button><button type="button" data-hosu-digit="9">9</button></div>
+    </div>
+    <div id="hosuFeedback" class="feedback" aria-live="polite"></div>
+    <button type="button" id="hosuNextBtn" class="primary">進む →</button>
+  </div>
+  <div id="hosuResult" class="hosu-panel hidden">
+    <h2>12問おわりました</h2><div id="hosuResultScore" class="hosu-result-score"></div>
+    <p id="hosuResultText"></p><p id="hosuSessionCount" class="hosu-record"></p>
+    <div class="hosu-toolbar"><button type="button" id="hosuRetryBtn" class="primary">もう一回</button><button type="button" id="hosuResultMenuBtn">モード選択へ</button></div>
+  </div>
+</div>
 
 <div id="kukuView" class="kuku-view">
   <div class="subview-topbar">
@@ -4873,6 +4945,8 @@ HTML = r"""
   // Navigation is deliberately dependency-free and installed before all other app logic.
   // It changes only view classes using raw DOM queries, so even a later JS error cannot trap the user.
   function hardSetView(target) {
+    try { stopHosuSession(); } catch (error) {}
+    root.querySelector("#hosuView")?.classList.remove("show");
     const byId = (id) => root.querySelector(`#${id}`);
     const home = byId("homeView");
     const menu = byId("menuView");
@@ -4920,6 +4994,8 @@ HTML = r"""
       settings.classList.add("show");
     } else if (target === "weakness") {
       weakness.classList.add("show");
+    } else if (target === "hosu") {
+      byId("hosuView")?.classList.add("show");
     } else if (target === "kuku") {
       kuku.classList.add("show");
       const menuViewEl = byId("kukuMenuView");
@@ -4964,7 +5040,8 @@ HTML = r"""
           target === "home" ||
           target === "challenge-menu" ||
           target === "weakness" ||
-          target === "kuku"
+          target === "kuku" ||
+          target === "hosu"
         ) &&
         workspaceEl?.classList.contains(
           "show"
@@ -4992,6 +5069,7 @@ HTML = r"""
         else if (target === "settings") showSettings();
         else if (target === "weakness") showWeaknessHome();
         else if (target === "kuku") showKukuHome();
+        else if (target === "hosu") showHosuHome();
       } catch (error) {}
     }, 0);
   }
@@ -5625,6 +5703,466 @@ HTML = r"""
   let learningCurrentFrame = 0;
   let learningVoiceEnabled = false;
   let learningNarrationToken = 0;
+
+  // 補数名人：分類と解説を同じ珠操作列から生成する。
+  const HOSU_STORAGE_KEY = "soroban_hosu_master_v1";
+  const hosu = {
+    op: "＋", level: 1, questions: [], index: 0, position: -1,
+    correct: 0, hintQuestions: 0, mistakeQuestions: 0,
+    questionWrong: false, questionHint: false, resolved: false,
+    input: "", voice: false, recognition: null, token: 0,
+    speaking: false, speechTimer: null, complete: false, recorded: false,
+    pools: new Map(), stats: {}
+  };
+  try { hosu.stats = JSON.parse(localStorage.getItem(HOSU_STORAGE_KEY) || "{}"); }
+  catch (error) { hosu.stats = {}; }
+  if (!hosu.stats || typeof hosu.stats !== "object" || Array.isArray(hosu.stats)) hosu.stats = {};
+
+  function buildHosuPlan(a, op, b) {
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 1 ||
+        !["＋", "－"].includes(op) || (op === "－" && a < b)) {
+      throw new Error("補数問題の数値が不正です。");
+    }
+    let value = a;
+    const events = [];
+    const digit = (place) => Math.floor(value / place) % 10;
+    const move = (delta, place) => {
+      const from = value;
+      value += delta;
+      if (value < 0) throw new Error("負の珠状態です。");
+      const amount = Math.abs(delta / place);
+      events.push({ kind: "move", from, value, place, delta,
+        text: `${placeName(place)}で${amount}を${delta > 0 ? "足します" : "引きます"}。` });
+    };
+    const ask = (base, amount, sign, place) => {
+      const answer = base - amount;
+      events.push({ kind: "question", value, place, base, amount, sign, answer,
+        text: `${placeName(place)}で${amount}を${sign > 0 ? "足す" : "引く"}ときに使う、${base}の補数はいくつ？`,
+        explanation: `${amount}と${answer}で${base}です。` +
+          (sign > 0 ? `${answer}を引いて${base}を足すと、${amount}を足せます。`
+                    : `${base}を引いて${answer}を足すと、${amount}を引けます。`) });
+    };
+    const apply = (place, amount, sign, depth = 0) => {
+      if (!amount) return;
+      if (depth > 12) throw new Error("補数操作の再帰上限です。");
+      const d = digit(place);
+      if (sign > 0) {
+        if (d + amount >= 10) {
+          ask(10, amount, sign, place);
+          apply(place, 10 - amount, -1, depth + 1);
+          apply(place * 10, 1, 1, depth + 1);
+        } else if (d < 5 && amount < 5 && d + amount >= 5) {
+          ask(5, amount, sign, place);
+          move(-(5 - amount) * place, place);
+          move(5 * place, place);
+        } else if (d < 5 && amount >= 5) {
+          move(5 * place, place);
+          if (amount > 5) move((amount - 5) * place, place);
+        } else {
+          move(amount * place, place);
+        }
+      } else {
+        if (d < amount) {
+          ask(10, amount, sign, place);
+          apply(place * 10, 1, -1, depth + 1);
+          apply(place, 10 - amount, 1, depth + 1);
+        } else if (d >= 5 && amount < 5 && d % 5 < amount) {
+          ask(5, amount, sign, place);
+          move(-5 * place, place);
+          move((5 - amount) * place, place);
+        } else if (d >= 5 && amount >= 5) {
+          move(-5 * place, place);
+          if (amount > 5) move(-(amount - 5) * place, place);
+        } else {
+          move(-amount * place, place);
+        }
+      }
+    };
+    decomposeByPlace(b).forEach((part) => apply(part.place, part.digit, op === "＋" ? 1 : -1));
+    const answer = op === "＋" ? a + b : a - b;
+    if (value !== answer) throw new Error("補数操作の結果が一致しません。");
+    const prompts = events.filter((event) => event.kind === "question");
+    const count = prompts.length;
+    return { a, op, b, answer, events, count,
+      level: count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3,
+      mixed: prompts.some((e) => e.base === 5) && prompts.some((e) => e.base === 10),
+      digits: String(Math.max(a, b, answer)).length };
+  }
+
+  function hosuPool(op, level) {
+    const key = `${op}|${level}`;
+    if (hosu.pools.has(key)) return hosu.pools.get(key);
+    const unique = new Map();
+    const consider = (a, b) => {
+      if (op === "－" && a < b) return;
+      const plan = buildHosuPlan(a, op, b);
+      if (plan.level === level && plan.count <= 6) unique.set(`${a}|${b}`, plan);
+    };
+    // 1桁の基本と併用を先に網羅し、2〜3桁へ広げる。
+    for (let a = 1; a <= 18; a += 1) {
+      for (let b = 1; b <= 9; b += 1) consider(a, b);
+    }
+    if (level > 1) {
+      for (let a = 10; a <= 99; a += 1) {
+        for (let b = 1; b <= 9; b += 1) consider(a, b);
+      }
+      for (let attempt = 0; attempt < 1800; attempt += 1) {
+        const a = randInt(10, level === 3 ? 999 : 99);
+        const b = randInt(1, level === 3 ? 999 : 99);
+        consider(a, b);
+      }
+    }
+    const pool = [...unique.values()];
+    if (pool.length < 12) throw new Error("補数問題を十分に生成できませんでした。");
+    hosu.pools.set(key, pool);
+    return pool;
+  }
+
+  function buildHosuQuestions(op, level) {
+    const pool = shuffleKuku(hosuPool(op, level));
+    const selected = [];
+    const add = (list, max) => {
+      for (const plan of list) {
+        if (selected.length >= max) break;
+        if (!selected.includes(plan)) selected.push(plan);
+      }
+    };
+    if (level === 1) {
+      add(pool.filter((q) => q.events.some((e) => e.kind === "question" && e.base === 5)), 6);
+      add(pool.filter((q) => q.events.some((e) => e.kind === "question" && e.base === 10)), 12);
+    } else if (level === 2) {
+      // 2回の中でも、まず5と10の併用を中心に練習する。
+      add(pool.filter((q) => q.mixed && q.b < 10), 8);
+    }
+    add(pool, 12);
+    return shuffleKuku(selected);
+  }
+
+  function stopHosuRecognition() {
+    if (hosu.recognition) {
+      const recognition = hosu.recognition;
+      hosu.recognition = null;
+      recognition.onend = null;
+      try { recognition.abort(); } catch (error) {}
+    }
+  }
+
+  function stopHosuSession() {
+    hosu.token += 1;
+    stopHosuRecognition();
+    clearTimeout(hosu.speechTimer);
+    hosu.speaking = false;
+    if ($("#hosuView")?.classList.contains("show") && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  function speakHosu(text, onDone = null) {
+    stopHosuRecognition();
+    const token = ++hosu.token;
+    clearTimeout(hosu.speechTimer);
+    hosu.speaking = true;
+    let finished = false;
+    const done = () => {
+      if (finished || token !== hosu.token) return;
+      finished = true;
+      clearTimeout(hosu.speechTimer);
+      hosu.speaking = false;
+      if (onDone) onDone();
+    };
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+      done(); return;
+    }
+    window.speechSynthesis.cancel();
+    hosu.speechTimer = setTimeout(done, Math.max(5000, text.length * 240));
+    waitForJapaneseVoice(1000).then((voice) => {
+      if (token !== hosu.token || finished || !$("#hosuView").classList.contains("show")) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ja-JP";
+      utterance.rate = 0.82;
+      utterance.volume = 1;
+      if (voice) utterance.voice = voice;
+      utterance.onend = done;
+      utterance.onerror = done;
+      try { window.speechSynthesis.resume(); window.speechSynthesis.speak(utterance); }
+      catch (error) { done(); }
+    }).catch(done);
+  }
+
+  function renderHosuMenu() {
+    const grid = $("#hosuModeGrid");
+    grid.innerHTML = "";
+    for (const op of ["＋", "－"]) {
+      const section = document.createElement("section");
+      section.className = "hosu-group";
+      const heading = document.createElement("h3");
+      heading.textContent = op === "＋" ? "足し算" : "引き算";
+      section.appendChild(heading);
+      const cards = document.createElement("div");
+      cards.className = "hosu-cards";
+      for (const level of [1, 2, 3]) {
+        const card = document.createElement("article");
+        card.className = "mode-card";
+        const entry = hosu.stats[`${op}|${level}`] || {};
+        const name = ["", "初級", "中級", "上級"][level];
+        card.innerHTML = `<div class="mode-name">${name}</div><div class="mode-desc">補数 ${level === 3 ? "3回以上" : `${level}回`}</div><div class="chips"><span class="chip">12問・時間なし</span></div><div class="hosu-record">挑戦 ${Number(entry.sessions) || 0}回｜最高 ${Number(entry.best) || 0}/12</div>`;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "primary";
+        button.textContent = "はじめる";
+        button.dataset.hosuOp = op;
+        button.dataset.hosuLevel = String(level);
+        button.addEventListener("click", () => startHosuMode(op, level));
+        card.appendChild(button);
+        cards.appendChild(card);
+      }
+      section.appendChild(cards);
+      grid.appendChild(section);
+    }
+  }
+
+  function showHosuHome() {
+    stopHosuSession();
+    showHome();
+    $("#homeView").classList.add("hidden");
+    $("#hosuView").classList.add("show");
+    $("#hosuMenu").classList.remove("hidden");
+    $("#hosuGame").classList.add("hidden");
+    $("#hosuResult").classList.add("hidden");
+    renderHosuMenu();
+  }
+
+  function startHosuMode(op, level) {
+    stopHosuSession();
+    hosu.op = op;
+    hosu.level = level;
+    hosu.questions = buildHosuQuestions(op, level);
+    hosu.index = 0;
+    hosu.correct = 0;
+    hosu.hintQuestions = 0;
+    hosu.mistakeQuestions = 0;
+    hosu.recorded = false;
+    hosu.voice = preferredVoiceAnswerEnabled && Boolean(getSpeechRecognitionClass());
+    $("#hosuMenu").classList.add("hidden");
+    $("#hosuResult").classList.add("hidden");
+    $("#hosuGame").classList.remove("hidden");
+    $("#hosuTitle").textContent = `${op === "＋" ? "足し算" : "引き算"}・${["", "初級", "中級", "上級"][level]}`;
+    updateHosuVoiceUi();
+    beginHosuQuestion();
+  }
+
+  function updateHosuVoiceUi() {
+    $("#hosuVoiceBtn").textContent = hosu.voice ? "🎤 音声回答 ON" : "🎤 音声回答 OFF";
+    $("#hosuVoiceBtn").classList.toggle("on", hosu.voice);
+  }
+
+  function drawHosuBoard(value, activePlace = null) {
+    const board = $("#hosuBoard");
+    board.innerHTML = "";
+    const q = hosu.questions[hosu.index];
+    const max = Math.max(q.a, q.b, q.answer, ...q.events.map((event) => event.value));
+    const count = String(max).length;
+    for (let i = count - 1; i >= 0; i -= 1) {
+      const place = 10 ** i;
+      const rod = document.createElement("div");
+      rod.className = "soroban-rod" + (place === activePlace ? " active" : "");
+      const line = document.createElement("div"); line.className = "rod-line"; rod.appendChild(line);
+      const upper = document.createElement("div"); upper.className = "soroban-bead upper-bead"; rod.appendChild(upper);
+      const lowers = [];
+      for (let n = 0; n < 4; n += 1) {
+        const bead = document.createElement("div"); bead.className = "soroban-bead lower-bead";
+        rod.appendChild(bead); lowers.push(bead);
+      }
+      const label = document.createElement("div"); label.className = "rod-place";
+      label.textContent = shortPlaceName(place); rod.appendChild(label);
+      setRodDigit({ upper, lowers }, Math.floor(value / place) % 10);
+      board.appendChild(rod);
+    }
+    board.dataset.value = String(value);
+  }
+
+  function beginHosuQuestion() {
+    stopHosuSession();
+    hosu.position = -1;
+    hosu.questionWrong = false;
+    hosu.questionHint = false;
+    hosu.complete = false;
+    hosu.resolved = false;
+    renderHosuStep();
+  }
+
+  function renderHosuStep() {
+    stopHosuSession();
+    const q = hosu.questions[hosu.index];
+    const event = q.events[hosu.position];
+    hosu.input = "";
+    hosu.resolved = false;
+    $("#hosuAnswer").textContent = "\u00a0";
+    $("#hosuVoiceStatus").textContent = "";
+    $("#hosuFeedback").textContent = "";
+    $("#hosuFeedback").className = "feedback";
+    $("#hosuExplanation").classList.add("hidden");
+    $("#hosuProgress").textContent = `${hosu.index + 1} / 12｜自力正解 ${hosu.correct}`;
+    $("#hosuEquation").textContent = `${q.a} ${q.op} ${q.b} ＝ ${hosu.complete ? q.answer : "?"}`;
+    $("#hosuCount").textContent = `補数 ${q.count}回｜${q.digits}桁${q.mixed ? "｜5と10を併用" : ""}`;
+    const prompt = !hosu.complete && event?.kind === "question";
+    $("#hosuAnswerArea").classList.toggle("hidden", !prompt);
+    $("#hosuHintBtn").classList.toggle("hidden", !prompt);
+    $("#hosuNextBtn").disabled = prompt;
+    $("#hosuNextBtn").textContent = hosu.complete
+      ? (hosu.index === 11 ? "結果を見る" : "次の問題へ") : "進む →";
+    const text = hosu.complete ? `できました。答えは${q.answer}です。`
+      : hosu.position < 0 ? `${q.a}を置きました。補数を1つずつ考えましょう。` : event.text;
+    $("#hosuPrompt").textContent = text;
+    const shown = hosu.complete ? q.answer : event ? event.value : q.a;
+    drawHosuBoard(shown, hosu.complete ? null : event?.place);
+    speakHosu(text, () => { if (prompt && hosu.voice && !hosu.resolved) startHosuRecognition(); });
+  }
+
+  function submitHosuAnswer(value) {
+    const q = hosu.questions[hosu.index];
+    const event = q?.events[hosu.position];
+    if (!$("#hosuView").classList.contains("show") || hosu.complete ||
+        event?.kind !== "question" || hosu.resolved || value === "") return;
+    const user = Number(value);
+    if (!Number.isInteger(user) || user < 1 || user > 9) return;
+    hosu.input = String(user);
+    $("#hosuAnswer").textContent = hosu.input;
+    stopHosuRecognition();
+    const ok = user === event.answer;
+    if (ok) {
+      hosu.resolved = true;
+      $("#hosuFeedback").textContent = "せいかい！";
+      $("#hosuFeedback").className = "feedback good";
+      $("#hosuNextBtn").disabled = false;
+      speakHosu("せいかい！");
+    } else {
+      hosu.questionWrong = true;
+      $("#hosuFeedback").textContent = "ざんねん！ もう一度答えてね。";
+      $("#hosuFeedback").className = "feedback bad";
+      $("#hosuExplanation").textContent = event.explanation;
+      $("#hosuExplanation").classList.remove("hidden");
+      speakHosu(`ざんねん！ ${event.explanation} もう一度答えてね。`, () => {
+        if (hosu.voice && !hosu.resolved) startHosuRecognition();
+      });
+    }
+  }
+
+  function nextHosuStep() {
+    const q = hosu.questions[hosu.index];
+    const event = q?.events[hosu.position];
+    if (!q || (event?.kind === "question" && !hosu.resolved && !hosu.complete)) return;
+    if (hosu.complete) {
+      hosu.index += 1;
+      if (hosu.index === 12) finishHosuMode();
+      else beginHosuQuestion();
+      return;
+    }
+    hosu.position += 1;
+    if (hosu.position >= q.events.length) {
+      hosu.complete = true;
+      if (hosu.questionHint) hosu.hintQuestions += 1;
+      else if (hosu.questionWrong) hosu.mistakeQuestions += 1;
+      else hosu.correct += 1;
+    }
+    renderHosuStep();
+  }
+
+  function startHosuRecognition() {
+    const q = hosu.questions[hosu.index];
+    const event = q?.events[hosu.position];
+    if (!hosu.voice || hosu.speaking || hosu.resolved || hosu.complete ||
+        event?.kind !== "question" || !$("#hosuView").classList.contains("show")) return;
+    const Recognition = getSpeechRecognitionClass();
+    if (!Recognition) { hosu.voice = false; updateHosuVoiceUi(); return; }
+    stopHosuRecognition();
+    const token = hosu.token;
+    const recognition = new Recognition();
+    hosu.recognition = recognition;
+    recognition.lang = "ja-JP";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 8;
+    let retry = true;
+    recognition.onstart = () => { $("#hosuVoiceStatus").textContent = "🎤 答えを言ってね"; };
+    recognition.onresult = (event) => {
+      if (token !== hosu.token || hosu.recognition !== recognition) return;
+      const selected = selectBestHintSingleDigitSpeech(event.results?.[0]);
+      if (selected) { retry = false; submitHosuAnswer(selected.value); }
+    };
+    recognition.onerror = (event) => {
+      if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event.error)) {
+        retry = false;
+        hosu.voice = false;
+        updateHosuVoiceUi();
+        $("#hosuVoiceStatus").textContent = "マイクを使えません。数字をタップしてね。";
+      }
+    };
+    recognition.onend = () => {
+      if (hosu.recognition !== recognition) return;
+      hosu.recognition = null;
+      if (retry && token === hosu.token && hosu.voice && !hosu.resolved) {
+        hosu.speechTimer = setTimeout(startHosuRecognition, 250);
+      }
+    };
+    try { recognition.start(); }
+    catch (error) {
+      hosu.recognition = null;
+      $("#hosuVoiceStatus").textContent = "マイクを開始できません。数字をタップしてね。";
+    }
+  }
+
+  function finishHosuMode() {
+    stopHosuSession();
+    const key = `${hosu.op}|${hosu.level}`;
+    if (!hosu.recorded) {
+      const previous = hosu.stats[key] || {};
+      hosu.stats[key] = {
+        sessions: (Number(previous.sessions) || 0) + 1,
+        best: Math.max(Number(previous.best) || 0, hosu.correct),
+        lastCorrect: hosu.correct, lastAt: new Date().toISOString()
+      };
+      try { localStorage.setItem(HOSU_STORAGE_KEY, JSON.stringify(hosu.stats)); } catch (error) {}
+      hosu.recorded = true;
+    }
+    $("#hosuGame").classList.add("hidden");
+    $("#hosuResult").classList.remove("hidden");
+    $("#hosuResultScore").textContent = `${hosu.correct} / 12`;
+    $("#hosuResultText").textContent = `すべての補数を最初に答えられた問題 ${hosu.correct}問｜再挑戦 ${hosu.mistakeQuestions}問｜ヒント使用 ${hosu.hintQuestions}問`;
+    $("#hosuSessionCount").textContent = `このモードの挑戦 ${hosu.stats[key].sessions}回目`;
+    speakHosu(`12問おわりました。自力で正解できた問題は${hosu.correct}問です。`);
+  }
+
+  $("#hosuNextBtn").addEventListener("click", nextHosuStep);
+  $("#hosuMenuBtn").addEventListener("click", showHosuHome);
+  $("#hosuResultMenuBtn").addEventListener("click", showHosuHome);
+  $("#hosuRetryBtn").addEventListener("click", () => startHosuMode(hosu.op, hosu.level));
+  $("#hosuDigits").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-hosu-digit]");
+    if (button) submitHosuAnswer(button.dataset.hosuDigit);
+  });
+  $("#hosuHintBtn").addEventListener("click", () => {
+    const event = hosu.questions[hosu.index]?.events[hosu.position];
+    if (event?.kind !== "question" || hosu.resolved) return;
+    hosu.questionHint = true;
+    $("#hosuExplanation").textContent = event.explanation;
+    $("#hosuExplanation").classList.remove("hidden");
+    speakHosu(event.explanation, () => { if (hosu.voice) startHosuRecognition(); });
+  });
+  $("#hosuVoiceBtn").addEventListener("click", () => {
+    hosu.voice = !hosu.voice;
+    updateHosuVoiceUi();
+    if (hosu.voice) {
+      if (!getSpeechRecognitionClass()) {
+        hosu.voice = false;
+        updateHosuVoiceUi();
+        $("#hosuVoiceStatus").textContent = "このブラウザでは音声回答を使えません。数字をタップしてね。";
+      } else startHosuRecognition();
+    } else {
+      stopHosuRecognition();
+      $("#hosuVoiceStatus").textContent = "";
+    }
+  });
 
   const BGM_SETTING_KEY = "soroban_bgm_enabled_v1";
   const VOICE_DEFAULT_SETTING_KEY = "soroban_voice_answer_default_v1";
@@ -14912,6 +15450,7 @@ HTML = r"""
   }
 
   function forceHomeView() {
+    root.querySelector("#hosuView")?.classList.remove("show");
     workspace.classList.remove("show");
     results.classList.remove("show");
     menuView.classList.add("hidden");
@@ -14924,6 +15463,7 @@ HTML = r"""
   }
 
   function forceChallengeMenuView() {
+    root.querySelector("#hosuView")?.classList.remove("show");
     homeView.classList.add("hidden");
     learningView.classList.remove("show");
     anzanView.classList.remove("show");
@@ -20508,6 +21048,9 @@ HTML = r"""
             rankingModal.classList.contains("show")
           ) {
             closeRankingModal();
+          } else if ($("#hosuView").classList.contains("show")) {
+            if (!$("#hosuMenu").classList.contains("hidden")) hardNavigate("home");
+            else showHosuHome();
           } else if (
             workspace.classList.contains("show") ||
             results.classList.contains("show")
