@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V141-GLOBAL-VOLUME
+# VERSION: CLEAN-V142-CHALLENGE-MEDAL-COUNTS
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V141-GLOBAL-VOLUME"
+APP_VERSION = "CLEAN-V142-CHALLENGE-MEDAL-COUNTS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3855,6 +3855,11 @@ HTML = r"""
   #appVolumeSlider { flex: 1; min-width: 0; max-width: 280px; height: 30px; margin: 0; accent-color: #315f86; cursor: pointer; }
   #appVolumeValue { min-width: 4ch; font-size: 12px; color: #6d675f; font-variant-numeric: tabular-nums; }
 
+
+  .challenge-medal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .challenge-medal-head .mode-no { min-width: 0; overflow-wrap: anywhere; }
+  .challenge-medal-strip { flex-shrink: 0; }
+
 </style>
 <div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
   <label for="appVolumeSlider">🔊 音量</label>
@@ -6363,6 +6368,7 @@ HTML = r"""
   const LEARNING_STORAGE_KEY = "soroban_learning_stats_v1";
   const RANKING_STORAGE_KEY = "soroban_score_rankings_v2";
   const CHALLENGE_COUNT_STORAGE_KEY = "soroban_challenge_counts_v1";
+  const CHALLENGE_MEDAL_STORAGE_KEY = "soroban_challenge_medal_counts_v1";
   const SESSION_HISTORY_STORAGE_KEY = "soroban_session_history_v1";
   const RANK_CERTIFICATION_STORAGE_KEY = "soroban_rank_certification_v2";
   const CHALLENGE_RESUME_STORAGE_KEY = "soroban_challenge_resume_v2";
@@ -6425,6 +6431,9 @@ HTML = r"""
   let scoreRankings = loadScoreRankings();
   let challengeCounts = loadChallengeCounts();
   let kukuMedalStats = loadKukuMedalStats();
+  let challengeMedalStats = loadChallengeMedalStats();
+  let sessionChallengeMedalAwarded = false;
+  let sessionChallengeMedalTier = null;
   let sessionHistory = loadSessionHistory();
   let sessionWeakAsked = 0;
   let sessionWeakCorrect = 0;
@@ -7553,6 +7562,100 @@ HTML = r"""
 
   function kukuMedalLabel(tierKey) {
     return KUKU_MEDAL_DEFS.find((def) => def.key === tierKey)?.label || "";
+  }
+
+  function loadChallengeMedalStats() {
+    const modes = {};
+    for (const mode of Object.keys(modeInfo)) modes[mode] = createEmptyKukuMedalEntry();
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CHALLENGE_MEDAL_STORAGE_KEY) || "{}");
+      const source = parsed?.modes;
+      if (source && typeof source === "object" && !Array.isArray(source)) {
+        for (const mode of Object.keys(modes)) {
+          for (const tier of ["gold", "silver", "bronze"]) {
+            const count = Number(source[mode]?.[tier]);
+            if (Number.isSafeInteger(count) && count >= 0) modes[mode][tier] = count;
+          }
+        }
+      }
+    } catch (error) {}
+    return { version: 1, modes };
+  }
+
+  function challengeMedalCount(mode, tier) {
+    return challengeMedalStats.modes[mode]?.[tier] || 0;
+  }
+
+  function renderChallengeMedalSummaries() {
+    root.querySelectorAll("[data-challenge-medal-mode]").forEach((strip) => {
+      const mode = strip.dataset.challengeMedalMode;
+      strip.querySelectorAll("[data-challenge-medal]").forEach((node) => {
+        const tier = node.dataset.challengeMedal;
+        const count = challengeMedalCount(mode, tier);
+        node.textContent = `×${count}`;
+        node.setAttribute("aria-label", `${getMedalTierDefinition(tier).label}メダル ${count}枚`);
+      });
+    });
+  }
+
+  function setupChallengeMedalSummaries() {
+    const images = root.querySelector("#homeAddSubMedal")?.dataset;
+    root.querySelectorAll(".start-mode").forEach((button) => {
+      const card = button.closest(".mode-card");
+      const mode = button.dataset.mode;
+      if (!card || !modeInfo[mode] || card.querySelector("[data-challenge-medal-mode]")) return;
+      const head = document.createElement("div");
+      head.className = "challenge-medal-head";
+      const label = card.querySelector(".mode-no");
+      if (label) { card.insertBefore(head, label); head.appendChild(label); }
+      else card.prepend(head);
+      const strip = document.createElement("div");
+      strip.className = "kuku-medal-strip challenge-medal-strip";
+      strip.dataset.challengeMedalMode = mode;
+      strip.setAttribute("role", "group");
+      strip.setAttribute("aria-label", "このモードのメダル獲得数");
+      for (const tier of ["gold", "silver", "bronze"]) {
+        const def = getMedalTierDefinition(tier);
+        const chip = document.createElement("span");
+        chip.className = `kuku-medal-chip ${tier}`;
+        chip.title = `${def.label}：${def.minCorrect}/12以上${def.timedOnly ? "・5分以内" : ""}`;
+        const image = document.createElement("img");
+        image.className = "kuku-medal-image";
+        image.src = images?.[`${tier}Src`] || "";
+        image.alt = `${def.label}メダル`;
+        const count = document.createElement("span");
+        count.className = "count";
+        count.dataset.challengeMedal = tier;
+        chip.appendChild(image);
+        chip.appendChild(count);
+        strip.appendChild(chip);
+      }
+      head.appendChild(strip);
+    });
+    renderChallengeMedalSummaries();
+  }
+
+  function awardChallengeMedal(scoreInfo, timeup) {
+    if (sessionChallengeMedalAwarded || !modeInfo[currentMode] ||
+        activeRemedialSkillId || activeWeaknessChallengeMode ||
+        sessionTotalQuestions !== TOTAL_QUESTIONS || answers.length !== TOTAL_QUESTIONS) {
+      return sessionChallengeMedalTier;
+    }
+    // 既存の認定基準を使用し、1回のチャレンジでは最高の1色だけ加算する。
+    sessionChallengeMedalAwarded = true;
+    const correct = Number(scoreInfo?.correctCount);
+    const tier = [...MEDAL_TIERS].reverse().find((def) =>
+      Number.isInteger(correct) && correct >= def.minCorrect && correct <= TOTAL_QUESTIONS &&
+      (!def.timedOnly || !timeup)
+    );
+    sessionChallengeMedalTier = tier?.key || null;
+    if (!tier) return null;
+    challengeMedalStats.modes[currentMode][tier.key] += 1;
+    try {
+      localStorage.setItem(CHALLENGE_MEDAL_STORAGE_KEY, JSON.stringify(challengeMedalStats));
+    } catch (error) {}
+    renderChallengeMedalSummaries();
+    return tier.key;
   }
 
   function randomKukuEncouragement() {
@@ -19886,6 +19989,8 @@ HTML = r"""
     promotedMode = null;
     sessionRankingSaved = false;
     sessionChallengeRecorded = false;
+    sessionChallengeMedalAwarded = false;
+    sessionChallengeMedalTier = null;
     closeRankingModal();
 
     $("#retryBtn").textContent =
@@ -20888,6 +20993,8 @@ HTML = r"""
     const challengeScore =
       calculateChallengeScore();
 
+    const earnedChallengeMedal = awardChallengeMedal(challengeScore, timeup);
+
     if (
       activeRemedialSkillId ||
       activeWeaknessChallengeMode
@@ -21031,6 +21138,12 @@ HTML = r"""
     ) {
       resultMessage +=
         " 苦手は次回も優先して出題します。";
+    }
+
+    if (earnedChallengeMedal) {
+      const label = getMedalTierDefinition(earnedChallengeMedal).label;
+      const count = challengeMedalCount(currentMode, earnedChallengeMedal);
+      resultMessage += ` ${label}メダルを1枚獲得しました（累計${count}枚）。`;
     }
 
     $("#resultNote").textContent =
@@ -21699,6 +21812,7 @@ HTML = r"""
       );
   }
 
+  setupChallengeMedalSummaries();
   setupModeChallengeCountLabels();
   setupModeRankingButtons();
 
