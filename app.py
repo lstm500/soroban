@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V98-BRONZE-SILVER-GOLD-HINT-OUTCOME
+# VERSION: CLEAN-V138-KUKU-CHANT-FEEDBACK
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V137-KUKU-MEIJIN-WRONG-ANSWER-VOICE"
+APP_VERSION = "CLEAN-V138-KUKU-CHANT-FEEDBACK"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -16289,6 +16289,23 @@ HTML = r"""
     return `${question.a}掛ける${question.b}は？`;
   }
 
+  function getKukuSpokenAnswer(question) {
+    // 不正解時も九九の唱え方で、式と答えを読み上げる。
+    const digits = ["", "いち", "に", "さん", "よん", "ご", "ろく", "なな", "はち", "きゅう"];
+    const tens = Math.floor(question.answer / 10);
+    const ones = question.answer % 10;
+    const singleAnswers = ["", "いち", "に", "さん", "し", "ご", "ろく", "しち", "はち", "く"];
+    const answerReading =
+      tens > 0
+        ? `${tens === 1 ? "" : digits[tens]}じゅう${digits[ones]}`
+        : singleAnswers[ones];
+    const tenStems = ["", "いんじゅう", "にじゅう", "さんじゅう", "しじゅう", "ごじゅう", "ろくじゅう", "しちじゅう", "はちじゅう", "くじゅう"];
+    const stem = KUKU_CHANT_STEMS?.[question.a]?.[question.b] ||
+      (question.b === 10 ? tenStems[question.a] : "");
+
+    return `${stem}、${answerReading}。`;
+  }
+
   function speakKukuQuestion(question, onDone) {
     stopKukuRecognition();
     let finished = false;
@@ -16533,7 +16550,7 @@ HTML = r"""
 
     const kukuFeedbackVoice = ok
       ? "お見事！"
-      : `残念！${question.a}掛ける${question.b}は${question.answer}です。`;
+      : `残念！${getKukuSpokenAnswer(question)}`;
 
     speakAnswerFeedback(
       ok,
