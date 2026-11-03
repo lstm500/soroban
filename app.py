@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V136-FINAL-RANK-MASTER"
+APP_VERSION = "CLEAN-V137-KUKU-MEIJIN-WRONG-ANSWER-VOICE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3869,7 +3869,7 @@ HTML = r"""
 
     <button type="button" id="homeKukuBtn" data-app-nav="kuku" class="home-mode-btn kuku-home">
       <span class="home-mode-kicker">KUKU</span>
-      <span class="home-mode-name">九九即答チャレンジ</span>
+      <span class="home-mode-name">九九名人</span>
       <span class="home-mode-desc">
         九九を見た瞬間に答える練習。掛け算のそろばんへ進む前の基礎力を確認します。
       </span>
@@ -3899,7 +3899,7 @@ HTML = r"""
 <div id="kukuView" class="kuku-view">
   <div class="subview-topbar">
     <button type="button" id="kukuTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
-    <div class="subview-topbar-title">九九即答チャレンジ</div>
+    <div class="subview-topbar-title">九九名人</div>
   </div>
   <div id="kukuMenuView">
     <div class="kuku-hero">
@@ -4004,7 +4004,7 @@ HTML = r"""
   </div>
   <div id="kukuResultView" class="hidden">
     <div class="kuku-result-card">
-      <div>九九即答チャレンジ終了</div>
+      <div>九九名人終了</div>
       <div id="kukuResultScore" class="kuku-result-score">0 / 9</div>
       <div id="kukuResultText" class="kuku-prompt"></div>
       <div class="kuku-actions">
@@ -16501,7 +16501,7 @@ HTML = r"""
     updateKukuButtons();
     updateKukuAnswerDisplay();
 
-    // 九九即答チャレンジではBGMを使用しない。
+    // 九九名人ではBGMを使用しない。
     stopBgm();
 
     startKukuTimer();
@@ -16530,7 +16530,17 @@ HTML = r"""
     kukuCorrectCount.textContent =
       `正解 ${kukuCorrect}`;
     const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= kukuQuestions.length) finishKukuMode(false); else runKukuQuestion(); };
-    speakAnswerFeedback(ok, kukuStreak, advance, ok ? "お見事！" : "残念！");
+
+    const kukuFeedbackVoice = ok
+      ? "お見事！"
+      : `残念！${question.a}掛ける${question.b}は${question.answer}です。`;
+
+    speakAnswerFeedback(
+      ok,
+      kukuStreak,
+      advance,
+      kukuFeedbackVoice
+    );
   }
 
   function finishKukuMode(timeup = false) {
