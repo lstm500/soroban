@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V151-HOSU-CHALLENGE-VOICE
+# VERSION: CLEAN-V152-HOSU-NARRATION-GUARD
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V151-HOSU-CHALLENGE-VOICE"
+APP_VERSION = "CLEAN-V152-HOSU-NARRATION-GUARD"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -6385,8 +6385,8 @@ HTML = r"""
     };
     recognition.onspeechstart = () => {
       if (!current() || accepted) return;
-      // BGMは変更しない。子どもの発話中は案内音声だけを止める。
-      if (hosu.speaking) hosu.interruptSpeech?.();
+      // 発話検知はアプリの読み上げや環境音でも起こるため、ここでは止めない。
+      // 有効な回答を認識したonresultでのみ案内音声を中断する。
       $("#hosuVoiceStatus").textContent = "🎤 聞いています…";
     };
     recognition.onspeechend = () => {
