@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V146-HOSU-SHORT-QUESTIONS
+# VERSION: CLEAN-V147-HOSU-VOICE-RETRY
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V146-HOSU-SHORT-QUESTIONS"
+APP_VERSION = "CLEAN-V147-HOSU-VOICE-RETRY"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -6293,6 +6293,25 @@ HTML = r"""
     $("#hosuVoiceStatus").textContent = message;
   }
 
+  function selectHosuNumericSpeech(result, phase) {
+    // 質問に使える範囲の候補だけを比較する。正解そのものでは絞らない。
+    const candidates = [];
+    for (let i = 0; i < (result?.length || 0); i += 1) {
+      const alternative = result[i];
+      const transcript = String(alternative?.transcript || "")
+        .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+        .replace(/(?:の)?(?:補数|ほすう)/g, "");
+      const candidate = { transcript, confidence: alternative?.confidence };
+      const selected = phase === "base"
+        ? selectBestNumericSpeech([candidate]) : selectBestHintSingleDigitSpeech([candidate]);
+      if (selected && (phase !== "base" || selected.value === 5 || selected.value === 10)) {
+        candidates.push(candidate);
+      }
+    }
+    return phase === "base"
+      ? selectBestNumericSpeech(candidates) : selectBestHintSingleDigitSpeech(candidates);
+  }
+
   function startHosuRecognition() {
     const phase = hosuVoicePhase();
     if (!phase || hosu.recognition) return;
@@ -6310,7 +6329,6 @@ HTML = r"""
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 8;
-    let retry = true;
     let startedAt = 0;
     const current = () => token === hosu.token && hosu.recognition === recognition &&
       questionIndex === hosu.index && position === hosu.position && hosuVoicePhase() === phase;
@@ -6325,10 +6343,9 @@ HTML = r"""
       if (!current() || performance.now() - startedAt < 350) return;
       const result = event.results?.[event.resultIndex || 0] || event.results?.[0];
       if (phase === "answer" || phase === "base") {
-        const selected = phase === "base" ? selectBestNumericSpeech(result) : selectBestHintSingleDigitSpeech(result);
-        if (selected) { retry = false; submitHosuAnswer(selected.value); return; }
+        const selected = selectHosuNumericSpeech(result, phase);
+        if (selected) { submitHosuAnswer(selected.value); return; }
       } else if (hosuCommandMatches(result, phase)) {
-        retry = false;
         stopHosuRecognition();
         nextHosuStep();
         return;
@@ -6338,14 +6355,15 @@ HTML = r"""
     recognition.onerror = (event) => {
       if (!current()) return;
       if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event.error)) {
-        retry = false;
         fallbackHosuVoice("マイクを使えません。数字とボタンで進めてね。");
       }
     };
     recognition.onend = () => {
       if (hosu.recognition !== recognition) return;
       hosu.recognition = null;
-      if (retry && token === hosu.token) queueHosuRecognition(250);
+      // 無効な候補や一時的なエラーでも、この質問の聞き取りを続ける。
+      // 進行・中断時はtokenまたはrecognitionの照合で再開を防ぐ。
+      if (token === hosu.token) queueHosuRecognition(250);
     };
     try { recognition.start(); }
     catch (error) {
