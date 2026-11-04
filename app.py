@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V145-HOSU-HANDS-FREE
+# VERSION: CLEAN-V146-HOSU-SHORT-QUESTIONS
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V145-HOSU-HANDS-FREE"
+APP_VERSION = "CLEAN-V146-HOSU-SHORT-QUESTIONS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3861,10 +3861,10 @@ HTML = r"""
   .challenge-medal-strip { flex-shrink: 0; }
 
 
-  .hosu-start-guide { margin: 12px 0; padding: 10px 12px; background: #f2f7ed; border-left: 3px solid #789563; border-radius: 8px; font-size: 14px; line-height: 1.65; }
-  .hosu-start-guide ol { margin: 5px 0; padding-left: 1.6em; }
-  .hosu-start-guide p { margin: 5px 0 0; }
 
+  .hosu-base-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .hosu-base-choices button { background: #eef4e8; min-height: 52px; }
+  .hosu-intro { margin: 10px 0; font-size: 14px; line-height: 1.7; }
 </style>
 <div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
   <label for="appVolumeSlider">🔊 音量</label>
@@ -3985,13 +3985,17 @@ HTML = r"""
     <div class="hosu-toolbar"><button type="button" id="hosuVoiceBtn">🎤 音声回答 OFF</button><span id="hosuVoiceStatus" aria-live="polite"></span></div>
     <div id="hosuEquation" class="hosu-equation"></div>
     <div id="hosuCount" class="hosu-count"></div>
-    <div id="hosuStartGuide" class="hosu-start-guide hidden"></div>
+    <p id="hosuIntro" class="hosu-intro hidden"></p>
     <div id="hosuBoard" class="soroban-board"></div>
     <div id="hosuPrompt" class="hosu-prompt" aria-live="polite"></div>
     <button type="button" id="hosuHintBtn">考え方を見る</button>
     <div id="hosuExplanation" class="hosu-explanation hidden"></div>
     <div id="hosuAnswerArea" class="hidden">
       <div id="hosuAnswer" class="hosu-answer" aria-live="polite"></div>
+      <div id="hosuBaseChoices" class="hosu-base-choices hidden">
+        <button type="button" data-hosu-base="5">5の補数</button>
+        <button type="button" data-hosu-base="10">10の補数</button>
+      </div>
       <div id="hosuDigits" class="hosu-digits"><button type="button" data-hosu-digit="1">1</button><button type="button" data-hosu-digit="2">2</button><button type="button" data-hosu-digit="3">3</button><button type="button" data-hosu-digit="4">4</button><button type="button" data-hosu-digit="5">5</button><button type="button" data-hosu-digit="6">6</button><button type="button" data-hosu-digit="7">7</button><button type="button" data-hosu-digit="8">8</button><button type="button" data-hosu-digit="9">9</button></div>
     </div>
     <div id="hosuFeedback" class="feedback" aria-live="polite"></div>
@@ -6085,7 +6089,9 @@ HTML = r"""
   function updateHosuVoiceUi() {
     $("#hosuVoiceBtn").textContent = hosu.voice ? "🎤 音声回答 ON" : "🎤 音声回答 OFF";
     $("#hosuVoiceBtn").classList.toggle("on", hosu.voice);
-    $("#hosuDigits").classList.toggle("hidden", hosu.voice);
+    const baseQuestion = !hosu.baseResolved;
+    $("#hosuDigits").classList.toggle("hidden", hosu.voice || baseQuestion);
+    $("#hosuBaseChoices").classList.toggle("hidden", hosu.voice || !baseQuestion);
   }
 
   function drawHosuBoard(value, activePlace = null) {
@@ -6125,21 +6131,18 @@ HTML = r"""
 
   function hosuActionPrompt(event) {
     const amount = Math.abs(event.delta / event.place);
-    const instruction = event.delta > 0
+    return event.delta > 0
       ? `${placeName(event.place)}に${amount}を足してね。`
       : `${placeName(event.place)}から${amount}を引いてね。`;
-    const carry = event.place > event.sourcePlace
-      ? event.delta > 0 ? "これが繰り上がりです。" : "これが繰り下がりです。"
-      : "";
-    return `${instruction}${carry}動かせたら「できた」を${hosu.voice ? "言ってね" : "押してね"}。`;
   }
 
-  function renderHosuStep() {
+  function renderHosuStep(keepBase = false) {
     stopHosuSession();
     const q = hosu.questions[hosu.index];
     const event = q.events[hosu.position];
     hosu.input = "";
     hosu.resolved = false;
+    if (!keepBase) hosu.baseResolved = false;
     $("#hosuAnswer").textContent = "\u00a0";
     $("#hosuVoiceStatus").textContent = "";
     $("#hosuFeedback").textContent = "";
@@ -6147,51 +6150,41 @@ HTML = r"""
     $("#hosuExplanation").classList.add("hidden");
     $("#hosuProgress").textContent = `${hosu.index + 1} / 12｜自力正解 ${hosu.correct}`;
     $("#hosuEquation").textContent = `${q.a} ${q.op} ${q.b} ＝ ${hosu.complete ? q.answer : "?"}`;
-    $("#hosuCount").textContent = `補数の連鎖 最大${q.count}回｜${q.digits}桁${q.mixed ? "｜5と10を併用" : ""}`;
-    const firstScreen = hosu.index === 0 && hosu.position < 0 && !hosu.complete;
-    const guide = $("#hosuStartGuide");
-    guide.classList.toggle("hidden", !firstScreen);
-    if (firstScreen) {
-      guide.innerHTML = q.op === "＋"
-        ? `<strong>まず考えて、ゆっくり動かそう</strong>
-           <ol><li>そのまま足せる → 補数なし</li>
-           <li>そのまま足せず、同じ位で5の珠を使って置きかえる → 5の補数</li>
-           <li>くり上がる → 10の補数</li></ol>
-           <p><strong>くり上がりは、補数を引く → となりの位に1を足す。</strong></p>
-           <p>例：7＋9なら、1を引いてから10を足す。</p>
-           <p>急がず、声を聞いて、珠をひとつずつ動かそう。</p>`
-        : `<strong>まず考えて、ゆっくり動かそう</strong>
-           <ol><li>そのまま引ける → 補数なし</li>
-           <li>そのまま引けず、同じ位で5の珠を使って置きかえる → 5の補数</li>
-           <li>くり下がる → 10の補数</li></ol>
-           <p><strong>くり下がりは、となりの位から1を引く → 補数を足す。</strong></p>
-           <p>例：12−8なら、10を引いてから2を足す。</p>
-           <p>急がず、声を聞いて、珠をひとつずつ動かそう。</p>`;
-    }
+    $("#hosuCount").textContent = `補数の連鎖 最大${q.count}回｜${q.digits}桁`;
+    const introduction = "5の補数、10の補数かを最初に考えてから、補数になる数を引きましょう。";
+    const showIntro = hosu.index === 0 && hosu.position < 0 && q.op === "＋" && !hosu.complete;
+    $("#hosuIntro").textContent = showIntro ? introduction : "";
+    $("#hosuIntro").classList.toggle("hidden", !showIntro);
     const prompt = !hosu.complete && event?.kind === "question";
     $("#hosuAnswerArea").classList.toggle("hidden", !prompt);
+    updateHosuVoiceUi();
     $("#hosuHintBtn").classList.toggle("hidden", !prompt);
     $("#hosuNextBtn").disabled = prompt;
     $("#hosuNextBtn").textContent = hosu.complete
       ? (hosu.index === 11 ? "結果を見る" : "次の問題へ")
       : prompt ? "補数を答えてね" : "できた";
     const text = hosu.complete
-      ? `できました。答えは${q.answer}です。${hosu.voice ? (hosu.index === 11 ? "結果を見るときは「つぎ」と言ってね。" : "次の問題へ進むときは「つぎ」と言ってね。") : ""}`
+      ? (hosu.voice ? "できたね。「つぎ」と言ってね。" : "できたね。")
       : hosu.position < 0
-        ? `${q.a}を手元のそろばんに置いてね。置けたら「できた」を${hosu.voice ? "言ってね" : "押してね"}。`
-        : event.kind === "move" ? hosuActionPrompt(event) : event.text;
+        ? `${q.a}を置いてね。できたら「できた」を${hosu.voice ? "言ってね" : "押してね"}。`
+        : event.kind === "move" ? hosuActionPrompt(event)
+        : !hosu.baseResolved
+          ? `${event.amount}を${event.sign > 0 ? "足す" : "引く"}とき、5？ 10？`
+          : `${event.amount}と、いくつで${event.base}？`;
     $("#hosuPrompt").textContent = text;
     // 先に完成形を見せず、手元で操作して確認した時だけ画面の珠を更新する。
     const shown = hosu.complete ? q.answer
       : event?.kind === "move" ? event.from : event ? event.value : q.a;
     drawHosuBoard(shown, hosu.complete ? null : event?.place);
-    const narration = firstScreen
-      ? (q.op === "＋"
-          ? "まず、そのまま足せるか、5の補数か、10の補数かを考えよう。くり上がりは、補数を引いてから、となりの位に1を足します。"
-          : "まず、そのまま引けるか、5の補数か、10の補数かを考えよう。くり下がりは、となりの位から1を引いてから、補数を足します。") +
-        `急がず、珠をひとつずつ動かそう。${text}`
-      : text;
-    speakHosu(narration);
+    if (showIntro) {
+      speakHosu(introduction, () => {
+        // 1文ずつ読み、説明と操作の声かけをまとめて長くしない。
+        if (hosu.index === 0 && hosu.position < 0 &&
+            $("#hosuView").classList.contains("show") && !$("#hosuGame").classList.contains("hidden")) {
+          speakHosu(text);
+        }
+      });
+    } else speakHosu(text);
   }
 
   function submitHosuAnswer(value) {
@@ -6200,6 +6193,20 @@ HTML = r"""
     if (!$("#hosuView").classList.contains("show") || hosu.complete ||
         event?.kind !== "question" || hosu.resolved || value === "") return;
     const user = Number(value);
+    if (!hosu.baseResolved) {
+      if (user !== 5 && user !== 10) return;
+      stopHosuRecognition();
+      if (user === event.base) {
+        hosu.baseResolved = true;
+        renderHosuStep(true);
+      } else {
+        hosu.questionWrong = true;
+        $("#hosuFeedback").textContent = "もういちど考えよう。";
+        $("#hosuFeedback").className = "feedback bad";
+        speakHosu("もういちど。5？ 10？");
+      }
+      return;
+    }
     if (!Number.isInteger(user) || user < 1 || user > 9) return;
     hosu.input = String(user);
     $("#hosuAnswer").textContent = hosu.input;
@@ -6222,11 +6229,9 @@ HTML = r"""
       });
     } else {
       hosu.questionWrong = true;
-      $("#hosuFeedback").textContent = "ざんねん！ もう一度答えてね。";
+      $("#hosuFeedback").textContent = "もういちど考えよう。";
       $("#hosuFeedback").className = "feedback bad";
-      $("#hosuExplanation").textContent = event.explanation;
-      $("#hosuExplanation").classList.remove("hidden");
-      speakHosu(`ざんねん！ ${event.explanation} もう一度答えてね。`);
+      speakHosu("ざんねん。もういちど。");
     }
   }
 
@@ -6256,7 +6261,7 @@ HTML = r"""
         $("#hosuGame").classList.contains("hidden")) return null;
     const event = hosu.questions[hosu.index]?.events[hosu.position];
     if (hosu.complete) return "next";
-    if (event?.kind === "question") return hosu.resolved ? null : "answer";
+    if (event?.kind === "question") return hosu.resolved ? null : hosu.baseResolved ? "answer" : "base";
     return hosu.position < 0 || event?.kind === "move" ? "done" : null;
   }
 
@@ -6284,7 +6289,7 @@ HTML = r"""
     stopHosuRecognition();
     hosu.voice = false;
     updateHosuVoiceUi();
-    renderHosuStep();
+    renderHosuStep(true);
     $("#hosuVoiceStatus").textContent = message;
   }
 
@@ -6309,7 +6314,7 @@ HTML = r"""
     let startedAt = 0;
     const current = () => token === hosu.token && hosu.recognition === recognition &&
       questionIndex === hosu.index && position === hosu.position && hosuVoicePhase() === phase;
-    const instruction = phase === "answer" ? "🎤 答えを言ってね"
+    const instruction = phase === "base" ? "🎤 5か10で答えてね" : phase === "answer" ? "🎤 答えを言ってね"
       : phase === "done" ? "🎤 動かせたら「できた」と言ってね" : "🎤 進むときは「つぎ」と言ってね";
     recognition.onstart = () => {
       if (!current()) { stopHosuRecognition(); return; }
@@ -6319,8 +6324,8 @@ HTML = r"""
     recognition.onresult = (event) => {
       if (!current() || performance.now() - startedAt < 350) return;
       const result = event.results?.[event.resultIndex || 0] || event.results?.[0];
-      if (phase === "answer") {
-        const selected = selectBestHintSingleDigitSpeech(result);
+      if (phase === "answer" || phase === "base") {
+        const selected = phase === "base" ? selectBestNumericSpeech(result) : selectBestHintSingleDigitSpeech(result);
         if (selected) { retry = false; submitHosuAnswer(selected.value); return; }
       } else if (hosuCommandMatches(result, phase)) {
         retry = false;
@@ -6375,6 +6380,10 @@ HTML = r"""
   $("#hosuMenuBtn").addEventListener("click", showHosuHome);
   $("#hosuResultMenuBtn").addEventListener("click", showHosuHome);
   $("#hosuRetryBtn").addEventListener("click", () => startHosuMode(hosu.op, hosu.level));
+  $("#hosuBaseChoices").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-hosu-base]");
+    if (button) submitHosuAnswer(button.dataset.hosuBase);
+  });
   $("#hosuDigits").addEventListener("click", (event) => {
     const button = event.target.closest("[data-hosu-digit]");
     if (button) submitHosuAnswer(button.dataset.hosuDigit);
@@ -6383,15 +6392,18 @@ HTML = r"""
     const event = hosu.questions[hosu.index]?.events[hosu.position];
     if (event?.kind !== "question" || hosu.resolved) return;
     hosu.questionHint = true;
-    $("#hosuExplanation").textContent = event.explanation;
+    const explanation = hosu.baseResolved
+      ? `${event.amount}と${event.answer}で${event.base}だよ。`
+      : `${event.base}の補数を使うよ。`;
+    $("#hosuExplanation").textContent = explanation;
     $("#hosuExplanation").classList.remove("hidden");
-    speakHosu(event.explanation);
+    speakHosu(explanation);
   });
   $("#hosuVoiceBtn").addEventListener("click", () => {
     hosu.voice = !hosu.voice && Boolean(getSpeechRecognitionClass());
     updateHosuVoiceUi();
     stopHosuRecognition();
-    if (!hosu.resolved) renderHosuStep();
+    if (!hosu.resolved) renderHosuStep(true);
     if (!getSpeechRecognitionClass()) {
       $("#hosuVoiceStatus").textContent = "このブラウザでは音声回答を使えません。数字とボタンで進めてね。";
     }
