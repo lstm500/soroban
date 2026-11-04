@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V150-HOSU-LISTEN-DURING-SPEECH
+# VERSION: CLEAN-V151-HOSU-CHALLENGE-VOICE
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V150-HOSU-LISTEN-DURING-SPEECH"
+APP_VERSION = "CLEAN-V151-HOSU-CHALLENGE-VOICE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5998,6 +5998,13 @@ HTML = r"""
     clearTimeout(hosu.speechTimer);
     hosu.speaking = true;
     let finished = false;
+    hosu.interruptSpeech = () => {
+      if (finished || token !== hosu.token) return;
+      finished = true;
+      clearTimeout(hosu.speechTimer);
+      hosu.speaking = false;
+      cancelAppSpeech();
+    };
     const done = () => {
       if (finished || token !== hosu.token) return;
       finished = true;
@@ -6354,62 +6361,78 @@ HTML = r"""
     const position = hosu.position;
     const recognition = new Recognition();
     hosu.recognition = recognition;
+    // チャレンジ本体と同じ認識設定・残響ガード・判定待ち時間を使う。
     recognition.lang = "ja-JP";
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.maxAlternatives = 8;
-    let pendingAnswer = null;
-    let pendingCommand = false;
-    const current = () => token === hosu.token && hosu.recognition === recognition &&
-      questionIndex === hosu.index && position === hosu.position && hosuVoicePhase() === phase;
-    const instruction = phase === "base" ? "🎤 5か10で答えてね" : phase === "answer" ? "🎤 答えを言ってね"
+    recognition.maxAlternatives = 5;
+    let startedAt = null;
+    let accepted = false;
+    const sameStep = () => token === hosu.token && questionIndex === hosu.index &&
+      position === hosu.position && hosuVoicePhase() === phase;
+    const current = () => sameStep() && hosu.recognition === recognition;
+    const instruction = phase === "base" ? "🎤 5の補数か10の補数で答えてね"
       : phase === "done" ? "🎤 動かせたら「できた」と言ってね" : "🎤 進むときは「つぎ」と言ってね";
+    const retry = (delay) => {
+      if (accepted || !sameStep()) return;
+      if (hosu.recognition === recognition) stopHosuRecognition();
+      queueHosuRecognition(delay);
+    };
     recognition.onstart = () => {
-      if (!current()) { stopHosuRecognition(); return; }
+      if (!current()) return;
+      startedAt = Date.now();
       $("#hosuVoiceStatus").textContent = instruction;
+    };
+    recognition.onspeechstart = () => {
+      if (!current() || accepted) return;
+      // BGMは変更しない。子どもの発話中は案内音声だけを止める。
+      if (hosu.speaking) hosu.interruptSpeech?.();
+      $("#hosuVoiceStatus").textContent = "🎤 聞いています…";
+    };
+    recognition.onspeechend = () => {
+      if (current() && !accepted) $("#hosuVoiceStatus").textContent = "🎤 確認中…";
     };
     recognition.onresult = (event) => {
-      if (!current() || pendingAnswer !== null || pendingCommand) return;
-      const result = event.results?.[event.resultIndex || 0] || event.results?.[0];
-      if (phase === "answer" || phase === "base") {
-        const selected = selectHosuNumericSpeech(result, phase);
-        if (selected) {
-          pendingAnswer = selected.value;
-          // マイクの終了通知を待ってから、判定・読み上げへ進む。
-          // onresult内でabortすると、ブラウザの録音解放と次の認識が競合する。
-          return;
-        }
-      } else if (hosuCommandMatches(result, phase)) {
-        pendingCommand = true;
+      if (!current() || accepted) return;
+      if (startedAt === null || Date.now() - startedAt < MIC_RESULT_GUARD_MS) return;
+      const result = event.results?.[0];
+      const selected = phase === "base" ? selectHosuNumericSpeech(result, phase) : null;
+      const command = phase !== "base" && hosuCommandMatches(result, phase);
+      if (!selected && !command) {
+        $("#hosuVoiceStatus").textContent = instruction;
         return;
       }
-      $("#hosuVoiceStatus").textContent = instruction;
+      accepted = true;
+      hosu.interruptSpeech?.();
+      // チャレンジと同じくstop→160ms後に確定。onendの到着には依存しない。
+      try { recognition.stop(); } catch (error) {}
+      clearTimeout(hosu.recognitionTimer);
+      hosu.recognitionTimer = setTimeout(() => {
+        if (!sameStep()) return;
+        if (hosu.recognition === recognition) {
+          hosu.recognition = null;
+          recognition.onend = null;
+          recognition.onerror = null;
+        }
+        if (selected) submitHosuAnswer(selected.value);
+        else nextHosuStep();
+      }, 160);
     };
     recognition.onerror = (event) => {
-      if (!current()) return;
+      if (!current() || accepted) return;
       if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event.error)) {
         fallbackHosuVoice("マイクを使えません。数字とボタンで進めてね。");
+      } else {
+        retry(["no-speech", "aborted"].includes(event.error) ? 380 : 500);
       }
     };
     recognition.onend = () => {
       if (hosu.recognition !== recognition) return;
       hosu.recognition = null;
-      if (token !== hosu.token || questionIndex !== hosu.index ||
-          position !== hosu.position || hosuVoicePhase() !== phase) return;
-      if (pendingAnswer !== null) {
-        submitHosuAnswer(pendingAnswer);
-      } else if (pendingCommand) {
-        nextHosuStep();
-      } else {
-        queueHosuRecognition(250);
-      }
+      if (!accepted && sameStep()) queueHosuRecognition(320);
     };
     try { recognition.start(); }
-    catch (error) {
-      if (hosu.recognition === recognition) {
-        fallbackHosuVoice("マイクを開始できません。数字とボタンで進めてね。");
-      }
-    }
+    catch (error) { retry(500); }
   }
 
   function finishHosuMode() {
