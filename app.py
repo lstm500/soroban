@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V148-HOSU-VOICE-END
+# VERSION: CLEAN-V149-HOSU-GUIDANCE
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V148-HOSU-VOICE-END"
+APP_VERSION = "CLEAN-V149-HOSU-GUIDANCE"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -6014,7 +6014,7 @@ HTML = r"""
       if (token !== hosu.token || finished || !$("#hosuView").classList.contains("show")) return;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "ja-JP";
-      utterance.rate = 0.82;
+      utterance.rate = 1.05;
       utterance.volume = appMasterVolume;
       if (voice) utterance.voice = voice;
       utterance.onend = done;
@@ -6136,13 +6136,32 @@ HTML = r"""
       : `${placeName(event.place)}から${amount}を引いてね。`;
   }
 
+  function hosuComplementAction(event) {
+    const unit = event.base * event.place;
+    return event.sign > 0
+      ? `${event.amount}の${event.base}の補数を引いて${unit}を足しましょう。`
+      : `${unit}を引いて${event.amount}の${event.base}の補数を足しましょう。`;
+  }
+
+  function hosuComplementReason(event) {
+    const digit = Math.floor(event.value / event.place) % 10;
+    if (event.base === 10) {
+      return event.sign > 0
+        ? `${digit}に${event.amount}を足すと繰り上がるよ。5の補数では繰り上がれないので、10の補数を使うよ。`
+        : `${digit}から${event.amount}は引けないよ。5の補数では足りないので、となりの位から借りる10の補数を使うよ。`;
+    }
+    return event.sign > 0
+      ? `繰り上がらないので、10の補数は使わないよ。下の珠だけでは足せないので、5の珠に置き換える5の補数を使うよ。`
+      : `となりの位から借りなくていいので、10の補数は使わないよ。下の珠だけでは引けないので、5の珠を取って戻す5の補数を使うよ。`;
+  }
+
   function renderHosuStep(keepBase = false) {
     stopHosuSession();
     const q = hosu.questions[hosu.index];
     const event = q.events[hosu.position];
     hosu.input = "";
-    hosu.resolved = false;
     if (!keepBase) hosu.baseResolved = false;
+    hosu.resolved = event?.kind === "question" && hosu.baseResolved;
     $("#hosuAnswer").textContent = "\u00a0";
     $("#hosuVoiceStatus").textContent = "";
     $("#hosuFeedback").textContent = "";
@@ -6156,21 +6175,22 @@ HTML = r"""
     $("#hosuIntro").textContent = showIntro ? introduction : "";
     $("#hosuIntro").classList.toggle("hidden", !showIntro);
     const prompt = !hosu.complete && event?.kind === "question";
-    $("#hosuAnswerArea").classList.toggle("hidden", !prompt);
+    const answering = prompt && !hosu.resolved;
+    $("#hosuAnswerArea").classList.toggle("hidden", !answering);
     updateHosuVoiceUi();
     $("#hosuHintBtn").classList.toggle("hidden", !prompt);
-    $("#hosuNextBtn").disabled = prompt;
+    $("#hosuNextBtn").disabled = answering;
     $("#hosuNextBtn").textContent = hosu.complete
       ? (hosu.index === 11 ? "結果を見る" : "次の問題へ")
-      : prompt ? "補数を答えてね" : "できた";
+      : answering ? "補数を答えてね" : "できた";
     const text = hosu.complete
       ? (hosu.voice ? "できたね。「つぎ」と言ってね。" : "できたね。")
       : hosu.position < 0
         ? `${q.a}を置いてね。できたら「できた」を${hosu.voice ? "言ってね" : "押してね"}。`
         : event.kind === "move" ? hosuActionPrompt(event)
         : !hosu.baseResolved
-          ? `${event.amount}を${event.sign > 0 ? "足す" : "引く"}とき、5？ 10？`
-          : `${event.amount}と、いくつで${event.base}？`;
+          ? `${event.amount}を${event.sign > 0 ? "足す" : "引く"}とき、5の補数？10の補数？どっちになる？`
+          : hosuComplementAction(event);
     $("#hosuPrompt").textContent = text;
     // 先に完成形を見せず、手元で操作して確認した時だけ画面の珠を更新する。
     const shown = hosu.complete ? q.answer
@@ -6247,6 +6267,10 @@ HTML = r"""
       return;
     }
     hosu.position += 1;
+    // 「できた」で、案内した補数操作に含まれる珠移動をまとめて確認する。
+    if (event?.kind === "question" && hosu.resolved) {
+      while (q.events[hosu.position]?.kind === "move") hosu.position += 1;
+    }
     if (hosu.position >= q.events.length) {
       hosu.complete = true;
       if (hosu.questionHint) hosu.hintQuestions += 1;
@@ -6261,7 +6285,7 @@ HTML = r"""
         $("#hosuGame").classList.contains("hidden")) return null;
     const event = hosu.questions[hosu.index]?.events[hosu.position];
     if (hosu.complete) return "next";
-    if (event?.kind === "question") return hosu.resolved ? null : hosu.baseResolved ? "answer" : "base";
+    if (event?.kind === "question") return hosu.resolved ? "done" : "base";
     return hosu.position < 0 || event?.kind === "move" ? "done" : null;
   }
 
@@ -6420,11 +6444,9 @@ HTML = r"""
   });
   $("#hosuHintBtn").addEventListener("click", () => {
     const event = hosu.questions[hosu.index]?.events[hosu.position];
-    if (event?.kind !== "question" || hosu.resolved) return;
+    if (event?.kind !== "question" || hosu.complete) return;
     hosu.questionHint = true;
-    const explanation = hosu.baseResolved
-      ? `${event.amount}と${event.answer}で${event.base}だよ。`
-      : `${event.base}の補数を使うよ。`;
+    const explanation = hosuComplementReason(event);
     $("#hosuExplanation").textContent = explanation;
     $("#hosuExplanation").classList.remove("hidden");
     speakHosu(explanation);
