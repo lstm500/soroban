@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V149-HOSU-GUIDANCE
+# VERSION: CLEAN-V150-HOSU-LISTEN-DURING-SPEECH
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V149-HOSU-GUIDANCE"
+APP_VERSION = "CLEAN-V150-HOSU-LISTEN-DURING-SPEECH"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -5830,7 +5830,7 @@ HTML = r"""
     correct: 0, hintQuestions: 0, mistakeQuestions: 0,
     questionWrong: false, questionHint: false, resolved: false,
     input: "", voice: false, recognition: null, token: 0,
-    speaking: false, speechTimer: null, complete: false, recorded: false,
+    speaking: false, speechTimer: null, recognitionTimer: null, complete: false, recorded: false,
     pools: new Map(), stats: {}
   };
   try { hosu.stats = JSON.parse(localStorage.getItem(HOSU_STORAGE_KEY) || "{}"); }
@@ -5984,6 +5984,7 @@ HTML = r"""
     hosu.token += 1;
     stopHosuRecognition();
     clearTimeout(hosu.speechTimer);
+    clearTimeout(hosu.recognitionTimer);
     hosu.speaking = false;
     if ($("#hosuView")?.classList.contains("show") && "speechSynthesis" in window) {
       cancelAppSpeech();
@@ -5992,6 +5993,7 @@ HTML = r"""
 
   function speakHosu(text, onDone = null) {
     stopHosuRecognition();
+    clearTimeout(hosu.recognitionTimer);
     const token = ++hosu.token;
     clearTimeout(hosu.speechTimer);
     hosu.speaking = true;
@@ -6002,7 +6004,7 @@ HTML = r"""
       clearTimeout(hosu.speechTimer);
       hosu.speaking = false;
       if (onDone) onDone();
-      // 解説を最後まで読んでから、回答・操作完了・次問の聞き取りへ進む。
+      // 読み上げ中も聞き取る。終了時にも必要なら聞き取りを再開する。
       if (token === hosu.token) queueHosuRecognition();
     };
     if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
@@ -6010,6 +6012,7 @@ HTML = r"""
     }
     cancelAppSpeech();
     hosu.speechTimer = setTimeout(done, Math.max(5000, text.length * 240));
+    queueHosuRecognition(0);
     waitForJapaneseVoice(1000).then((voice) => {
       if (token !== hosu.token || finished || !$("#hosuView").classList.contains("show")) return;
       const utterance = new SpeechSynthesisUtterance(text);
@@ -6138,9 +6141,10 @@ HTML = r"""
 
   function hosuComplementAction(event) {
     const unit = event.base * event.place;
+    const complement = event.answer * event.place;
     return event.sign > 0
-      ? `${event.amount}の${event.base}の補数を引いて${unit}を足しましょう。`
-      : `${unit}を引いて${event.amount}の${event.base}の補数を足しましょう。`;
+      ? `${event.amount}の${event.base}の補数は${event.answer}なので、${complement}を引いて${unit}を足しましょう。`
+      : `${event.amount}の${event.base}の補数は${event.answer}なので、${unit}を引いて${complement}を足しましょう。`;
   }
 
   function hosuComplementReason(event) {
@@ -6281,7 +6285,7 @@ HTML = r"""
   }
 
   function hosuVoicePhase() {
-    if (!hosu.voice || hosu.speaking || !$("#hosuView").classList.contains("show") ||
+    if (!hosu.voice || !$("#hosuView").classList.contains("show") ||
         $("#hosuGame").classList.contains("hidden")) return null;
     const event = hosu.questions[hosu.index]?.events[hosu.position];
     if (hosu.complete) return "next";
@@ -6291,9 +6295,9 @@ HTML = r"""
 
   function queueHosuRecognition(delay = 200) {
     if (!hosuVoicePhase()) return;
-    clearTimeout(hosu.speechTimer);
+    clearTimeout(hosu.recognitionTimer);
     const token = hosu.token;
-    hosu.speechTimer = setTimeout(() => {
+    hosu.recognitionTimer = setTimeout(() => {
       if (token === hosu.token) startHosuRecognition();
     }, delay);
   }
@@ -6324,6 +6328,7 @@ HTML = r"""
       const alternative = result[i];
       const transcript = String(alternative?.transcript || "")
         .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+        .replace(/[\s、。,.！!？?]/g, "")
         .replace(/(?:の)?(?:補数|ほすう)/g, "");
       const candidate = { transcript, confidence: alternative?.confidence };
       const selected = phase === "base"
@@ -6353,7 +6358,6 @@ HTML = r"""
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 8;
-    let startedAt = 0;
     let pendingAnswer = null;
     let pendingCommand = false;
     const current = () => token === hosu.token && hosu.recognition === recognition &&
@@ -6362,11 +6366,10 @@ HTML = r"""
       : phase === "done" ? "🎤 動かせたら「できた」と言ってね" : "🎤 進むときは「つぎ」と言ってね";
     recognition.onstart = () => {
       if (!current()) { stopHosuRecognition(); return; }
-      startedAt = performance.now();
       $("#hosuVoiceStatus").textContent = instruction;
     };
     recognition.onresult = (event) => {
-      if (!current() || pendingAnswer !== null || pendingCommand || performance.now() - startedAt < 350) return;
+      if (!current() || pendingAnswer !== null || pendingCommand) return;
       const result = event.results?.[event.resultIndex || 0] || event.results?.[0];
       if (phase === "answer" || phase === "base") {
         const selected = selectHosuNumericSpeech(result, phase);
