@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V147-HOSU-VOICE-RETRY
+# VERSION: CLEAN-V148-HOSU-VOICE-END
 
 import json
 
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V147-HOSU-VOICE-RETRY"
+APP_VERSION = "CLEAN-V148-HOSU-VOICE-END"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -6330,6 +6330,8 @@ HTML = r"""
     recognition.interimResults = false;
     recognition.maxAlternatives = 8;
     let startedAt = 0;
+    let pendingAnswer = null;
+    let pendingCommand = false;
     const current = () => token === hosu.token && hosu.recognition === recognition &&
       questionIndex === hosu.index && position === hosu.position && hosuVoicePhase() === phase;
     const instruction = phase === "base" ? "🎤 5か10で答えてね" : phase === "answer" ? "🎤 答えを言ってね"
@@ -6340,14 +6342,18 @@ HTML = r"""
       $("#hosuVoiceStatus").textContent = instruction;
     };
     recognition.onresult = (event) => {
-      if (!current() || performance.now() - startedAt < 350) return;
+      if (!current() || pendingAnswer !== null || pendingCommand || performance.now() - startedAt < 350) return;
       const result = event.results?.[event.resultIndex || 0] || event.results?.[0];
       if (phase === "answer" || phase === "base") {
         const selected = selectHosuNumericSpeech(result, phase);
-        if (selected) { submitHosuAnswer(selected.value); return; }
+        if (selected) {
+          pendingAnswer = selected.value;
+          // マイクの終了通知を待ってから、判定・読み上げへ進む。
+          // onresult内でabortすると、ブラウザの録音解放と次の認識が競合する。
+          return;
+        }
       } else if (hosuCommandMatches(result, phase)) {
-        stopHosuRecognition();
-        nextHosuStep();
+        pendingCommand = true;
         return;
       }
       $("#hosuVoiceStatus").textContent = instruction;
@@ -6361,9 +6367,15 @@ HTML = r"""
     recognition.onend = () => {
       if (hosu.recognition !== recognition) return;
       hosu.recognition = null;
-      // 無効な候補や一時的なエラーでも、この質問の聞き取りを続ける。
-      // 進行・中断時はtokenまたはrecognitionの照合で再開を防ぐ。
-      if (token === hosu.token) queueHosuRecognition(250);
+      if (token !== hosu.token || questionIndex !== hosu.index ||
+          position !== hosu.position || hosuVoicePhase() !== phase) return;
+      if (pendingAnswer !== null) {
+        submitHosuAnswer(pendingAnswer);
+      } else if (pendingCommand) {
+        nextHosuStep();
+      } else {
+        queueHosuRecognition(250);
+      }
     };
     try { recognition.start(); }
     catch (error) {
