@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V160-COLLECTION-MEDAL-IMAGES
+# VERSION: CLEAN-V161-SMALLER-MEDALS
 
 import json
 import hashlib
@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V160-COLLECTION-MEDAL-IMAGES"
+APP_VERSION = "CLEAN-V161-SMALLER-MEDALS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3904,7 +3904,7 @@ HTML = r"""
   .kuku-table-scroll::-webkit-scrollbar {width:12px;}
   .kuku-table-scroll::-webkit-scrollbar-track {background:#eee7db;border-radius:8px;}
   .kuku-table-scroll::-webkit-scrollbar-thumb {background:#8b7960;border-radius:8px;border:2px solid #eee7db;}
-  .collection-medal-image {display:block;width:88px;height:88px;max-width:100%;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(55,42,27,.2));}
+  .collection-medal-image {display:block;width:72px;height:72px;max-width:100%;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(55,42,27,.2));}
   .medal-slot.locked .collection-medal-image {filter:grayscale(1);opacity:.22;}
 </style>
 <div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
@@ -10119,8 +10119,8 @@ HTML = r"""
         };
         medal.src = sourceMap[tierKey] || sourceMap.gold;
         medal.alt = tier ? `${rank.name}・${tier.label}メダル` : `${rank.name}・未獲得`;
-        medal.width = 88;
-        medal.height = 88;
+        medal.width = 72;
+        medal.height = 72;
 
         const name = document.createElement("div");
         name.className = "medal-slot-name";
