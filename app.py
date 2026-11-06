@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V161-SMALLER-MEDALS
+# VERSION: CLEAN-V162-PERFORMANCE-LOGS
 
 import json
 import hashlib
@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V161-SMALLER-MEDALS"
+APP_VERSION = "CLEAN-V162-PERFORMANCE-LOGS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3906,6 +3906,7 @@ HTML = r"""
   .kuku-table-scroll::-webkit-scrollbar-thumb {background:#8b7960;border-radius:8px;border:2px solid #eee7db;}
   .collection-medal-image {display:block;width:72px;height:72px;max-width:100%;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(55,42,27,.2));}
   .medal-slot.locked .collection-medal-image {filter:grayscale(1);opacity:.22;}
+  .diagnostics-buttons {display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
 </style>
 <div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
   <label for="appVolumeSlider">🔊 音量</label>
@@ -4384,6 +4385,20 @@ HTML = r"""
       <div id="medalResetStatus" class="medal-reset-status"></div>
     </div>
   </div>
+
+  <section id="diagnosticsPanel" class="medal-collection" aria-labelledby="diagnosticsTitle">
+    <h3 id="diagnosticsTitle">動作ログ</h3>
+    <p class="setting-desc">UI・動作速度の改善用です。操作時間、画面更新の推定時間、音声・BGMの待ち時間、停止やエラーをこの端末に記録します。音声・認識内容・入力した答えは保存しません。</p>
+    <p class="setting-desc">直近最大2,000件を保存し、古いログから削除します。端末容量により件数が少なくなる場合があります。問題が起きた直後にJSONを出力してください。</p>
+    <p id="diagnosticsStatus" role="status"></p>
+    <div class="diagnostics-buttons">
+      <button type="button" id="diagnosticsToggle">記録を停止</button>
+      <button type="button" id="diagnosticsJson">JSONを出力</button>
+      <button type="button" id="diagnosticsCsv">CSVを出力</button>
+      <button type="button" id="diagnosticsClear">ログを消去</button>
+    </div>
+    <p class="setting-desc">表示完了時間は推定値です。サーバー起動・データベース処理は直接計測できません。ログの保存・停止は学習記録に影響しません。</p>
+  </section>
 
   <div class="settings-save-note">
     設定はこの端末のブラウザに自動保存されます。暗算モードは、音声回答をONにしておくと答えるときの画面操作も減らせます。
@@ -5023,6 +5038,177 @@ HTML = r"""
   const root = document.getElementById("soroban-app");
   const $ = (selector) => root.querySelector(selector);
 
+  const appDiagnostics = (() => {
+    const KEY = "soroban_diagnostics_v1", ENABLED = "soroban_diagnostics_enabled_v1";
+    const LIMIT = 2000, MAX_BYTES = 1200000;
+    const session = `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
+    let enabled = true, records = [], dropped = 0, sequence = 0, pending = null, recent = null;
+    let saveTimer = null, dirty = false, storageError = false, lastSnapshot = "", snapshotAt = 0;
+    const now = () => performance.now();
+    const clean = (text) => String(text || "").replace(/https?:\/\/[^\s)]+/g,"[URL]").slice(0,700);
+    try {
+      enabled = localStorage.getItem(ENABLED) !== "false";
+      const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+      if (Array.isArray(saved.records)) records = saved.records.slice(-LIMIT);
+      dropped = Number(saved.dropped) || 0;
+    } catch (error) { storageError = true; }
+    function state() {
+      const views = ["settingsView","kukuView","hosuView","anzanView","learningView","weaknessView","workspace","results"];
+      const view = views.find(id => $("#"+id)?.classList.contains("show")) ||
+        (!$("#menuView")?.classList.contains("hidden") ? "menuView" : "homeView");
+      const count = view === "kukuView" ? $("#kukuQCount") : view === "hosuView" ? $("#hosuProgress") : view === "anzanView" ? $("#anzanQCount") : view === "workspace" ? $("#qCount") : null;
+      return {view,question:count?.textContent?.match(/\d+\s*\/\s*\d+/)?.[0] || ""};
+    }
+    function status() {
+      const node = $("#diagnosticsStatus");
+      if (node) node.textContent = `${enabled ? "記録中" : "停止中"}｜${records.length}件${storageError ? "｜端末保存不可（出力は可能）" : ""}`;
+      const button = $("#diagnosticsToggle");
+      if (button) { button.textContent = enabled ? "記録を停止" : "記録を開始";button.setAttribute("aria-pressed",String(enabled)); }
+    }
+    function flush() {
+      clearTimeout(saveTimer);saveTimer = null;
+      if (!dirty) return;
+      try {
+        let data = JSON.stringify({version:1,dropped,records});
+        while (data.length * 2 > MAX_BYTES && records.length > 1) {
+          const count = Math.max(1,Math.ceil(records.length / 10));
+          records.splice(0,count);dropped += count;
+          data = JSON.stringify({version:1,dropped,records});
+        }
+        localStorage.setItem(KEY,data);storageError = false;dirty = false;
+      } catch (error) {storageError = true;}
+      status();
+    }
+    const association = () => pending?.id || (recent && now()-recent.start<10000 ? recent.id : null);
+    function add(type,data = {},id = association()) {
+      if (!enabled) return;
+      records.push({time:new Date().toISOString(),session,app_version:APP_VERSION,type,interaction_id:id,...data});
+      if (records.length > LIMIT) {dropped += records.length-LIMIT;records.splice(0,records.length-LIMIT);}
+      dirty = true;
+      if (!saveTimer) saveTimer = setTimeout(flush,2000);
+    }
+    function finish(reason) {
+      if (!pending) return;
+      const action = pending;pending = null;
+      clearTimeout(action.quiet);clearTimeout(action.timeout);
+      add("interaction_complete",{button:action.button,from:action.from,...state(),elapsed_ms:+(now()-action.start).toFixed(2),reason,
+        measurement:"DOM quiet 150ms + two animation frames; estimated, not proof of visual completion"},action.id);
+    }
+    function settled() {
+      if (!pending) return;
+      const action = pending;
+      clearTimeout(action.quiet);
+      action.quiet = setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (pending === action) finish("dom_settled_estimate");
+      })),150);
+    }
+    function begin(button) {
+      if (!enabled) return;
+      finish("superseded");
+      const action = {id:`${session}-${++sequence}`,button,from:state().view,start:now()};pending = action;recent = action;
+      add("interaction_start",{button,...state()});
+      queueMicrotask(() => {
+        add("handlers_returned",{elapsed_ms:+(now()-action.start).toFixed(2)},action.id);
+      });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (pending === action) add("first_frame_estimate",{elapsed_ms:+(now()-action.start).toFixed(2),...state()},action.id);
+      }));
+      action.timeout = setTimeout(() => {if (pending === action) finish("timeout_10s");},10000);
+      settled();
+    }
+    function span(name,details = {}) {
+      const id = association(), start = now(), on = enabled;
+      if (on) add("phase_start",{name,...details},id);
+      let done = false;
+      return (outcome="ok") => {
+        if (done) return;done = true;
+        if (on) add("phase_end",{name,...details,outcome,duration_ms:+(now()-start).toFixed(2)},id);
+      };
+    }
+    function measure(name,fn) {
+      if (!enabled) return fn();
+      const end=span(name);
+      try {const result=fn();end();return result;} catch(error){end("error");throw error;}
+    }
+    function summary() {
+      const groups = {};
+      for (const record of records) if (record.type === "interaction_complete" && record.reason === "dom_settled_estimate") {
+        const key = `${record.from} / ${record.button}`;(groups[key] ||= []).push(record.elapsed_ms);
+      }
+      return Object.entries(groups).map(([action,times]) => {
+        times.sort((a,b)=>a-b);
+        return {action,count:times.length,average_ms:+(times.reduce((a,b)=>a+b,0)/times.length).toFixed(2),p95_ms:times[Math.ceil(times.length*.95)-1],max_ms:times.at(-1)};
+      }).sort((a,b)=>b.p95_ms-a.p95_ms);
+    }
+    function download(format) {
+      flush();
+      const environment = {user_agent:navigator.userAgent,language:navigator.language,width:window.innerWidth,height:window.innerHeight,pixel_ratio:window.devicePixelRatio,
+        hardware_concurrency:navigator.hardwareConcurrency,device_memory_gb:navigator.deviceMemory,visibility:document.visibilityState};
+      const report = {schema_version:1,exported_at:new Date().toISOString(),app_version:APP_VERSION,environment,dropped_records:dropped,
+        notes:["Times are milliseconds. Visual completion is estimated from DOM quiet and animation frames.","Background tabs, speech and network waits must be assessed separately.","No microphone audio, transcripts, typed answers, or resource URLs are recorded.","Browser diagnostics start after the embedded script runs; Python startup and database latency are not directly measured."],summary:summary(),records};
+      const csvCell = value => '"'+String(value ?? "").replace(/"/g,'""')+'"';
+      const keys=["time","session","app_version","interaction_id","type","button","from","view","question","name","elapsed_ms","duration_ms","reason","outcome","details"];
+      const body = format === "csv" ? "\uFEFF" + [keys.join(","),...records.map(r=>keys.map(k=>csvCell(k==="details"?JSON.stringify(r):r[k])).join(","))].join("\r\n") : JSON.stringify(report,null,2);
+      const url=URL.createObjectURL(new Blob([body],{type:format === "csv"?"text/csv;charset=utf-8":"application/json"}));
+      const link=document.createElement("a");link.href=url;link.download=`soroban_diagnostics_${new Date().toISOString().replace(/[:.]/g,"-")}.${format}`;
+      document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }
+    document.addEventListener("click",event=>{
+      const button=event.target.closest?.("button,summary");
+      if (!button || !root.contains(button) || button.closest("#diagnosticsPanel")) return;
+      // 数字の回答は保存せず、どの入力手段を使ったかだけ記録する。
+      const keypad=button.closest(".keypad,.kuku-keypad,.anzan-keypad,.hosu-digits,.hint-number-grid");
+      begin(keypad?`${keypad.id || keypad.className}:key`:clean(button.id || button.textContent.trim()).slice(0,100));
+    },true);
+    document.addEventListener("submit",event=>{if(root.contains(event.target)&&!pending)begin("form_submit");},true);
+    if (typeof MutationObserver !== "undefined") new MutationObserver(changes=>{
+      if (!enabled || !changes.some(change=>!$("#diagnosticsPanel").contains(change.target))) return;
+      if (pending) settled();
+      if (now()-snapshotAt<250) return;snapshotAt=now();
+      const current=state(),signature=JSON.stringify(current);
+      if (signature!==lastSnapshot){lastSnapshot=signature;add("screen_state",{...current,action_elapsed_ms:recent?+(now()-recent.start).toFixed(2):null});}
+    }).observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["class"]});
+    if (typeof PerformanceObserver !== "undefined") for (const type of ["longtask","resource"]) {
+      try {new PerformanceObserver(list=>{
+        for (const entry of list.getEntries()) {
+          if (type === "resource" && entry.duration<100) continue;
+          add(type,{duration_ms:+entry.duration.toFixed(2),start_ms:+entry.startTime.toFixed(2),
+            ...(type==="resource"?{initiator:entry.initiatorType,transfer_bytes:entry.transferSize}:{}),...state()});
+        }
+      }).observe({type,buffered:true});} catch(error) {}
+    }
+    let tick=now();
+    setInterval(()=>{const current=now(),lag=current-tick-1000;tick=current;
+      if (enabled && document.visibilityState!=="hidden" && lag>100) add("event_loop_delay",{duration_ms:+lag.toFixed(2),...state()});
+    },1000);
+    window.addEventListener("error",event=>add("error",{message:clean(event.message),line:event.lineno,column:event.colno,...state()}));
+    window.addEventListener("unhandledrejection",event=>add("unhandled_rejection",{message:clean(event.reason?.message || event.reason),...state()}));
+    document.addEventListener("visibilitychange",()=>{add("visibility",{state:document.visibilityState});if(document.visibilityState==="hidden")flush();});
+    window.addEventListener("pagehide",flush);
+    $("#diagnosticsToggle").addEventListener("click",()=>{
+      if (enabled) finish("recording_stopped");enabled=!enabled;
+      try{localStorage.setItem(ENABLED,String(enabled));}catch(error){storageError=true;}
+      add("recording_started",state());flush();status();
+    });
+    $("#diagnosticsJson").addEventListener("click",()=>download("json"));
+    $("#diagnosticsCsv").addEventListener("click",()=>download("csv"));
+    $("#diagnosticsClear").addEventListener("click",()=>{
+      if(pending){clearTimeout(pending.quiet);clearTimeout(pending.timeout);pending=null;}
+      records=[];dropped=0;dirty=true;flush();status();
+    });
+    add("session_start",{...state(),time_origin:performance.timeOrigin || null});status();
+    function observeRecognition(recognition) {
+      if (!recognition.addEventListener) return;
+      let end = null;
+      recognition.addEventListener("start",()=>{end=span("microphone_session");add("microphone_started",state());});
+      recognition.addEventListener("result",()=>add("microphone_result_received",state()));
+      recognition.addEventListener("error",event=>{add("microphone_error",{code:event.error,...state()});if(end)end(event.error);});
+      recognition.addEventListener("end",()=>{if(end)end();});
+    }
+    return {span,measure,flush,observeRecognition};
+  })();
+
+
   const APP_VOLUME_STORAGE_KEY = "soroban_master_volume_v1";
   let appMasterVolume = 1;
   try {
@@ -5054,19 +5240,31 @@ HTML = r"""
     appSpeechQueue.add(utterance);
     const onEnd = utterance.onend;
     const onError = utterance.onerror;
+    const onStart = utterance.onstart;
+    const queued = appDiagnostics.span("speech_queue", {characters:utterance.text?.length || 0});
+    let playback = null;
+    const finish = outcome => {queued(outcome);if(playback)playback(outcome);};
+    utterance.__diagnosticsEnd = finish;
+    utterance.onstart = function(event) {
+      queued();playback = appDiagnostics.span("speech_playback");
+      if (typeof onStart === "function") onStart.call(this,event);
+    };
     utterance.onend = function(event) {
       appSpeechQueue.delete(utterance);
+      finish("ok");
       if (typeof onEnd === "function") onEnd.call(this, event);
     };
     utterance.onerror = function(event) {
       appSpeechQueue.delete(utterance);
+      finish(event?.error || "error");
       if (typeof onError === "function") onError.call(this, event);
     };
     try { window.speechSynthesis.speak(utterance); }
-    catch (error) { appSpeechQueue.delete(utterance); throw error; }
+    catch (error) { appSpeechQueue.delete(utterance); finish("error"); throw error; }
   }
 
   function cancelAppSpeech() {
+    appSpeechQueue.forEach(utterance => utterance.__diagnosticsEnd?.("cancelled"));
     appSpeechQueue.clear();
     window.speechSynthesis.cancel();
   }
@@ -5114,7 +5312,10 @@ HTML = r"""
 
   // Navigation is deliberately dependency-free and installed before all other app logic.
   // It changes only view classes using raw DOM queries, so even a later JS error cannot trap the user.
-  function hardSetView(target) {
+  function hardSetView(...args) {
+    return appDiagnostics.measure("hardSetView", () => hardSetViewMeasured.apply(this,args));
+  }
+  function hardSetViewMeasured(target) {
     try { stopKukuTableReading(); } catch (error) {}
     try { stopHosuSession(); } catch (error) {}
     root.querySelector("#hosuView")?.classList.remove("show");
@@ -6003,7 +6204,10 @@ HTML = r"""
     return pool;
   }
 
-  function buildHosuQuestions(op, level) {
+  function buildHosuQuestions(...args) {
+    return appDiagnostics.measure("buildHosuQuestions", () => buildHosuQuestionsMeasured.apply(this,args));
+  }
+  function buildHosuQuestionsMeasured(op, level) {
     const pool = shuffleKuku(hosuPool(op, level));
     const selected = [];
     const add = (list, max) => {
@@ -6129,7 +6333,10 @@ HTML = r"""
     renderHosuMenu();
   }
 
-  function startHosuMode(op, level) {
+  function startHosuMode(...args) {
+    return appDiagnostics.measure("startHosuMode", () => startHosuModeMeasured.apply(this,args));
+  }
+  function startHosuModeMeasured(op, level) {
     stopHosuSession();
     hosu.op = op;
     hosu.level = level;
@@ -6412,6 +6619,7 @@ HTML = r"""
     const questionIndex = hosu.index;
     const position = hosu.position;
     const recognition = new Recognition();
+    appDiagnostics.observeRecognition(recognition);
     hosu.recognition = recognition;
     // チャレンジ本体と同じ認識設定・残響ガード・判定待ち時間を使う。
     recognition.lang = "ja-JP";
@@ -6922,6 +7130,9 @@ HTML = r"""
         );
       }
 
+      const downloadDone = appDiagnostics.span("bgm_download", {track:name});
+      let decoded;
+      try {
       const response = await fetch(
         url,
         {
@@ -6940,11 +7151,17 @@ HTML = r"""
       const arrayBuffer =
         await response.arrayBuffer();
 
-      const decoded =
+      downloadDone();
+      const decodeDone = appDiagnostics.span("bgm_decode", {track:name});
+      try {
+      decoded =
         await this.ctx.decodeAudioData(
           arrayBuffer.slice(0)
         );
 
+      decodeDone();
+      } catch(error) {decodeDone("error");throw error;}
+      } catch(error) {downloadDone("error");throw error;}
       this.buffers.set(name, decoded);
       return decoded;
     }
@@ -10086,7 +10303,10 @@ HTML = r"""
     };
   }
 
-  function renderMedalCollection() {
+  function renderMedalCollection(...args) {
+    return appDiagnostics.measure("renderMedalCollection", () => renderMedalCollectionMeasured.apply(this,args));
+  }
+  function renderMedalCollectionMeasured() {
     if (!medalCollectionGrid) return;
 
     medalCollectionGrid.innerHTML = "";
@@ -13005,6 +13225,7 @@ HTML = r"""
 
     const recognition =
       new Recognition();
+    appDiagnostics.observeRecognition(recognition);
 
     hintQuestionRecognition =
       recognition;
@@ -14978,6 +15199,7 @@ HTML = r"""
 
     const recognition =
       new Recognition();
+    appDiagnostics.observeRecognition(recognition);
 
     recognition.lang = "ja-JP";
     recognition.continuous = false;
@@ -17522,6 +17744,7 @@ HTML = r"""
 
     const recognition =
       new Recognition();
+    appDiagnostics.observeRecognition(recognition);
 
     kukuRecognition =
       recognition;
@@ -17750,7 +17973,10 @@ HTML = r"""
     verify();
   }
 
-  function startKukuMode(level) {
+  function startKukuMode(...args) {
+    return appDiagnostics.measure("startKukuMode", () => startKukuModeMeasured.apply(this,args));
+  }
+  function startKukuModeMeasured(level) {
     stopKukuSession();
     kukuLevel = Math.max(1, Math.min(5, Number(level) || 1));
     kukuQuestions = buildKukuQuestions(kukuLevel); kukuQuestionIndex = 0; kukuCorrect = 0; kukuStreak = 0; kukuAnswerBuffer = ""; kukuVoiceEnabled = preferredVoiceAnswerEnabled; kukuLocked = true;
@@ -17766,7 +17992,10 @@ HTML = r"""
     runKukuQuestion();
   }
 
-  function runKukuQuestion() {
+  function runKukuQuestion(...args) {
+    return appDiagnostics.measure("runKukuQuestion", () => runKukuQuestionMeasured.apply(this,args));
+  }
+  function runKukuQuestionMeasured() {
     stopKukuRecognition();
     if (kukuQuestionIndex >= kukuQuestions.length) { finishKukuMode(false); return; }
     const token = ++kukuRunToken; const question = kukuQuestions[kukuQuestionIndex];
@@ -17953,7 +18182,10 @@ HTML = r"""
     );
   }
 
-  function showSettings() {
+  function showSettings(...args) {
+    return appDiagnostics.measure("showSettings", () => showSettingsMeasured.apply(this,args));
+  }
+  function showSettingsMeasured() {
     stopTimer();
     stopBgm();
     hideSorobanHint();
@@ -18271,6 +18503,7 @@ HTML = r"""
 
     const recognition =
       new Recognition();
+    appDiagnostics.observeRecognition(recognition);
 
     anzanRecognition =
       recognition;
@@ -19233,7 +19466,10 @@ HTML = r"""
     );
   }
 
-  function requestStartMode(
+  function requestStartMode(...args) {
+    return appDiagnostics.measure("requestStartMode", () => requestStartModeMeasured.apply(this,args));
+  }
+  function requestStartModeMeasured(
     mode,
     sourceButton = null
   ) {
@@ -20593,7 +20829,10 @@ HTML = r"""
     }
   }
 
-  function renderQuestion(voiceReady = false) {
+  function renderQuestion(...args) {
+    return appDiagnostics.measure("renderQuestion", () => renderQuestionMeasured.apply(this,args));
+  }
+  function renderQuestionMeasured(voiceReady = false) {
     hideSorobanHint();
 
     // 音声モードでは、
