@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V158-KUKU-SCROLL-CHECK
+# VERSION: CLEAN-V159-SETTINGS-FRAME-HEIGHT
 
 import json
 import hashlib
@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V158-KUKU-SCROLL-CHECK"
+APP_VERSION = "CLEAN-V159-SETTINGS-FRAME-HEIGHT"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -6520,7 +6520,35 @@ HTML = r"""
     sendSharedStamp();
   });
   window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');
-  window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:1600},'*');
+  let settingsFrameHeight = null;
+  let settingsHeightScheduled = false;
+  function syncSettingsFrameHeight() {
+    settingsHeightScheduled = false;
+    const settings = $("#settingsView");
+    const visible = settings.classList.contains("show");
+    const bottom = visible ? settings.getBoundingClientRect().bottom + (window.scrollY || 0) : 0;
+    const height = Math.max(1600, Math.ceil(bottom + 32));
+    if (height === settingsFrameHeight) return;
+    settingsFrameHeight = height;
+    window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height},'*');
+  }
+  function scheduleSettingsFrameHeight() {
+    if (settingsHeightScheduled) return;
+    settingsHeightScheduled = true;
+    requestAnimationFrame(syncSettingsFrameHeight);
+  }
+  // 設定の表示切替、メダルの描画、獲得条件の展開、画面幅変更を追跡する。
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(scheduleSettingsFrameHeight).observe($("#settingsView"));
+  }
+  if (typeof MutationObserver !== "undefined") {
+    new MutationObserver(scheduleSettingsFrameHeight).observe($("#settingsView"), {
+      attributes:true,childList:true,subtree:true,characterData:true
+    });
+  }
+  $("#settingsView").addEventListener("toggle", scheduleSettingsFrameHeight, true);
+  window.addEventListener("resize", scheduleSettingsFrameHeight);
+  syncSettingsFrameHeight();
 
   function finishHosuMode() {
     stopHosuSession();
