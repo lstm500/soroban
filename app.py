@@ -1,6 +1,9 @@
-# VERSION: CLEAN-V152-HOSU-NARRATION-GUARD
+# VERSION: CLEAN-V155-KUKU-BGM-FRAME
 
 import json
+import hashlib
+import tempfile
+from pathlib import Path
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -13,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V152-HOSU-NARRATION-GUARD"
+APP_VERSION = "CLEAN-V155-KUKU-BGM-FRAME"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -1783,7 +1786,9 @@ HTML = r"""
   }
 
   .question-card.streak6,
-  .question-card.streak10 {
+  .kuku-game-card.streak6,
+  .question-card.streak10 ,
+  .kuku-game-card.streak10 {
     border: 7px solid transparent !important;
     background:
       linear-gradient(#fffdf9, #fffdf9) padding-box,
@@ -1802,22 +1807,26 @@ HTML = r"""
     animation: rainbowBorder 2.2s linear infinite;
   }
 
-  .question-card.streak6 {
+  .question-card.streak6 ,
+  .kuku-game-card.streak6 {
     box-shadow: none !important;
   }
 
-  .question-card.streak10 {
+  .question-card.streak10 ,
+  .kuku-game-card.streak10 {
     box-shadow: none;
   }
 
   /* 10問連続正解以上：
      レインボー枠は常時、発光は新しい問題が出た瞬間だけ。 */
-  .question-card.streak10.question-flash {
+  .question-card.streak10.question-flash ,
+  .kuku-game-card.streak10.question-flash {
     animation:
       rainbowBorder 2.2s linear infinite;
   }
 
-  .question-card.streak10.question-flash::before {
+  .question-card.streak10.question-flash::before ,
+  .kuku-game-card.streak10.question-flash::before {
     content: "";
     position: absolute;
     inset: -14px;
@@ -3865,6 +3874,20 @@ HTML = r"""
   .hosu-base-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .hosu-base-choices button { background: #eef4e8; min-height: 52px; }
   .hosu-intro { margin: 10px 0; font-size: 14px; line-height: 1.7; }
+  .kuku-table-head {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .kuku-table-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:16px 0;}
+  .kuku-table-card {background:white;border:1px solid #ddd3c1;border-radius:16px;padding:14px;}
+  .kuku-table-card h3 {margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .kuku-table-card button {font-size:14px;padding:8px 12px;}
+  .kuku-table-card table {width:100%;border-collapse:collapse;}
+  .kuku-table-card td {padding:7px 4px;border-bottom:1px solid #eee8dd;}
+  .kuku-table-card td:first-child {white-space:nowrap;font-weight:700;}
+  .kuku-table-card td:last-child {font-size:13px;}
+  .kuku-table-card tr.reading {background:#fff0b8;}
+  #kukuTableStatus {min-height:1.5em;}
+  @media(max-width:760px) {.kuku-table-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:520px) {.kuku-table-grid {grid-template-columns:1fr;}}
+  .kuku-game-card {position:relative;transition:border-color .25s ease,border-width .25s ease,box-shadow .25s ease; }
 </style>
 <div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
   <label for="appVolumeSlider">🔊 音量</label>
@@ -4013,7 +4036,15 @@ HTML = r"""
     <button type="button" id="kukuTopBtn" data-app-nav="home" class="top-back-btn">← TOPへ</button>
     <div class="subview-topbar-title">九九名人</div>
   </div>
+  <section id="kukuTableView" class="hidden" aria-labelledby="kukuTableTitle">
+    <div class="kuku-table-head"><h2 id="kukuTableTitle">九九一覧表</h2><button type="button" id="kukuTableBackBtn">← レベル選択へ</button></div>
+    <p>聞きたい段の「読み上げ」を押してね。</p>
+    <button type="button" id="kukuTableStopBtn" disabled>読み上げを停止</button>
+    <p id="kukuTableStatus" role="status" aria-live="polite"></p>
+    <div id="kukuTableGrid" class="kuku-table-grid"></div>
+  </section>
   <div id="kukuMenuView">
+    <button type="button" id="kukuTableOpenBtn" class="primary">九九一覧表</button>
     <div class="kuku-hero">
       <h2>九九を見た瞬間に答える</h2>
       <p>問題は「○掛ける○は？」と読み上げます。音声回答ONなら声で、OFFならスマホの数字ボタンで答えます。</p>
@@ -5064,6 +5095,7 @@ HTML = r"""
   // Navigation is deliberately dependency-free and installed before all other app logic.
   // It changes only view classes using raw DOM queries, so even a later JS error cannot trap the user.
   function hardSetView(target) {
+    try { stopKukuTableReading(); } catch (error) {}
     try { stopHosuSession(); } catch (error) {}
     root.querySelector("#hosuView")?.classList.remove("show");
     const byId = (id) => root.querySelector(`#${id}`);
@@ -6435,10 +6467,48 @@ HTML = r"""
     catch (error) { retry(500); }
   }
 
+  // Shared stamp outbox: records survive refresh and send only to trusted Streamlit Python.
+  const SHARED_STAMP_KEY = 'chokomana_soroban_stamps_v1';
+  let sharedStamps = [];
+  try {const saved=JSON.parse(localStorage.getItem(SHARED_STAMP_KEY)||'[]');if(Array.isArray(saved))sharedStamps=saved.slice(0,250)}catch(e){}
+  let stampReady=false,stampSending=null,stampRetryBlocked=false;
+  function persistSharedStamps(){try{localStorage.setItem(SHARED_STAMP_KEY,JSON.stringify(sharedStamps))}catch(e){}}
+  function sendSharedStamp(){
+    if(!stampReady||stampSending||stampRetryBlocked||!sharedStamps.length)return;
+    stampSending=sharedStamps[0].attempt_id;
+    window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',value:{stamp:sharedStamps[0]},dataType:'json'},'*');
+  }
+  function queueSharedStamp(category_key,category_label,char,reading,correct,total,grade){
+    if(!Number.isInteger(correct)||!Number.isInteger(total)||total<1||correct<0||correct>total)return;
+    if(!['gold','silver','bronze','white'].includes(grade))return;
+    const item={attempt_id:crypto.randomUUID(),category_key,category_label,stamp_char:char,reading,
+      correct_count:correct,total_count:total,grade,finished_at:new Date().toISOString()};
+    sharedStamps.push(item);stampRetryBlocked=false;persistSharedStamps();sendSharedStamp();
+  }
+  function gradeSharedScore(correct,total){
+    return correct===total?'gold':correct/total>=.8?'silver':correct/total>=.6?'bronze':'white';
+  }
+  window.addEventListener('message',event=>{
+    if(event.source!==window.parent||event.data?.type!=='streamlit:render')return;
+    stampReady=true;
+    const result=event.data.args?.stamp_result||{};
+    if(result.ok&&result.attempt_id){
+      sharedStamps=sharedStamps.filter(x=>x.attempt_id!==result.attempt_id);
+      persistSharedStamps();stampSending=null;
+    }else if(result.attempt_id&&stampSending===result.attempt_id){
+      // Retain on network/permission failures, then retry after a future interaction.
+      stampSending=null;stampRetryBlocked=true;
+    }
+    sendSharedStamp();
+  });
+  window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');
+  window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:1600},'*');
+
   function finishHosuMode() {
     stopHosuSession();
     const key = `${hosu.op}|${hosu.level}`;
     if (!hosu.recorded) {
+      queueSharedStamp('hosu','補数名人','珠','しゅ',hosu.correct,12,gradeSharedScore(hosu.correct,12));
       const previous = hosu.stats[key] || {};
       hosu.stats[key] = {
         sessions: (Number(previous.sessions) || 0) + 1,
@@ -14003,12 +14073,6 @@ HTML = r"""
   }
 
   function getTargetBgmVolume() {
-    // 九九チャレンジでは、マイク待機中からBGMを完全に止める。
-    // 発話検知前のBGMが音声認識へ回り込むのを防ぐ。
-    if (kukuListening) {
-      return BGM_VOLUME_LISTENING;
-    }
-
     if (
       voiceSpeechDetected ||
       anzanSpeechDetected ||
@@ -14019,7 +14083,7 @@ HTML = r"""
     }
 
     if (kukuPromptSpeaking) {
-      return BGM_VOLUME_KUKU_PROMPT;
+      return BGM_VOLUME_APP_SPEECH;
     }
 
     if (
@@ -14030,14 +14094,14 @@ HTML = r"""
       return BGM_VOLUME_APP_SPEECH;
     }
 
-    // 九九画面で考えている間も、通常チャレンジよりBGMを小さくする。
+    // 九九名人もチャレンジと同じ通常音量を使う。
     if (
       kukuView &&
       kukuView.classList.contains("show") &&
       kukuGameView &&
       !kukuGameView.classList.contains("hidden")
     ) {
-      return BGM_VOLUME_KUKU_NORMAL;
+      return BGM_VOLUME_NORMAL;
     }
 
     return BGM_VOLUME_NORMAL;
@@ -14057,10 +14121,10 @@ HTML = r"""
     bgmKeepAliveTimer =
       setInterval(() => {
         if (
-          !bgmOn ||
-          !voiceAnswerEnabled ||
-          !workspace.classList.contains("show") ||
-          results.classList.contains("show")
+          !bgmOn || !(
+            (voiceAnswerEnabled && workspace.classList.contains("show") && !results.classList.contains("show")) ||
+            (kukuVoiceEnabled && kukuView.classList.contains("show") && !kukuGameView.classList.contains("hidden"))
+          )
         ) {
           return;
         }
@@ -15643,7 +15707,7 @@ HTML = r"""
     });
   }
 
-  function setRainbowForStreak(streak) {
+  function setRainbowForStreak(streak, card = questionCard) {
     const vars = [
       "--rb1", "--rb2", "--rb3", "--rb4",
       "--rb5", "--rb6", "--rb7", "--rb8"
@@ -15651,7 +15715,7 @@ HTML = r"""
 
     if (streak < 6) {
       vars.forEach((name) =>
-        questionCard.style.removeProperty(name)
+        card.style.removeProperty(name)
       );
       return;
     }
@@ -15670,7 +15734,7 @@ HTML = r"""
         const hue =
           (baseHue + offset) % 360;
 
-        questionCard.style.setProperty(
+        card.style.setProperty(
           `--rb${index + 1}`,
           `hsl(${hue} 92% 58%)`
         );
@@ -15678,52 +15742,52 @@ HTML = r"""
     );
   }
 
-  function updateStreakFrame(streak) {
-    questionCard.classList.remove(
+  function updateStreakFrame(streak, card = questionCard) {
+    card.classList.remove(
       "streak5",
       "streak6",
       "streak10",
       "question-flash"
     );
 
-    questionCard.style.borderColor = "";
-    questionCard.style.borderWidth = "";
-    questionCard.style.boxShadow = "";
+    card.style.borderColor = "";
+    card.style.borderWidth = "";
+    card.style.boxShadow = "";
 
-    setRainbowForStreak(streak);
+    setRainbowForStreak(streak, card);
 
     if (streak >= 10) {
-      questionCard.classList.add(
+      card.classList.add(
         "streak10"
       );
       return;
     }
 
     if (streak >= 6) {
-      questionCard.classList.add(
+      card.classList.add(
         "streak6"
       );
     }
   }
 
-  function flashQuestionFrameIfNeeded() {
-    questionCard.classList.remove(
+  function flashQuestionFrameIfNeeded(streak = correctStreak, card = questionCard) {
+    card.classList.remove(
       "question-flash"
     );
 
-    if (correctStreak < 10) {
+    if (streak < 10) {
       return;
     }
 
     // reflowして、毎問きちんと発光アニメーションを再生。
-    void questionCard.offsetWidth;
+    void card.offsetWidth;
 
-    questionCard.classList.add(
+    card.classList.add(
       "question-flash"
     );
 
     setTimeout(() => {
-      questionCard.classList.remove(
+      card.classList.remove(
         "question-flash"
       );
     }, 1200);
@@ -17059,6 +17123,8 @@ HTML = r"""
   }
 
   function stopKukuSession() {
+    stopKukuTableReading();
+    if (kukuView.classList.contains("show") && !kukuGameView.classList.contains("hidden")) stopBgm();
     kukuRunToken += 1;
     stopKukuRecognition();
     stopKukuTimer();
@@ -17071,6 +17137,7 @@ HTML = r"""
     stopTimer(); stopBgm(); hideSorobanHint(); stopLearningAnimation(); stopAnzanSession(); stopKukuSession(); setVoiceAnswerEnabled(false);
     homeView.classList.add("hidden"); menuView.classList.add("hidden"); learningView.classList.remove("show"); anzanView.classList.remove("show"); settingsView.classList.remove("show"); weaknessView.classList.remove("show"); workspace.classList.remove("show"); results.classList.remove("show");
     kukuView.classList.add("show"); kukuMenuView.classList.remove("hidden"); kukuGameView.classList.add("hidden"); kukuResultView.classList.add("hidden");
+    $("#kukuTableView").classList.add("hidden");
     renderKukuMedalSummaries();
   }
 
@@ -17264,6 +17331,104 @@ HTML = r"""
 
     return `${stem}${answerReading}。`;
   }
+
+  let kukuTableToken = 0;
+  let kukuTableTimer = null;
+  let kukuTablePlaying = false;
+
+  function stopKukuTableReading() {
+    kukuTableToken += 1;
+    clearTimeout(kukuTableTimer);
+    if (kukuTablePlaying) cancelAppSpeech();
+    kukuTablePlaying = false;
+    $("#kukuTableStopBtn").disabled = true;
+    root.querySelectorAll("#kukuTableGrid .reading").forEach((row) => row.classList.remove("reading"));
+    $("#kukuTableStatus").textContent = "";
+  }
+
+  function buildKukuTable() {
+    const grid = $("#kukuTableGrid");
+    if (grid.children.length) return;
+    for (let a = 1; a <= 9; a += 1) {
+      const card = document.createElement("article");
+      card.className = "kuku-table-card";
+      const heading = document.createElement("h3");
+      heading.textContent = `${a}の段`;
+      const play = document.createElement("button");
+      play.type = "button";
+      play.textContent = "▶ 読み上げ";
+      play.setAttribute("aria-label", `${a}の段を読み上げ`);
+      play.addEventListener("click", () => readKukuTableRow(a));
+      heading.appendChild(play);card.appendChild(heading);
+      const table = document.createElement("table");
+      table.setAttribute("aria-label", `${a}の段`);
+      const body = document.createElement("tbody");
+      for (let b = 1; b <= 9; b += 1) {
+        const row = document.createElement("tr");
+        row.dataset.kukuTableCell = `${a}-${b}`;
+        const equation = document.createElement("td");
+        equation.textContent = `${a} × ${b} = ${a * b}`;
+        const reading = document.createElement("td");
+        reading.textContent = getKukuSpokenAnswer({a,b,answer:a*b}).replace(/。$/, "");
+        row.append(equation,reading);body.appendChild(row);
+      }
+      table.appendChild(body);card.appendChild(table);grid.appendChild(card);
+    }
+  }
+
+  function showKukuTable() {
+    showKukuHome();
+    kukuMenuView.classList.add("hidden");
+    $("#kukuTableView").classList.remove("hidden");
+    buildKukuTable();
+  }
+
+  function readKukuTableRow(a) {
+    stopKukuTableReading();
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+      $("#kukuTableStatus").textContent = "このブラウザでは読み上げを使えません。";
+      return;
+    }
+    kukuTablePlaying = true;
+    $("#kukuTableStopBtn").disabled = false;
+    const token = kukuTableToken;
+    const active = () => token === kukuTableToken && kukuTablePlaying &&
+      kukuView.classList.contains("show") && !$("#kukuTableView").classList.contains("hidden");
+    const read = (b,voice) => {
+      if (!active()) return;
+      root.querySelectorAll("#kukuTableGrid .reading").forEach((row) => row.classList.remove("reading"));
+      if (b > 9) {
+        stopKukuTableReading();
+        $("#kukuTableStatus").textContent = `${a}の段を読み終わりました。`;
+        return;
+      }
+      $(`[data-kuku-table-cell="${a}-${b}"]`).classList.add("reading");
+      $("#kukuTableStatus").textContent = `${a}の段：${a} × ${b} = ${a*b}`;
+      const utterance = new SpeechSynthesisUtterance(getKukuSpokenAnswer({a,b,answer:a*b}));
+      utterance.lang = "ja-JP";utterance.rate = 1.0;
+      if (voice) utterance.voice = voice;
+      let ended = false;
+      utterance.onend = () => {
+        if (ended || !active()) return;
+        ended = true;clearTimeout(kukuTableTimer);
+        kukuTableTimer = setTimeout(() => read(b+1,voice),250);
+      };
+      const failed = () => {
+        if (!active()) return;
+        stopKukuTableReading();
+        $("#kukuTableStatus").textContent = "読み上げが止まりました。もう一度、読み上げを押してね。";
+      };
+      utterance.onerror = failed;
+      kukuTableTimer = setTimeout(failed,12000);
+      try { window.speechSynthesis.resume();speakWithAppVolume(utterance); }
+      catch (error) { failed(); }
+    };
+    waitForJapaneseVoice(1000).then((voice) => read(1,voice)).catch(() => read(1,null));
+  }
+
+  $("#kukuTableOpenBtn").addEventListener("click", showKukuTable);
+  $("#kukuTableBackBtn").addEventListener("click", showKukuHome);
+  $("#kukuTableStopBtn").addEventListener("click", stopKukuTableReading);
 
   function speakKukuQuestion(question, onDone) {
     stopKukuRecognition();
@@ -17469,6 +17634,17 @@ HTML = r"""
     }
   }
 
+  function kukuChallengeStreak() {
+    // 通常チャレンジ12問に対する連続正解率へ換算する。
+    return Math.floor(kukuStreak * 12 / Math.max(1, kukuQuestions.length));
+  }
+
+  function updateKukuChallengeEffects(force = false) {
+    const streak = kukuChallengeStreak();
+    updateStreakFrame(streak, $("#kukuGameView .kuku-game-card"));
+    playBgmForStreak(streak, force);
+  }
+
   function startKukuMode(level) {
     stopKukuSession();
     kukuLevel = Math.max(1, Math.min(5, Number(level) || 1));
@@ -17477,8 +17653,9 @@ HTML = r"""
     updateKukuButtons();
     updateKukuAnswerDisplay();
 
-    // 九九名人ではBGMを使用しない。
-    stopBgm();
+    bgmEngine.ensureContext();
+    updateKukuChallengeEffects(true);
+    startBgmKeepAlive();
 
     startKukuTimer();
     runKukuQuestion();
@@ -17488,6 +17665,7 @@ HTML = r"""
     stopKukuRecognition();
     if (kukuQuestionIndex >= kukuQuestions.length) { finishKukuMode(false); return; }
     const token = ++kukuRunToken; const question = kukuQuestions[kukuQuestionIndex];
+    flashQuestionFrameIfNeeded(kukuChallengeStreak(), $("#kukuGameView .kuku-game-card"));
     kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
     kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${kukuQuestions.length}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
     kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = getKukuSpokenPrompt(question);
@@ -17505,6 +17683,7 @@ HTML = r"""
     else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
     kukuCorrectCount.textContent =
       `正解 ${kukuCorrect}`;
+    updateKukuChallengeEffects();
     const advance = () => { kukuQuestionIndex += 1; if (kukuQuestionIndex >= kukuQuestions.length) finishKukuMode(false); else runKukuQuestion(); };
 
     const kukuFeedbackVoice = ok
@@ -17566,6 +17745,7 @@ HTML = r"""
       kukuQuestions.length
     );
 
+    queueSharedStamp('kuku','九九名人','九','きゅう',kukuCorrect,kukuQuestions.length,earnedMedal||'white');
     const medalText = earnedMedal
       ? `${kukuMedalLabel(earnedMedal)}メダルを1枚獲得しました。`
       : "";
@@ -18160,6 +18340,8 @@ HTML = r"""
   }
 
   function finishAnzanMode() {
+    if (!anzanResultView.classList.contains('hidden')) return;
+    queueSharedStamp('anzan','暗算名人','暗','あん',anzanCorrect,ANZAN_TOTAL_QUESTIONS,gradeSharedScore(anzanCorrect,ANZAN_TOTAL_QUESTIONS));
     stopAnzanSession();
 
     anzanGameView.classList.add(
@@ -21402,6 +21584,10 @@ HTML = r"""
         timeup
       );
 
+    if(timedResult&&!sessionHistorySaved&&sessionRecord?.certificationEligible&&sessionTotalQuestions===TOTAL_QUESTIONS&&answers.length===TOTAL_QUESTIONS){
+      queueSharedStamp(String(currentMode),String(sessionRecord.modeTitle||'そろばん'),'算','さん',
+        Number(challengeScore.correctCount)||0,TOTAL_QUESTIONS,earnedChallengeMedal||'white');
+    }
     saveCompletedSession(
       sessionRecord
     );
@@ -22232,8 +22418,60 @@ html = (
     .replace("__KUKU_BRONZE_MEDAL__", KUKU_BRONZE_MEDAL_URI)
 )
 
-components.html(
-    html,
-    height=1600,
-    scrolling=True,
-)
+@st.cache_resource(max_entries=2)
+def stamp_component(frontend):
+    digest=hashlib.sha256(frontend.encode('utf-8')).hexdigest()[:16]
+    folder=Path(tempfile.gettempdir())/('soroban_stamp_component_'+digest)
+    folder.mkdir(parents=True,exist_ok=True)
+    (folder/'index.html').write_text(frontend,encoding='utf-8')
+    return components.declare_component('soroban_stamp_'+digest,path=str(folder))
+
+
+def store_soroban_stamp(stamp):
+    if not isinstance(stamp,dict):
+        raise ValueError('スタンプ形式が不正です。')
+    from uuid import UUID
+    attempt_id=str(UUID(str(stamp.get('attempt_id'))))
+    categories={'hosu':('補数名人','珠','しゅ'),'kuku':('九九名人','九','きゅう'),
+                'anzan':('暗算名人','暗','あん')}
+    cat=str(stamp.get('category_key',''))
+    if cat in categories:
+        label,char,reading=categories[cat]
+    else:
+        # Main challenge categories are determined by the existing app's mode data.
+        if not cat or len(cat)>48 or not cat.isascii() or not all(c.isalnum() or c in '_-' for c in cat):
+            raise ValueError('カテゴリーが不正です。')
+        label=str(stamp.get('category_label') or 'そろばん')[:64]
+        char,reading='算','さん'
+    right=stamp.get('correct_count');total=stamp.get('total_count')
+    if type(right) is not int or type(total) is not int or not (0<=right<=total<=100) or total<=0:
+        raise ValueError('正解数が不正です。')
+    grade=str(stamp.get('grade',''))
+    if grade not in ('gold','silver','bronze','white'):
+        raise ValueError('スタンプ色が不正です。')
+    if not st.secrets.get('SUPABASE_URL') or not st.secrets.get('SUPABASE_SERVICE_ROLE_KEY'):
+        raise ValueError('Supabase設定がありません。')
+    profile=str(st.secrets.get('CHOCOMANA_PROFILE_ID','family_default'))
+    row={'profile_id':profile,'source_app':'soroban','attempt_id':attempt_id,
+         'category_key':cat,'category_label':label,'stamp_char':char,'reading':reading,
+         'difficulty':'','correct_count':right,'total_count':total,'grade':grade}
+    get_supabase().table('chokomana_stamps').upsert(
+        row,on_conflict='profile_id,source_app,attempt_id',ignore_duplicates=True).execute()
+    return attempt_id
+
+
+stamp_result=st.session_state.get('soroban_stamp_result')
+event=stamp_component(html)(stamp_result=stamp_result,key='soroban_stamp_board',default=None)
+if isinstance(event,dict) and isinstance(event.get('stamp'),dict):
+    stamp=event['stamp']
+    stamp_id=str(stamp.get('attempt_id',''))
+    if st.session_state.get('soroban_stamp_last_attempt')!=stamp_id:
+        try:
+            saved_id=store_soroban_stamp(stamp)
+            st.session_state['soroban_stamp_result']={'ok':True,'attempt_id':saved_id}
+        except Exception:
+            st.session_state['soroban_stamp_result']={'ok':False,'attempt_id':stamp_id}
+        if st.session_state['soroban_stamp_result']['ok']:
+            st.session_state['soroban_stamp_last_attempt']=stamp_id
+        st.rerun()
+
