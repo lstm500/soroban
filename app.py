@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V159-SETTINGS-FRAME-HEIGHT
+# VERSION: CLEAN-V160-COLLECTION-MEDAL-IMAGES
 
 import json
 import hashlib
@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V159-SETTINGS-FRAME-HEIGHT"
+APP_VERSION = "CLEAN-V160-COLLECTION-MEDAL-IMAGES"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3904,6 +3904,8 @@ HTML = r"""
   .kuku-table-scroll::-webkit-scrollbar {width:12px;}
   .kuku-table-scroll::-webkit-scrollbar-track {background:#eee7db;border-radius:8px;}
   .kuku-table-scroll::-webkit-scrollbar-thumb {background:#8b7960;border-radius:8px;border:2px solid #eee7db;}
+  .collection-medal-image {display:block;width:88px;height:88px;max-width:100%;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(55,42,27,.2));}
+  .medal-slot.locked .collection-medal-image {filter:grayscale(1);opacity:.22;}
 </style>
 <div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
   <label for="appVolumeSlider">🔊 音量</label>
@@ -10107,15 +10109,18 @@ HTML = r"""
         const slot = document.createElement("div");
         slot.className = `medal-slot ${earned ? "earned" : "locked"}`;
 
-        const medal = document.createElement("div");
-        medal.className = "rank-medal";
-        medal.innerHTML = `<span class="rank-medal-text">${rank.name}</span>`;
-
-        setMedalVisual(
-          medal,
-          rank.name,
-          tierKey
-        );
+        const medal = document.createElement("img");
+        medal.className = "collection-medal-image";
+        const currentMedals = $(".home-rank-medal-coin").dataset;
+        const sourceMap = {
+          gold: currentMedals.goldSrc,
+          silver: currentMedals.silverSrc,
+          bronze: currentMedals.bronzeSrc
+        };
+        medal.src = sourceMap[tierKey] || sourceMap.gold;
+        medal.alt = tier ? `${rank.name}・${tier.label}メダル` : `${rank.name}・未獲得`;
+        medal.width = 88;
+        medal.height = 88;
 
         const name = document.createElement("div");
         name.className = "medal-slot-name";
