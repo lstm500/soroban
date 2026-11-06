@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V157-KUKU-START-TOP
+# VERSION: CLEAN-V158-KUKU-SCROLL-CHECK
 
 import json
 import hashlib
@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V157-KUKU-START-TOP"
+APP_VERSION = "CLEAN-V158-KUKU-SCROLL-CHECK"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -17141,6 +17141,8 @@ HTML = r"""
   }
 
   function stopKukuSession() {
+    clearTimeout(kukuScrollTimer);
+    kukuScrollCheck += 1;
     stopKukuTableReading();
     if (kukuView.classList.contains("show") && !kukuGameView.classList.contains("hidden")) stopBgm();
     kukuRunToken += 1;
@@ -17663,6 +17665,58 @@ HTML = r"""
     playBgmForStreak(streak, force);
   }
 
+  let kukuScrollTimer = null;
+  let kukuScrollCheck = 0;
+
+  function resetKukuScrollPosition(token = kukuRunToken) {
+    clearTimeout(kukuScrollTimer);
+    const check = ++kukuScrollCheck;
+    let attempts = 0;
+    const active = () => check === kukuScrollCheck && token === kukuRunToken &&
+      kukuView.classList.contains("show") && !kukuGameView.classList.contains("hidden");
+    // レベル選択・回答ボタンに残ったフォーカスが画面を引き戻すのを防ぐ。
+    try {
+      const focused = document.activeElement;
+      if (focused && root.contains(focused)) focused.blur();
+    } catch (error) {}
+    const verify = () => {
+      if (!active()) return;
+      const nodes = [document.scrollingElement, document.documentElement, document.body];
+      const windows = [window];
+      // window.scrollYではなく、iframeを包むstMain等がスクロールしている場合も確認する。
+      try {
+        let child = window;
+        for (let depth = 0; depth < 8 && child.parent && child.parent !== child; depth += 1) {
+          const parent = child.parent;
+          const parentDoc = parent.document;
+          const frame = child.frameElement || Array.from(parentDoc.querySelectorAll("iframe"))
+            .find((element) => element.contentWindow === child);
+          for (let node = frame; node; node = node.parentElement) nodes.push(node);
+          nodes.push(parentDoc.scrollingElement, parentDoc.documentElement, parentDoc.body);
+          windows.push(parent);
+          child = parent;
+        }
+      } catch (error) { /* 別オリジンではscrollIntoViewによる上端合わせを使う。 */ }
+      const moved = nodes.some((node) => node && (node.scrollTop > 1 || node.scrollLeft > 1)) ||
+        windows.some((surface) => (surface.scrollY || 0) > 1);
+      const clipped = kukuView.getBoundingClientRect().top < -1;
+      if (attempts === 0 || moved || clipped) {
+        try { kukuView.scrollIntoView({block:"start",inline:"nearest",behavior:"instant"}); } catch (error) {}
+        nodes.forEach((node) => {
+          if (!node) return;
+          node.scrollTop = 0; node.scrollLeft = 0;
+        });
+        windows.forEach((surface) => {
+          try { surface.scrollTo({top:0,left:0,behavior:"instant"}); } catch (error) {}
+        });
+      }
+      attempts += 1;
+      // マイク開始・レイアウト確定が遅れるスマホでも、2秒間は実際の位置を再確認する。
+      if (attempts < 21) kukuScrollTimer = setTimeout(verify,100);
+    };
+    verify();
+  }
+
   function startKukuMode(level) {
     stopKukuSession();
     kukuLevel = Math.max(1, Math.min(5, Number(level) || 1));
@@ -17687,9 +17741,8 @@ HTML = r"""
     kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
     kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${kukuQuestions.length}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
     kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = getKukuSpokenPrompt(question);
-    resetChallengeScrollPosition(kukuView, () => token === kukuRunToken &&
-      kukuView.classList.contains("show") && !kukuGameView.classList.contains("hidden"));
-    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 60); else kukuPrompt.textContent = "数字をタップして答えてね"; });
+    resetKukuScrollPosition(token);
+    speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; resetKukuScrollPosition(token); if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 60); else kukuPrompt.textContent = "数字をタップして答えてね"; });
   }
 
   function submitKukuAnswer() {
