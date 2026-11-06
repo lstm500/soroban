@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V155-KUKU-BGM-FRAME
+# VERSION: CLEAN-V157-KUKU-START-TOP
 
 import json
 import hashlib
@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V155-KUKU-BGM-FRAME"
+APP_VERSION = "CLEAN-V157-KUKU-START-TOP"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -3888,6 +3888,22 @@ HTML = r"""
   @media(max-width:760px) {.kuku-table-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}
   @media(max-width:520px) {.kuku-table-grid {grid-template-columns:1fr;}}
   .kuku-game-card {position:relative;transition:border-color .25s ease,border-width .25s ease,box-shadow .25s ease; }
+  .kuku-table-scroll {
+    max-height: min(60vh, 560px);
+    overflow-y: scroll;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: auto;
+    scrollbar-color: #8b7960 #eee7db;
+    padding: 0 8px 12px 0;
+    border-bottom: 1px solid #ddd3c1;
+  }
+  .kuku-table-scroll::-webkit-scrollbar {width:12px;}
+  .kuku-table-scroll::-webkit-scrollbar-track {background:#eee7db;border-radius:8px;}
+  .kuku-table-scroll::-webkit-scrollbar-thumb {background:#8b7960;border-radius:8px;border:2px solid #eee7db;}
 </style>
 <div class="app-volume-control" role="group" aria-label="アプリ全体の音量">
   <label for="appVolumeSlider">🔊 音量</label>
@@ -4041,7 +4057,9 @@ HTML = r"""
     <p>聞きたい段の「読み上げ」を押してね。</p>
     <button type="button" id="kukuTableStopBtn" disabled>読み上げを停止</button>
     <p id="kukuTableStatus" role="status" aria-live="polite"></p>
-    <div id="kukuTableGrid" class="kuku-table-grid"></div>
+    <div id="kukuTableScroll" class="kuku-table-scroll" role="region" aria-label="九九一覧表。上下にスクロールできます" tabindex="0">
+      <div id="kukuTableGrid" class="kuku-table-grid"></div>
+    </div>
   </section>
   <div id="kukuMenuView">
     <button type="button" id="kukuTableOpenBtn" class="primary">九九一覧表</button>
@@ -17669,6 +17687,8 @@ HTML = r"""
     kukuLocked = true; kukuAnswerBuffer = ""; updateKukuAnswerDisplay();
     kukuQCount.textContent = `${kukuQuestionIndex + 1} / ${kukuQuestions.length}`; kukuCorrectCount.textContent = `正解 ${kukuCorrect}`; kukuEquation.textContent = `${question.a} × ${question.b} = ?`;
     kukuFeedback.textContent = ""; kukuFeedback.className = "kuku-feedback"; kukuPrompt.textContent = getKukuSpokenPrompt(question);
+    resetChallengeScrollPosition(kukuView, () => token === kukuRunToken &&
+      kukuView.classList.contains("show") && !kukuGameView.classList.contains("hidden"));
     speakKukuQuestion(question, () => { if (token !== kukuRunToken || kukuQuestionIndex >= kukuQuestions.length) return; kukuLocked = false; if (kukuVoiceEnabled) setTimeout(startKukuVoiceRecognition, 60); else kukuPrompt.textContent = "数字をタップして答えてね"; });
   }
 
@@ -20075,8 +20095,9 @@ HTML = r"""
     updateTimeLimitUi();
   }
 
-  function resetChallengeScrollPosition() {
+  function resetChallengeScrollPosition(target = workspace, isActive = null) {
     const reset = () => {
+      if (isActive && !isActive()) return;
       try {
         window.scrollTo({
           top: 0,
@@ -20109,7 +20130,7 @@ HTML = r"""
       } catch (error) {}
 
       try {
-        workspace.scrollIntoView({
+        target.scrollIntoView({
           block: "start",
           inline: "nearest",
           behavior: "auto"
