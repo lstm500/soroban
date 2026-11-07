@@ -1,4 +1,4 @@
-# VERSION: CLEAN-V162-PERFORMANCE-LOGS
+# VERSION: CLEAN-V163-STAMP-RECEIPTS
 
 import json
 import hashlib
@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-APP_VERSION = "CLEAN-V162-PERFORMANCE-LOGS"
+APP_VERSION = "CLEAN-V163-STAMP-RECEIPTS"
 BUCKET_NAME = "music"
 SIGNED_URL_EXPIRES_IN = 3600
 
@@ -6341,6 +6341,7 @@ HTML = r"""
     hosu.op = op;
     hosu.level = level;
     hosu.questions = buildHosuQuestions(op, level);
+    hosuStampAttempt = beginSharedStamp("hosu", `${op === "＋" ? "足し算" : "引き算"}・${["","初級","中級","上級"][level]}`,12);
     hosu.index = 0;
     hosu.correct = 0;
     hosu.hintQuestions = 0;
@@ -6546,6 +6547,7 @@ HTML = r"""
       if (hosu.questionHint) hosu.hintQuestions += 1;
       else if (hosu.questionWrong) hosu.mistakeQuestions += 1;
       else hosu.correct += 1;
+      recordSharedStampAnswer(hosuStampAttempt,hosu.index,!hosu.questionWrong && !hosu.questionHint);
     }
     renderHosuStep();
   }
@@ -6695,40 +6697,111 @@ HTML = r"""
     catch (error) { retry(500); }
   }
 
-  // Shared stamp outbox: records survive refresh and send only to trusted Streamlit Python.
+  // Only completion receipts go to Streamlit Python. No database credential enters this component.
   const SHARED_STAMP_KEY = 'chokomana_soroban_stamps_v1';
-  let sharedStamps = [];
-  try {const saved=JSON.parse(localStorage.getItem(SHARED_STAMP_KEY)||'[]');if(Array.isArray(saved))sharedStamps=saved.slice(0,250)}catch(e){}
-  let stampReady=false,stampSending=null,stampRetryBlocked=false;
-  function persistSharedStamps(){try{localStorage.setItem(SHARED_STAMP_KEY,JSON.stringify(sharedStamps))}catch(e){}}
-  function sendSharedStamp(){
-    if(!stampReady||stampSending||stampRetryBlocked||!sharedStamps.length)return;
-    stampSending=sharedStamps[0].attempt_id;
-    window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',value:{stamp:sharedStamps[0]},dataType:'json'},'*');
+  const STAMP_ATTEMPT_KEY = 'chokomana_soroban_attempts_v2';
+  const STAMP_CATEGORIES = Object.freeze({
+    calculation:{category_key:'calculation',category_label:'そろばん・計算',stamp_char:'算',reading:'さん'},
+    hosu:{category_key:'hosu',category_label:'補数名人',stamp_char:'補',reading:'ほ'},
+    kuku:{category_key:'kuku',category_label:'九九名人',stamp_char:'九',reading:'きゅう'},
+    anzan:{category_key:'anzan',category_label:'暗算名人',stamp_char:'暗',reading:'あん'}
+  });
+  let sharedStamps = [], stampAttempts = {};
+  try {const saved=JSON.parse(localStorage.getItem(SHARED_STAMP_KEY)||'[]');if(Array.isArray(saved))sharedStamps=saved;}catch(error){}
+  try {const saved=JSON.parse(localStorage.getItem(STAMP_ATTEMPT_KEY)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))stampAttempts=saved;}catch(error){}
+  for (const attempt of Object.values(stampAttempts)) {
+    if (attempt?.schema_version===2 && attempt.receipt && !sharedStamps.some(item=>item.attempt_id===attempt.attempt_id)) sharedStamps.push(attempt.receipt);
   }
-  function queueSharedStamp(category_key,category_label,char,reading,correct,total,grade){
-    if(!Number.isInteger(correct)||!Number.isInteger(total)||total<1||correct<0||correct>total)return;
-    if(!['gold','silver','bronze','white'].includes(grade))return;
-    const item={attempt_id:crypto.randomUUID(),category_key,category_label,stamp_char:char,reading,
-      correct_count:correct,total_count:total,grade,finished_at:new Date().toISOString()};
-    sharedStamps.push(item);stampRetryBlocked=false;persistSharedStamps();sendSharedStamp();
+  let stampReady=false,stampProfile='',stampSending=null,stampRetryTimer=null,stampRetryCount=0;
+  let stampConfigSeen=false;
+  const freshIdentityWaiters=new Set();
+  let mainStampAttempt=null,hosuStampAttempt=null,kukuStampAttempt=null,anzanStampAttempt=null;
+  const stampUuid = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    if (typeof crypto === 'undefined' || !crypto.getRandomValues) return null;
+    const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+    const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+  };
+  function persistSharedStamps() {
+    try {localStorage.setItem(SHARED_STAMP_KEY,JSON.stringify(sharedStamps));} catch(error) {}
+    try {localStorage.setItem(STAMP_ATTEMPT_KEY,JSON.stringify(stampAttempts));} catch(error) {}
   }
-  function gradeSharedScore(correct,total){
-    return correct===total?'gold':correct/total>=.8?'silver':correct/total>=.6?'bronze':'white';
+  function beginSharedStamp(kind,difficulty,total,resume=null) {
+    if (!STAMP_CATEGORIES[kind] || !Number.isInteger(total) || total<1 || total>100) return null;
+    if (resume?.schema_version===2 && resume.kind===kind && resume.total_count===total && resume.profile_id===stampProfile) {
+      stampAttempts[kind]=resume;persistSharedStamps();return resume;
+    }
+    const id=stampUuid();if(!id)return null;
+    const attempt={schema_version:2,kind,attempt_id:id,profile_id:stampProfile,difficulty:String(difficulty||''),total_count:total,
+      started_at:new Date().toISOString(),answers:{},status:'active'};
+    if(!stampConfigSeen)freshIdentityWaiters.add(attempt);
+    stampAttempts[kind]=attempt;persistSharedStamps();return attempt;
+  }
+  function recordSharedStampAnswer(attempt,index,correct) {
+    if (!attempt || attempt.status!=='active' || !Number.isInteger(index) || index<0 || index>=attempt.total_count ||
+        Object.prototype.hasOwnProperty.call(attempt.answers,String(index))) return;
+    attempt.answers[String(index)]=Boolean(correct);persistSharedStamps();
+  }
+  function completeSharedStamp(attempt,grade) {
+    if (!attempt || attempt.status!=='active' || !['gold','silver','bronze','white'].includes(grade)) return;
+    const values=Object.values(attempt.answers);
+    if (values.length!==attempt.total_count) return; // unfinished, including a timed-out partial run
+    if (attempt.kind==='hosu' || attempt.kind==='anzan') grade=gradeSharedScore(values.filter(Boolean).length,attempt.total_count);
+    const item={schema_version:2,...STAMP_CATEGORIES[attempt.kind],attempt_id:attempt.attempt_id,profile_id:attempt.profile_id,
+      difficulty:attempt.difficulty,correct_count:values.filter(Boolean).length,total_count:attempt.total_count,
+      completed_count:values.length,grade,finished_at:new Date().toISOString()};
+    // Save the receipt before marking the attempt queued. Both survive reload and retain the same ID.
+    if (!sharedStamps.some(stamp=>stamp.attempt_id===item.attempt_id)) sharedStamps.push(item);
+    attempt.status='queued';attempt.receipt=item;persistSharedStamps();sendSharedStamp();
+  }
+  function gradeSharedScore(correct,total) {
+    return correct===total?'gold':correct>=Math.ceil(total*5/6)?'silver':correct>=Math.ceil(total*2/3)?'bronze':'white';
+  }
+  function sendSharedStamp() {
+    if (!stampReady || stampSending || !stampProfile) return;
+    // A receipt is never reassigned to a different learner after a Secrets/profile change.
+    const stamp=sharedStamps.find(item=>item.schema_version===2 && item.profile_id===stampProfile);
+    if (!stamp) return;
+    const delivery_id=stampUuid();if(!delivery_id)return;
+    stampSending={attempt_id:stamp.attempt_id,delivery_id};
+    window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',value:{stamp,delivery_id},dataType:'json'},'*');
+  }
+  function scheduleStampRetry() {
+    clearTimeout(stampRetryTimer);
+    const delay=[2000,5000,15000,60000][Math.min(stampRetryCount++,3)];
+    stampRetryTimer=setTimeout(()=>{stampRetryTimer=null;stampSending=null;sendSharedStamp();},delay);
   }
   window.addEventListener('message',event=>{
     if(event.source!==window.parent||event.data?.type!=='streamlit:render')return;
     stampReady=true;
-    const result=event.data.args?.stamp_result||{};
-    if(result.ok&&result.attempt_id){
-      sharedStamps=sharedStamps.filter(x=>x.attempt_id!==result.attempt_id);
-      persistSharedStamps();stampSending=null;
-    }else if(result.attempt_id&&stampSending===result.attempt_id){
-      // Retain on network/permission failures, then retry after a future interaction.
-      stampSending=null;stampRetryBlocked=true;
+    stampProfile=String(event.data.args?.stamp_profile_id||'');
+    if(!stampConfigSeen){
+      stampConfigSeen=true;
+      if(stampProfile)for(const attempt of freshIdentityWaiters){
+        attempt.profile_id=stampProfile;
+        if(attempt.receipt)attempt.receipt.profile_id=stampProfile;
+      }
+      freshIdentityWaiters.clear();persistSharedStamps();
     }
-    sendSharedStamp();
+    const result=event.data.args?.stamp_result||{};
+    if(stampSending && result.delivery_id===stampSending.delivery_id && result.attempt_id===stampSending.attempt_id){
+      stampSending=null;
+      if(result.ok){
+        sharedStamps=sharedStamps.filter(item=>item.attempt_id!==result.attempt_id);
+        for(const attempt of Object.values(stampAttempts)) if(attempt?.attempt_id===result.attempt_id){attempt.status='saved';delete attempt.receipt;}
+        stampRetryCount=0;clearTimeout(stampRetryTimer);persistSharedStamps();
+      } else {
+        // Configuration/validation errors await a future config render; network errors retry quietly.
+        if(result.code==='save_failed')scheduleStampRetry();
+        else return;
+      }
+    }
+    if(!stampRetryTimer || result.ok)sendSharedStamp();
   });
+  window.addEventListener('online',()=>{stampSending=null;sendSharedStamp();});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!stampSending)sendSharedStamp();});
+
   window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');
   let settingsFrameHeight = null;
   let settingsHeightScheduled = false;
@@ -6764,7 +6837,7 @@ HTML = r"""
     stopHosuSession();
     const key = `${hosu.op}|${hosu.level}`;
     if (!hosu.recorded) {
-      queueSharedStamp('hosu','補数名人','珠','しゅ',hosu.correct,12,gradeSharedScore(hosu.correct,12));
+      completeSharedStamp(hosuStampAttempt,gradeSharedScore(hosu.correct,12));
       const previous = hosu.stats[key] || {};
       hosu.stats[key] = {
         sessions: (Number(previous.sessions) || 0) + 1,
@@ -11205,6 +11278,7 @@ HTML = r"""
       savedAt:
         new Date().toISOString(),
       currentMode,
+      stampAttempt: mainStampAttempt,
       activeWeaknessChallengeMode,
       sessionTotalQuestions,
       index:
@@ -17979,7 +18053,9 @@ HTML = r"""
   function startKukuModeMeasured(level) {
     stopKukuSession();
     kukuLevel = Math.max(1, Math.min(5, Number(level) || 1));
-    kukuQuestions = buildKukuQuestions(kukuLevel); kukuQuestionIndex = 0; kukuCorrect = 0; kukuStreak = 0; kukuAnswerBuffer = ""; kukuVoiceEnabled = preferredVoiceAnswerEnabled; kukuLocked = true;
+    kukuQuestions = buildKukuQuestions(kukuLevel);
+    kukuStampAttempt = beginSharedStamp("kuku",kukuLevelName(kukuLevel),kukuQuestions.length);
+    kukuQuestionIndex = 0; kukuCorrect = 0; kukuStreak = 0; kukuAnswerBuffer = ""; kukuVoiceEnabled = preferredVoiceAnswerEnabled; kukuLocked = true;
     kukuMenuView.classList.add("hidden"); kukuResultView.classList.add("hidden"); kukuGameView.classList.remove("hidden");
     updateKukuButtons();
     updateKukuAnswerDisplay();
@@ -18014,6 +18090,7 @@ HTML = r"""
     const user = Number(raw); if (!Number.isFinite(user)) return;
     kukuLocked = true; stopKukuRecognition();
     const question = kukuQuestions[kukuQuestionIndex]; const ok = user === question.answer;
+    recordSharedStampAnswer(kukuStampAttempt,kukuQuestionIndex,ok);
     if (ok) { kukuCorrect += 1; kukuStreak += 1; kukuFeedback.textContent = "お見事！"; kukuFeedback.className = "kuku-feedback good"; }
     else { kukuStreak = 0; kukuFeedback.textContent = `残念！ 答えは ${question.answer}`; kukuFeedback.className = "kuku-feedback bad"; }
     kukuCorrectCount.textContent =
@@ -18080,7 +18157,7 @@ HTML = r"""
       kukuQuestions.length
     );
 
-    queueSharedStamp('kuku','九九名人','九','きゅう',kukuCorrect,kukuQuestions.length,earnedMedal||'white');
+    completeSharedStamp(kukuStampAttempt,earnedMedal||'white');
     const medalText = earnedMedal
       ? `${kukuMedalLabel(earnedMedal)}メダルを1枚獲得しました。`
       : "";
@@ -18351,6 +18428,7 @@ HTML = r"""
     anzanLevel =
       Number(level) || 1;
 
+    anzanStampAttempt = beginSharedStamp("anzan",["","初級","中級","上級"][anzanLevel] || String(anzanLevel),ANZAN_TOTAL_QUESTIONS);
     anzanQuestionIndex = 0;
     anzanCorrect = 0;
     anzanLocked = false;
@@ -18645,6 +18723,7 @@ HTML = r"""
       user ===
       anzanQuestion.answer;
 
+    recordSharedStampAnswer(anzanStampAttempt,anzanQuestionIndex,ok);
     if (ok) {
       anzanCorrect += 1;
       anzanFeedback.textContent =
@@ -18680,7 +18759,7 @@ HTML = r"""
 
   function finishAnzanMode() {
     if (!anzanResultView.classList.contains('hidden')) return;
-    queueSharedStamp('anzan','暗算名人','暗','あん',anzanCorrect,ANZAN_TOTAL_QUESTIONS,gradeSharedScore(anzanCorrect,ANZAN_TOTAL_QUESTIONS));
+    completeSharedStamp(anzanStampAttempt,gradeSharedScore(anzanCorrect,ANZAN_TOTAL_QUESTIONS));
     stopAnzanSession();
 
     anzanGameView.classList.add(
@@ -20589,6 +20668,10 @@ HTML = r"""
         )
       );
 
+    mainStampAttempt = beginSharedStamp("calculation", modeInfo[mode]?.title || String(mode),sessionTotalQuestions,resumeState?.stampAttempt);
+    if (resumeState && !resumeState.stampAttempt) {
+      (resumeState.answers || []).forEach((entry,i) => recordSharedStampAnswer(mainStampAttempt,i,entry.ok && !entry.hintUsed));
+    }
     questions =
       resumeState
         ? Array.isArray(
@@ -21046,6 +21129,7 @@ HTML = r"""
           ? "correct"
           : "wrong";
 
+    recordSharedStampAnswer(mainStampAttempt,index,ok && !hintUsed);
     answers.push({
       q,
       user,
@@ -21930,10 +22014,7 @@ HTML = r"""
         timeup
       );
 
-    if(timedResult&&!sessionHistorySaved&&sessionRecord?.certificationEligible&&sessionTotalQuestions===TOTAL_QUESTIONS&&answers.length===TOTAL_QUESTIONS){
-      queueSharedStamp(String(currentMode),String(sessionRecord.modeTitle||'そろばん'),'算','さん',
-        Number(challengeScore.correctCount)||0,TOTAL_QUESTIONS,earnedChallengeMedal||'white');
-    }
+    if (answers.length === sessionTotalQuestions) completeSharedStamp(mainStampAttempt,earnedChallengeMedal||'white');
     saveCompletedSession(
       sessionRecord
     );
@@ -22773,51 +22854,109 @@ def stamp_component(frontend):
     return components.declare_component('soroban_stamp_'+digest,path=str(folder))
 
 
+STAMP_CATEGORIES = {
+    'calculation': ('そろばん・計算', '算', 'さん'),
+    'hosu': ('補数名人', '補', 'ほ'),
+    'kuku': ('九九名人', '九', 'きゅう'),
+    'anzan': ('暗算名人', '暗', 'あん'),
+}
+
+
+class StampSaveError(ValueError):
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
+
+
+def stamp_profile_id():
+    # No shared fallback: an unconfigured learner must never become family_default.
+    value = st.secrets.get('CHOCOMANA_PROFILE_ID')
+    return value.strip() if isinstance(value, str) and 0 < len(value.strip()) <= 128 else ''
+
+
 def store_soroban_stamp(stamp):
-    if not isinstance(stamp,dict):
-        raise ValueError('スタンプ形式が不正です。')
     from uuid import UUID
-    attempt_id=str(UUID(str(stamp.get('attempt_id'))))
-    categories={'hosu':('補数名人','珠','しゅ'),'kuku':('九九名人','九','きゅう'),
-                'anzan':('暗算名人','暗','あん')}
-    cat=str(stamp.get('category_key',''))
-    if cat in categories:
-        label,char,reading=categories[cat]
-    else:
-        # Main challenge categories are determined by the existing app's mode data.
-        if not cat or len(cat)>48 or not cat.isascii() or not all(c.isalnum() or c in '_-' for c in cat):
-            raise ValueError('カテゴリーが不正です。')
-        label=str(stamp.get('category_label') or 'そろばん')[:64]
-        char,reading='算','さん'
-    right=stamp.get('correct_count');total=stamp.get('total_count')
-    if type(right) is not int or type(total) is not int or not (0<=right<=total<=100) or total<=0:
-        raise ValueError('正解数が不正です。')
-    grade=str(stamp.get('grade',''))
-    if grade not in ('gold','silver','bronze','white'):
-        raise ValueError('スタンプ色が不正です。')
-    if not st.secrets.get('SUPABASE_URL') or not st.secrets.get('SUPABASE_SERVICE_ROLE_KEY'):
-        raise ValueError('Supabase設定がありません。')
-    profile=str(st.secrets.get('CHOCOMANA_PROFILE_ID','family_default'))
-    row={'profile_id':profile,'source_app':'soroban','attempt_id':attempt_id,
-         'category_key':cat,'category_label':label,'stamp_char':char,'reading':reading,
-         'difficulty':'','correct_count':right,'total_count':total,'grade':grade}
+    from datetime import datetime, timezone
+    from urllib.parse import urlparse
+
+    if not isinstance(stamp, dict) or stamp.get('schema_version') != 2:
+        raise StampSaveError('invalid_stamp')
+    try:
+        attempt_id = str(UUID(str(stamp.get('attempt_id', ''))))
+        finished = datetime.fromisoformat(str(stamp.get('finished_at', '')).replace('Z', '+00:00'))
+        if finished.tzinfo is None:
+            raise ValueError('timezone missing')
+    except (ValueError, TypeError):
+        raise StampSaveError('invalid_stamp') from None
+    profile = stamp_profile_id()
+    if not profile:
+        raise StampSaveError('missing_profile')
+    if stamp.get('profile_id') != profile:
+        raise StampSaveError('profile_mismatch')
+    category = stamp.get('category_key')
+    if category not in STAMP_CATEGORIES:
+        raise StampSaveError('invalid_stamp')
+    label, char, reading = STAMP_CATEGORIES[category]
+    correct, total = stamp.get('correct_count'), stamp.get('total_count')
+    if type(correct) is not int or type(total) is not int or not 0 <= correct <= total <= 100 or total < 1:
+        raise StampSaveError('invalid_stamp')
+    if type(stamp.get('completed_count')) is not int or stamp['completed_count'] != total:
+        raise StampSaveError('incomplete_attempt')
+    grade = stamp.get('grade')
+    if grade not in ('gold', 'silver', 'bronze', 'white'):
+        raise StampSaveError('invalid_stamp')
+    difficulty = stamp.get('difficulty', '')
+    if not isinstance(difficulty, str) or len(difficulty) > 160:
+        raise StampSaveError('invalid_stamp')
+    url = st.secrets.get('SUPABASE_URL')
+    if not url or not st.secrets.get('SUPABASE_SERVICE_ROLE_KEY'):
+        raise StampSaveError('missing_secrets')
+    if urlparse(str(url)).hostname != 'keewulninyoeylgflshb.supabase.co':
+        raise StampSaveError('project_mismatch')
+    row = {
+        'profile_id': profile, 'source_app': 'soroban', 'attempt_id': attempt_id,
+        'category_key': category, 'category_label': label, 'stamp_char': char, 'reading': reading,
+        'difficulty': difficulty, 'correct_count': correct, 'total_count': total, 'grade': grade,
+        'finished_at': finished.astimezone(timezone.utc).isoformat(),
+    }
+    # DO NOTHING on the existing unique key. A replay never replaces the first result.
     get_supabase().table('chokomana_stamps').upsert(
-        row,on_conflict='profile_id,source_app,attempt_id',ignore_duplicates=True).execute()
+        row, on_conflict='profile_id,source_app,attempt_id', ignore_duplicates=True,
+        returning='minimal',
+    ).execute()
     return attempt_id
 
 
-stamp_result=st.session_state.get('soroban_stamp_result')
-event=stamp_component(html)(stamp_result=stamp_result,key='soroban_stamp_board',default=None)
-if isinstance(event,dict) and isinstance(event.get('stamp'),dict):
-    stamp=event['stamp']
-    stamp_id=str(stamp.get('attempt_id',''))
-    if st.session_state.get('soroban_stamp_last_attempt')!=stamp_id:
-        try:
-            saved_id=store_soroban_stamp(stamp)
-            st.session_state['soroban_stamp_result']={'ok':True,'attempt_id':saved_id}
-        except Exception:
-            st.session_state['soroban_stamp_result']={'ok':False,'attempt_id':stamp_id}
-        if st.session_state['soroban_stamp_result']['ok']:
-            st.session_state['soroban_stamp_last_attempt']=stamp_id
-        st.rerun()
+def process_soroban_stamp_event(event):
+    from uuid import UUID
+    if not isinstance(event, dict) or not isinstance(event.get('stamp'), dict):
+        return False
+    delivery_id = str(event.get('delivery_id', ''))
+    try:
+        UUID(delivery_id)
+    except (ValueError, TypeError):
+        return False
+    # A Streamlit rerun reuses its component value. Only a new delivery may trigger I/O.
+    if st.session_state.get('soroban_stamp_last_delivery') == delivery_id:
+        return False
+    stamp = event['stamp']
+    result = {'ok': False, 'attempt_id': str(stamp.get('attempt_id', '')), 'delivery_id': delivery_id}
+    try:
+        result['attempt_id'] = store_soroban_stamp(stamp)
+        result['ok'] = True
+    except StampSaveError as error:
+        result['code'] = error.code
+    except Exception:
+        result['code'] = 'save_failed'
+    st.session_state['soroban_stamp_last_delivery'] = delivery_id
+    st.session_state['soroban_stamp_result'] = result
+    return True
 
+
+stamp_result = st.session_state.get('soroban_stamp_result')
+event = stamp_component(html)(
+    stamp_result=stamp_result, stamp_profile_id=stamp_profile_id(),
+    key='soroban_stamp_board', default=None,
+)
+if process_soroban_stamp_event(event):
+    st.rerun()
